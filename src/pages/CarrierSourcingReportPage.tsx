@@ -33,6 +33,7 @@ type CarrierSourcingReportPageProps = {
   onSearchChange: (value: string) => void
   viewMode: ViewMode
   refreshKey: number
+  onOpenLoad: (id: string) => void
 }
 
 function statusPill(status: ReportLoad['status']) {
@@ -58,6 +59,7 @@ export function CarrierSourcingReportPage({
   onSearchChange,
   viewMode,
   refreshKey,
+  onOpenLoad,
 }: CarrierSourcingReportPageProps) {
   const [filters, setFilters] = useState<ReportFilters>({ ...DEFAULT_FILTERS })
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -332,7 +334,10 @@ export function CarrierSourcingReportPage({
               colFilters={filters.colFilters}
               onColFilterChange={(colFilters) => patch({ colFilters })}
               selectedIds={selectedId ? new Set([selectedId]) : undefined}
-              onRowClick={(row) => setSelectedId(row.id)}
+              onRowClick={(row) => {
+                setSelectedId(row.id)
+                onOpenLoad(row.id)
+              }}
               hoverTitle={(row) => row.customer}
               hoverSubtitle={(row) => `${row.origin} → ${row.destination}`}
               hoverDetails={(row) => [
@@ -373,7 +378,10 @@ export function CarrierSourcingReportPage({
                             'sr-load-card',
                             selectedId === row.id && 'is-selected'
                           )}
-                          onClick={() => setSelectedId(row.id)}
+                          onClick={() => {
+                            setSelectedId(row.id)
+                            onOpenLoad(row.id)
+                          }}
                         >
                           <div className="sr-load-card__top">
                             <span className="sr-load-card__id">{row.id}</span>

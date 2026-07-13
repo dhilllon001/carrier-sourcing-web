@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Search,
   Shield,
@@ -17,6 +17,8 @@ import {
   CarrierSourcingReportPage,
   type ViewMode,
 } from '@/pages/CarrierSourcingReportPage'
+import { LoadDetailsPage } from '@/pages/LoadDetailsPage'
+import { reportLoads } from '@/data/report'
 import { cn } from '@/lib/cn'
 
 const NAV = [
@@ -33,6 +35,14 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [openLoadId, setOpenLoadId] = useState<string | null>(null)
+
+  const openLoad = useMemo(
+    () => reportLoads.find((r) => r.id === openLoadId) ?? null,
+    [openLoadId]
+  )
+
+  const inDetails = Boolean(openLoad)
 
   return (
     <div className={cn('sr-app', collapsed && 'is-collapsed')}>
@@ -65,8 +75,11 @@ export default function App() {
                 key={item.id}
                 type="button"
                 title={item.label}
-                className={cn('sr-sidebar__nav-link', nav === item.id && 'is-active')}
-                onClick={() => setNav(item.id)}
+                className={cn('sr-sidebar__nav-link', nav === item.id && !inDetails && 'is-active')}
+                onClick={() => {
+                  setNav(item.id)
+                  setOpenLoadId(null)
+                }}
               >
                 <Icon size={16} strokeWidth={1.75} />
                 {!collapsed && <span>{item.label}</span>}
@@ -91,87 +104,94 @@ export default function App() {
       </aside>
 
       <div className="sr-main">
-        <header className="sr-topbar">
-          <div className="sr-topbar__left">
-            <h1 className="sr-topbar__title">
-              {NAV.find((n) => n.id === nav)?.label ?? 'Sourcing'}
-            </h1>
-          </div>
-
-          <label className="sr-search sr-search--header">
-            <Search size={15} strokeWidth={1.75} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search probills, PO, customer, equipment…"
-            />
-          </label>
-
-          <div className="sr-topbar__actions">
-            <button type="button" className="sr-btn">
-              <MapPin size={14} strokeWidth={1.75} />
-              Quick lane search
-            </button>
-
-            <div className="sr-view-toggle" role="group" aria-label="View mode">
-              <button
-                type="button"
-                className={cn(viewMode === 'table' && 'is-active')}
-                onClick={() => setViewMode('table')}
-              >
-                <Table2 size={14} />
-                Table
-              </button>
-              <button
-                type="button"
-                className={cn(viewMode === 'cards' && 'is-active')}
-                onClick={() => setViewMode('cards')}
-              >
-                <LayoutGrid size={14} />
-                Cards
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="sr-btn"
-              onClick={() => setNav('cmt')}
-              title="CMT"
-            >
-              <Shield size={14} strokeWidth={1.75} />
-              CMT
-            </button>
-
-            <button
-              type="button"
-              className="sr-btn sr-btn--icon"
-              aria-label="Refresh"
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
-              <RefreshCw size={15} strokeWidth={1.75} />
-            </button>
-          </div>
-        </header>
-
-        {nav === 'sourcing' ? (
-          <CarrierSourcingReportPage
-            search={search}
-            onSearchChange={setSearch}
-            viewMode={viewMode}
-            refreshKey={refreshKey}
-          />
+        {inDetails && openLoad ? (
+          <LoadDetailsPage load={openLoad} onBack={() => setOpenLoadId(null)} />
         ) : (
-          <div className="sr-page">
-            <div className="sr-card sr-card__pad">
-              <h3 className="sr-card__title">
-                {NAV.find((n) => n.id === nav)?.label}
-              </h3>
-              <p className="sr-card__meta">
-                This module is ready for wiring. Use Sourcing for the full load table and lifecycle
-                filters.
-              </p>
-            </div>
-          </div>
+          <>
+            <header className="sr-topbar">
+              <div className="sr-topbar__left">
+                <h1 className="sr-topbar__title">
+                  {NAV.find((n) => n.id === nav)?.label ?? 'Sourcing'}
+                </h1>
+              </div>
+
+              <label className="sr-search sr-search--header">
+                <Search size={15} strokeWidth={1.75} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search probills, PO, customer, equipment…"
+                />
+              </label>
+
+              <div className="sr-topbar__actions">
+                <button type="button" className="sr-btn">
+                  <MapPin size={14} strokeWidth={1.75} />
+                  Quick lane search
+                </button>
+
+                <div className="sr-view-toggle" role="group" aria-label="View mode">
+                  <button
+                    type="button"
+                    className={cn(viewMode === 'table' && 'is-active')}
+                    onClick={() => setViewMode('table')}
+                  >
+                    <Table2 size={14} />
+                    Table
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(viewMode === 'cards' && 'is-active')}
+                    onClick={() => setViewMode('cards')}
+                  >
+                    <LayoutGrid size={14} />
+                    Cards
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className="sr-btn"
+                  onClick={() => setNav('cmt')}
+                  title="CMT"
+                >
+                  <Shield size={14} strokeWidth={1.75} />
+                  CMT
+                </button>
+
+                <button
+                  type="button"
+                  className="sr-btn sr-btn--icon"
+                  aria-label="Refresh"
+                  onClick={() => setRefreshKey((k) => k + 1)}
+                >
+                  <RefreshCw size={15} strokeWidth={1.75} />
+                </button>
+              </div>
+            </header>
+
+            {nav === 'sourcing' ? (
+              <CarrierSourcingReportPage
+                search={search}
+                onSearchChange={setSearch}
+                viewMode={viewMode}
+                refreshKey={refreshKey}
+                onOpenLoad={setOpenLoadId}
+              />
+            ) : (
+              <div className="sr-page">
+                <div className="sr-card sr-card__pad">
+                  <h3 className="sr-card__title">
+                    {NAV.find((n) => n.id === nav)?.label}
+                  </h3>
+                  <p className="sr-card__meta">
+                    This module is ready for wiring. Use Sourcing for the full load table and
+                    lifecycle filters.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
