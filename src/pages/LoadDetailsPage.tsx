@@ -806,7 +806,14 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             {stageWorkspace ? (
               <>
                 {isFindPost(subStage) && (
-                  <FindPostView detail={detail} onPostLoad={() => setPostOpen(true)} />
+                  <FindPostView
+                    detail={detail}
+                    onPostLoad={() => setPostOpen(true)}
+                    onAdvanceToOffers={() => {
+                      setStage('Tender')
+                      setSubStage('Offers & Bids')
+                    }}
+                  />
                 )}
                 {subStage === 'Offers & Bids' && (
                   <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />

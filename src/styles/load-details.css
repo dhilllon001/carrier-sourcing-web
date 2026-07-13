@@ -1889,8 +1889,8 @@
 }
 
 .dd-carrier-name {
-  display: flex;
-  align-items: flex-start;
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
 }
 
@@ -2512,4 +2512,617 @@
   .dd-span-2 {
     grid-column: auto;
   }
+}
+
+
+/* ── Clean Find tooling + flat table + WhatsApp offers ── */
+.dd-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--sr-border-1);
+  color: #0f1a2a;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dd-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #d5dbe3;
+  background: #ffffff;
+  color: #0f1a2a;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.dd-pill-btn:hover:not(:disabled) {
+  background: #f4f5f7;
+  border-color: #c5ccd6;
+}
+
+.dd-pill-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dd-pill-btn--emphasis {
+  background: #0f1a2a;
+  border-color: #0f1a2a;
+  color: #fff;
+}
+
+.dd-pill-btn--emphasis:hover:not(:disabled) {
+  background: #1a2536;
+  border-color: #1a2536;
+  color: #fff;
+}
+
+.dd-search--toolbar {
+  height: 32px;
+  max-width: 340px;
+  flex: 1 1 240px;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.dd-search--sm {
+  height: 30px;
+  border-radius: 8px;
+}
+
+.dd-find__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--sr-border-1);
+  border-radius: 12px;
+}
+
+.dd-find__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.dd-find__table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--sr-border-1);
+  border-radius: 12px;
+}
+
+.dd-carrier-table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12.5px;
+}
+
+.dd-carrier-table th,
+.dd-carrier-table td {
+  height: 44px;
+  padding: 0 12px;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid #eceff3;
+  color: #0f1a2a;
+}
+
+.dd-carrier-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f7f8fa;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7685;
+}
+
+.dd-carrier-table tbody tr:nth-child(even) td {
+  background: #fcfcfd;
+}
+
+.dd-carrier-table tbody tr:hover td,
+.dd-carrier-table tbody tr.is-selected td {
+  background: #f3f5f8 !important;
+}
+
+.dd-carrier-table .col-check {
+  width: 40px;
+}
+
+.dd-carrier-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.dd-carrier-name__text {
+  font-weight: 700;
+  color: #0f1a2a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-carrier-name .is-star {
+  color: #b45309;
+  fill: #b45309;
+  flex-shrink: 0;
+}
+
+.dd-source {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: #eef1f4;
+  color: #3d4a5c;
+}
+
+.dd-source--past {
+  background: #eef1f4;
+  color: #3d4a5c;
+}
+
+.dd-source--dat {
+  background: #eef1f4;
+  color: #3d4a5c;
+}
+
+.dd-source--new {
+  background: #eef1f4;
+  color: #3d4a5c;
+}
+
+/* Offers panels — less sectiony */
+.dd-offers__grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.dd-bids-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--sr-border-1);
+  border-radius: 12px;
+  min-height: 0;
+}
+
+.dd-bids-list__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dd-bids-list__head strong {
+  font-size: 13px;
+  color: #0f1a2a;
+}
+
+.dd-bid-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dd-bid-filters button {
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: #f2f3f5;
+  color: #3d4a5c;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dd-bid-filters button.is-active {
+  background: #0f1a2a;
+  color: #fff;
+}
+
+.dd-bid-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.dd-bid-card {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e8ebf0;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  color: #0f1a2a;
+}
+
+.dd-bid-card.is-selected {
+  border-color: #0f1a2a;
+  background: #f7f8fa;
+  box-shadow: none;
+}
+
+.dd-bid-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.dd-bid-card__top strong {
+  font-size: 12.5px;
+}
+
+.dd-bid-card__meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #6b7685;
+}
+
+.dd-bid-card__row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+/* WhatsApp-style chat */
+.dd-wa {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  height: 100%;
+  background: #fff;
+  border: 1px solid var(--sr-border-1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dd-wa__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eceff3;
+  background: #f7f8fa;
+}
+
+.dd-wa__head strong {
+  font-size: 13.5px;
+  color: #0f1a2a;
+}
+
+.dd-wa__thread {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 14px 20px;
+  background: #ece5dd;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dd-wa__day {
+  align-self: center;
+  margin: 4px 0 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #54656f;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dd-wa-bubble {
+  max-width: min(420px, 88%);
+  padding: 8px 10px 4px;
+  border-radius: 10px;
+  box-shadow: 0 1px 1px rgba(15, 26, 42, 0.08);
+}
+
+.dd-wa-bubble--them {
+  align-self: flex-start;
+  background: #fff;
+  border-top-left-radius: 4px;
+}
+
+.dd-wa-bubble--me {
+  align-self: flex-end;
+  background: #d9fdd3;
+  border-top-right-radius: 4px;
+}
+
+.dd-wa-bubble p {
+  margin: 0 0 2px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #111b21;
+}
+
+.dd-wa-time {
+  display: block;
+  text-align: right;
+  font-size: 10.5px;
+  color: #667781;
+  margin-top: 2px;
+}
+
+.dd-wa-card {
+  min-width: 260px;
+}
+
+.dd-wa-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eef0f3;
+  font-size: 12.5px;
+  color: #0f1a2a;
+}
+
+.dd-wa-legs {
+  display: grid;
+  gap: 8px;
+}
+
+.dd-wa-leg__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #667781;
+}
+
+.dd-wa-leg strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: #0f1a2a;
+}
+
+.dd-wa-leg em {
+  display: block;
+  margin-top: 1px;
+  font-style: normal;
+  font-size: 12px;
+  color: #54656f;
+}
+
+.dd-wa-leg__line {
+  height: 1px;
+  background: #e8ebf0;
+}
+
+.dd-wa__composer {
+  background: #f0f2f5;
+  border-top: 1px solid #e4e7eb;
+  padding: 8px 10px 10px;
+}
+
+.dd-wa__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dd-wa__quick button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #d5dbe3;
+  background: #fff;
+  color: #0f1a2a;
+  font-size: 11.5px;
+}
+
+.dd-wa__input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dd-wa__input-row input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 22px;
+  background: #fff;
+  font-size: 14px;
+  color: #0f1a2a;
+}
+
+.dd-wa__input-row input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(15, 26, 42, 0.08);
+}
+
+.dd-wa__send {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: #0f1a2a;
+  color: #fff;
+  display: inline-grid;
+  place-items: center;
+}
+
+.dd-wa__send:hover {
+  background: #1a2536;
+}
+
+/* Modal selects — flat white, no gradient fills */
+.dd-modal-grid select,
+.dd-modal-card select,
+.dd-modal-card > label select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 36px;
+  padding: 0 34px 0 10px;
+  border: 1px solid #d5dbe3 !important;
+  border-radius: 8px;
+  background-color: #ffffff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7685' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 12px 8px !important;
+  box-shadow: none !important;
+  color: #0f1a2a !important;
+}
+
+.dd-modal-grid input,
+.dd-modal-grid textarea,
+.dd-modal-card textarea,
+.dd-modal-card > label input {
+  background: #fff !important;
+  border: 1px solid #d5dbe3 !important;
+  box-shadow: none !important;
+  color: #0f1a2a !important;
+}
+
+.dd-seg button.is-active,
+.dd-refresh-chips button.is-active,
+.dd-notify button.is-active,
+.dd-market-tile.is-active {
+  background: #f4f5f7 !important;
+  border-color: #0f1a2a !important;
+  color: #0f1a2a !important;
+  box-shadow: none !important;
+}
+
+/* WhatsApp offer card route */
+.dd-wa-card__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #667781;
+}
+
+.dd-wa-card__top strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: #111b21;
+}
+
+.dd-wa-card__rate {
+  text-align: right;
+}
+
+.dd-wa-card__rate span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #667781;
+}
+
+.dd-wa-card__rate strong {
+  font-size: 16px;
+  color: #111b21;
+}
+
+.dd-wa-route {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.dd-wa-route__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6px;
+}
+
+.dd-wa-route__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 2px solid #0f1a2a;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.dd-wa-route__dot.is-del {
+  background: #0f1a2a;
+}
+
+.dd-wa-route__line {
+  flex: 1;
+  width: 2px;
+  margin: 4px 0;
+  background: #cfd5db;
+  border-radius: 2px;
+  min-height: 28px;
+}
+
+.dd-wa-route__stops {
+  display: grid;
+  gap: 12px;
+}
+
+.dd-offers .dd-stage__toolbar {
+  min-height: 44px;
+  padding: 8px 0;
+  gap: 8px;
+}
+
+.dd-stage.dd-offers,
+.dd-stage.dd-find {
+  gap: 10px;
+}
+
+.dd-offers .dd-search--sm {
+  max-width: none;
+  height: 30px;
+  border-radius: 999px;
+  background: #f7f8fa;
+  border-color: #e4e7eb;
 }
