@@ -284,7 +284,7 @@ export function OffersBidsView({
             <strong>Carrier Bids</strong>
             <span className="dd-best-pill">Best {bid?.amount ?? '—'}</span>
           </div>
-          <label className="dd-search dd-search--sm">
+          <label className="dd-search dd-search--sm dd-search--fixed">
             <Search size={13} />
             <input placeholder="Search bids…" />
           </label>
@@ -305,22 +305,27 @@ export function OffersBidsView({
               <button
                 key={b.id}
                 type="button"
-                className={cn('dd-bid-card', selected === b.id && 'is-selected')}
+                className={cn('dd-bid-card', selected === b.id && 'is-selected', b.best && 'is-best')}
                 onClick={() => setSelected(b.id)}
               >
                 <div className="dd-bid-card__top">
-                  <strong>{b.carrier}</strong>
+                  <div className="dd-bid-card__identity">
+                    <strong>{b.carrier}</strong>
+                    <span className="dd-bid-card__meta">MC# {b.mc}</span>
+                  </div>
                   <div className="dd-bid-card__tags">
                     {b.best && <span className="dd-tag-best">Best</span>}
                     <span className="dd-tag-status">{b.status}</span>
                   </div>
                 </div>
-                <div className="dd-bid-card__meta">MC# {b.mc}</div>
                 <div className="dd-bid-card__row">
-                  <span>
-                    Bid <strong className="is-pos">{b.amount}</strong>
+                  <div className="dd-bid-card__bid">
+                    <span>Bid</span>
+                    <strong>{b.amount}</strong>
+                  </div>
+                  <span className={cn('dd-bid-card__delta', b.vsTarget.startsWith('-') && 'is-pos')}>
+                    {b.vsTarget}
                   </span>
-                  <span className="dd-muted">{b.vsTarget}</span>
                 </div>
               </button>
             ))}

@@ -608,7 +608,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [stage, setStage] = useState<DetailStage>(load.stage as DetailStage)
   const [subStage, setSubStage] = useState<string>(load.subStage)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [railCollapsed, setRailCollapsed] = useState(true)
   const [tags, setTags] = useState<string[]>(base.tags)
   const [postOpen, setPostOpen] = useState(false)
   const [offerOpen, setOfferOpen] = useState(false)

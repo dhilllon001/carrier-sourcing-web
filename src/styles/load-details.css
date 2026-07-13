@@ -2577,7 +2577,10 @@
 }
 
 .dd-search--sm {
-  height: 30px;
+  flex: 0 0 auto;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
   border-radius: 8px;
 }
 
@@ -3119,10 +3122,129 @@
   gap: 10px;
 }
 
+.dd-search--sm,
+.dd-search--fixed,
 .dd-offers .dd-search--sm {
+  flex: 0 0 auto !important;
+  flex-grow: 0 !important;
+  align-self: stretch;
+  width: 100%;
   max-width: none;
-  height: 30px;
-  border-radius: 999px;
+  min-width: 0;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 8px;
   background: #f7f8fa;
   border-color: #e4e7eb;
+}
+
+.dd-bids-panel .dd-search {
+  flex: 0 0 32px !important;
+}
+
+/* Carrier bid cards — clean elevated cards */
+.dd-bid-cards {
+  gap: 8px;
+}
+
+.dd-bid-card {
+  padding: 12px 12px 11px;
+  border: 1px solid #e6e9ee;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 26, 42, 0.04);
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.dd-bid-card:hover {
+  border-color: #d5dbe3;
+  box-shadow: 0 2px 8px rgba(15, 26, 42, 0.06);
+}
+
+.dd-bid-card.is-selected {
+  border-color: #0f1a2a;
+  background: #fff;
+  box-shadow: 0 0 0 1px #0f1a2a, 0 2px 8px rgba(15, 26, 42, 0.06);
+}
+
+.dd-bid-card.is-best:not(.is-selected) {
+  border-color: #cce7d8;
+  background: #fbfefc;
+}
+
+.dd-bid-card__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dd-bid-card__identity strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f1a2a;
+  line-height: 1.25;
+}
+
+.dd-bid-card__meta {
+  margin-top: 0;
+  font-size: 11px;
+  color: #6b7685;
+}
+
+.dd-bid-card__top {
+  align-items: flex-start;
+}
+
+.dd-bid-card__tags {
+  flex-shrink: 0;
+}
+
+.dd-bid-card__row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eef0f3;
+  align-items: baseline;
+}
+
+.dd-bid-card__bid {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.dd-bid-card__bid > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7685;
+}
+
+.dd-bid-card__bid strong {
+  font-size: 15px;
+  font-weight: 750;
+  color: #0f1a2a;
+}
+
+.dd-bid-card__delta {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6b7685;
+}
+
+.dd-bid-card__delta.is-pos {
+  color: #1f7a43;
+}
+
+.dd-best-pill {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #bbf7d0;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
 }
