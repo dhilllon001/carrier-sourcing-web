@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { useRowHover } from '@/hooks/useRowHover'
 import { RowHoverPopover, type HoverDetail } from './RowHoverPopover'
@@ -10,6 +11,8 @@ export type SrColumn<T> = {
   filter?: { type: 'text' | 'range' }
   className?: string
   thClassName?: string
+  width?: number
+  minWidth?: number
   cell: (row: T) => React.ReactNode
 }
 
@@ -30,6 +33,7 @@ type SrDataTableProps<T extends { id: string }> = {
   maxHeight?: string
   tableClassName?: string
   wrapClassName?: string
+  resizable?: boolean
 }
 
 export function SrDataTable<T extends { id: string }>({
@@ -49,9 +53,80 @@ export function SrDataTable<T extends { id: string }>({
   maxHeight = 'min(58vh, 640px)',
   tableClassName,
   wrapClassName,
+  resizable = true,
 }: SrDataTableProps<T>) {
   const rowHover = useRowHover<T>()
   const showHover = Boolean(hoverTitle && hoverDetails)
+
+  const defaultWidths = useMemo(
+    () =>
+      Object.fromEntries(
+        columns.map((col) => [col.key, col.width ?? 120])
+      ) as Record<string, number>,
+    [columns]
+  )
+
+  const [widths, setWidths] = useState<Record<string, number>>(defaultWidths)
+  const dragRef = useRef<{
+    key: string
+    startX: number
+    startW: number
+  } | null>(null)
+
+  useEffect(() => {
+    setWidths((prev) => {
+      const next = { ...prev }
+      for (const col of columns) {
+        if (next[col.key] == null) next[col.key] = col.width ?? 120
+      }
+      return next
+    })
+  }, [columns])
+
+  const onResizeMove = useCallback(
+    (e: MouseEvent) => {
+      const drag = dragRef.current
+      if (!drag) return
+      const col = columns.find((c) => c.key === drag.key)
+      const min = col?.minWidth ?? 64
+      const next = Math.max(min, drag.startW + (e.clientX - drag.startX))
+      setWidths((prev) => ({ ...prev, [drag.key]: next }))
+    },
+    [columns]
+  )
+
+  const onResizeUp = useCallback(() => {
+    dragRef.current = null
+    document.body.classList.remove('sr-col-resizing')
+    window.removeEventListener('mousemove', onResizeMove)
+    window.removeEventListener('mouseup', onResizeUp)
+  }, [onResizeMove])
+
+  const startResize = (key: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragRef.current = {
+      key,
+      startX: e.clientX,
+      startW: widths[key] ?? defaultWidths[key] ?? 120,
+    }
+    document.body.classList.add('sr-col-resizing')
+    window.addEventListener('mousemove', onResizeMove)
+    window.addEventListener('mouseup', onResizeUp)
+  }
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener('mousemove', onResizeMove)
+      window.removeEventListener('mouseup', onResizeUp)
+      document.body.classList.remove('sr-col-resizing')
+    }
+  }, [onResizeMove, onResizeUp])
+
+  const tableMinWidth = useMemo(
+    () => columns.reduce((sum, col) => sum + (widths[col.key] ?? col.width ?? 120), 0),
+    [columns, widths]
+  )
 
   if (rows.length === 0) {
     return (
@@ -68,27 +143,62 @@ export function SrDataTable<T extends { id: string }>({
     <>
       <div className={cn('sr-table-shell', wrapClassName?.includes('flush') && 'is-flush')}>
         <div className={cn('sr-table-wrap', wrapClassName)} style={{ maxHeight }}>
-          <table className={cn('sr-table', tableClassName)}>
+          <table
+            className={cn('sr-table', tableClassName)}
+            style={{ minWidth: tableMinWidth, width: tableMinWidth }}
+          >
+            <colgroup>
+              {columns.map((col) => (
+                <col
+                  key={col.key}
+                  style={{ width: widths[col.key] ?? col.width ?? 120 }}
+                />
+              ))}
+            </colgroup>
             <thead>
               <tr>
                 {columns.map((col) => (
-                  <th key={col.key} className={cn(col.align === 'right' && 'num', col.thClassName)}>
-                    {col.filter && onColFilterChange ? (
-                      <ColumnFilterHeader
-                        label={col.header}
-                        filterKey={col.key}
-                        type={col.filter.type}
-                        value={colFilters[col.key]}
-                        onApply={(key, val) => {
-                          const next = { ...colFilters }
-                          if (val === undefined) delete next[key]
-                          else next[key] = val
-                          onColFilterChange(next)
-                        }}
-                      />
-                    ) : (
-                      col.header
-                    )}
+                  <th
+                    key={col.key}
+                    className={cn(col.align === 'right' && 'num', col.thClassName)}
+                    style={{ width: widths[col.key] ?? col.width ?? 120 }}
+                  >
+                    <div className="sr-th-inner">
+                      <div className="sr-th-label">
+                        {col.filter && onColFilterChange ? (
+                          <ColumnFilterHeader
+                            label={col.header}
+                            filterKey={col.key}
+                            type={col.filter.type}
+                            value={colFilters[col.key]}
+                            onApply={(key, val) => {
+                              const next = { ...colFilters }
+                              if (val === undefined) delete next[key]
+                              else next[key] = val
+                              onColFilterChange(next)
+                            }}
+                          />
+                        ) : (
+                          col.header
+                        )}
+                      </div>
+                      {resizable && (
+                        <button
+                          type="button"
+                          className="sr-col-resizer"
+                          aria-label={`Resize ${col.header} column`}
+                          onMouseDown={(e) => startResize(col.key, e)}
+                          onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            setWidths((prev) => ({
+                              ...prev,
+                              [col.key]: col.width ?? 120,
+                            }))
+                          }}
+                        />
+                      )}
+                    </div>
                   </th>
                 ))}
               </tr>

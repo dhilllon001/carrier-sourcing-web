@@ -119,6 +119,8 @@ export function CarrierSourcingReportPage({
         key: 'mode',
         header: 'Mode',
         thClassName: 'col-mode',
+        width: 120,
+        minWidth: 96,
         cell: (row) => (
           <div className="sr-mode-cell">
             <span className={cn('sr-mode-badge', `sr-mode-badge--${row.mode.toLowerCase()}`)}>
@@ -132,6 +134,8 @@ export function CarrierSourcingReportPage({
         key: 'tags',
         header: 'Tags',
         thClassName: 'col-tags',
+        width: 168,
+        minWidth: 120,
         cell: (row) => (
           <TagPopover
             tags={rowTags[row.id] ?? []}
@@ -143,6 +147,8 @@ export function CarrierSourcingReportPage({
         key: 'id',
         header: 'Probill',
         thClassName: 'col-probill',
+        width: 118,
+        minWidth: 96,
         cell: (row) => (
           <div className="sr-probill-cell">
             <button type="button" className="sr-probill-link">
@@ -156,6 +162,8 @@ export function CarrierSourcingReportPage({
         key: 'stage',
         header: 'Stage',
         thClassName: 'col-stage',
+        width: 132,
+        minWidth: 100,
         cell: (row) => (
           <div className="sr-stage-cell">
             <span className="sr-stage-main">{row.stage}</span>
@@ -167,6 +175,8 @@ export function CarrierSourcingReportPage({
         key: 'status',
         header: 'Status',
         thClassName: 'col-status',
+        width: 118,
+        minWidth: 96,
         cell: (row) => statusPill(row.status),
       },
       {
@@ -174,6 +184,8 @@ export function CarrierSourcingReportPage({
         header: 'Customer',
         filter: { type: 'text' },
         thClassName: 'col-customer',
+        width: 132,
+        minWidth: 100,
         cell: (row) => <span className="rep-name">{row.customer}</span>,
       },
       {
@@ -181,12 +193,16 @@ export function CarrierSourcingReportPage({
         header: 'Equip',
         filter: { type: 'text' },
         thClassName: 'col-equip',
+        width: 96,
+        minWidth: 80,
         cell: (row) => <span className="sr-equip">{row.equipment}</span>,
       },
       {
         key: 'route',
         header: 'Route',
         thClassName: 'col-route',
+        width: 360,
+        minWidth: 280,
         cell: (row) => (
           <div className="sr-route-cell">
             <div className="sr-route-line">
@@ -211,6 +227,8 @@ export function CarrierSourcingReportPage({
         header: 'Rate',
         align: 'right',
         thClassName: 'col-rate',
+        width: 84,
+        minWidth: 68,
         cell: (row) => (
           <span className={cn('mono', !row.rate && 'sr-empty')}>{row.rate ?? '—'}</span>
         ),
@@ -219,6 +237,8 @@ export function CarrierSourcingReportPage({
         key: 'broker',
         header: 'Broker',
         thClassName: 'col-broker',
+        width: 104,
+        minWidth: 80,
         cell: (row) => (
           <span className={cn(!row.broker && 'sr-empty')}>{row.broker ?? '—'}</span>
         ),
@@ -227,6 +247,8 @@ export function CarrierSourcingReportPage({
         key: 'team',
         header: 'Team',
         thClassName: 'col-team',
+        width: 100,
+        minWidth: 76,
         cell: (row) => <span className="sr-team">{row.team}</span>,
       },
     ],

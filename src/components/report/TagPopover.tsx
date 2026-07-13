@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Plus, Search, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { tagTone } from '@/lib/report/tagColors'
 
 export const SUGGESTED_TAGS = [
   'Hot lane',
@@ -113,30 +114,45 @@ export function TagPopover({ tags, onChange }: TagPopoverProps) {
     toggle(item)
   }
 
+  const visible = tags.slice(0, 2)
+  const overflow = tags.length - visible.length
+
   return (
     <div className="sr-tag-pop">
       <button
         ref={btnRef}
         type="button"
-        className={cn('sr-tag-btn', tags.length > 0 && 'has-tags', open && 'is-open')}
+        className={cn('sr-tag-trigger', tags.length > 0 && 'has-tags', open && 'is-open')}
         onClick={(e) => {
           e.stopPropagation()
           setOpen((v) => !v)
         }}
       >
         {tags.length === 0 ? (
-          <>
+          <span className="sr-tag-add">
             <Plus size={12} strokeWidth={2.25} />
             Tag
-          </>
+          </span>
         ) : (
-          <>
-            <span className="sr-tag-btn__count">{tags.length}</span>
-            <span className="sr-tag-btn__label">{tags[0]}</span>
-            {tags.length > 1 ? (
-              <span className="sr-tag-btn__more">+{tags.length - 1}</span>
-            ) : null}
-          </>
+          <span className="sr-tag-stack">
+            {visible.map((tag) => {
+              const tone = tagTone(tag)
+              return (
+                <span
+                  key={tag}
+                  className="sr-tag-pill"
+                  style={{
+                    background: tone.bg,
+                    color: tone.fg,
+                    borderColor: tone.border,
+                  }}
+                >
+                  {tag}
+                </span>
+              )
+            })}
+            {overflow > 0 && <span className="sr-tag-more">+{overflow}</span>}
+          </span>
         )}
       </button>
 
@@ -189,17 +205,25 @@ export function TagPopover({ tags, onChange }: TagPopoverProps) {
 
             {tags.length > 0 && (
               <div className="sr-tag-panel__applied">
-                {tags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    className="sr-tag-chip is-on"
-                    onClick={() => toggle(tag)}
-                  >
-                    {tag}
-                    <X size={11} strokeWidth={2.25} />
-                  </button>
-                ))}
+                {tags.map((tag) => {
+                  const tone = tagTone(tag)
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="sr-tag-chip is-on"
+                      style={{
+                        background: tone.bg,
+                        color: tone.fg,
+                        borderColor: tone.border,
+                      }}
+                      onClick={() => toggle(tag)}
+                    >
+                      {tag}
+                      <X size={11} strokeWidth={2.25} />
+                    </button>
+                  )
+                })}
               </div>
             )}
 
@@ -211,6 +235,7 @@ export function TagPopover({ tags, onChange }: TagPopoverProps) {
               {filtered.map((item) => {
                 const isCreate = item.startsWith('Create “')
                 const active = !isCreate && tags.includes(item)
+                const tone = !isCreate ? tagTone(item) : null
                 return (
                   <button
                     key={item}
@@ -222,7 +247,15 @@ export function TagPopover({ tags, onChange }: TagPopoverProps) {
                     )}
                     onClick={() => createOrToggle(item)}
                   >
-                    <span>{item}</span>
+                    <span className="sr-tag-option__main">
+                      {!isCreate && tone && (
+                        <span
+                          className="sr-tag-dot"
+                          style={{ background: tone.fg }}
+                        />
+                      )}
+                      <span>{item}</span>
+                    </span>
                     {active && <Check size={14} strokeWidth={2.25} />}
                     {isCreate && <Plus size={14} strokeWidth={2.25} />}
                   </button>
