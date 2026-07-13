@@ -261,7 +261,6 @@ export function CarrierSourcingReportPage({
     <div className="sr-page">
       <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">
         <div className="sr-express-group" role="group" aria-label="Mode">
-          <span className="sr-express-group__label">Mode</span>
           <div className="sr-express-segment">
             {(
               [
@@ -286,7 +285,6 @@ export function CarrierSourcingReportPage({
         </div>
 
         <div className="sr-express-group" role="group" aria-label="Status">
-          <span className="sr-express-group__label">Status</span>
           <div className="sr-express-segment">
             {(
               [
