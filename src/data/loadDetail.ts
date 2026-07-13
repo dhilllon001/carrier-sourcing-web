@@ -117,6 +117,10 @@ export type LoadDetail = {
   bookNowRate: string
   maxBuy: string
   rejectAbove: string
+  targetAllIn: string
+  marketMid: string
+  marketRange: string
+  thresholdNote: string
   market: string
   action: string
   subStatus: string
@@ -533,7 +537,22 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
     rejectAbove: load.rate
       ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 1.2 || 0).toFixed(2)}`
       : '—',
-    market: '—',
+    targetAllIn: `$${load.fee.toLocaleString()}`,
+    marketMid: load.rate
+      ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 0.97 || 0).toFixed(2)}`
+      : '—',
+    marketRange: load.rate
+      ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 0.88 || 0).toFixed(2)} – $${(
+          parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 1.14 || 0
+        ).toFixed(2)}`
+      : '—',
+    thresholdNote:
+      load.miles >= 500
+        ? 'Long-haul lane · favor book-now coverage'
+        : 'Short haul · tighten max buy on counter',
+    market: load.rate
+      ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 0.97 || 0).toFixed(2)}`
+      : '—',
     action:
       load.subStage === 'Find & Post'
         ? 'Find & post'

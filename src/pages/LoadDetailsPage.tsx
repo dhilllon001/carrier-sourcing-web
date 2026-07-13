@@ -241,42 +241,89 @@ function SummaryTab({
   return (
     <div className="dd-summary dd-overview">
       <section className="dd-thresh-bar">
-        <div className="dd-thresh-bar__head">
-          <strong>Bidding thresholds</strong>
-          <span className="dd-thresh-bar__currency">{detail.currency}</span>
-        </div>
-        <div className="dd-thresh-bar__body">
-          <div className="dd-thresh-bar__metrics">
-            <div className="is-max">
-              <strong>{detail.maxBuy}</strong>
-              <span>Max buy</span>
+        <div className="dd-thresh-bar__main">
+          <div className="dd-thresh-bar__content">
+            <div className="dd-thresh-bar__head">
+              <div className="dd-thresh-bar__title">
+                <strong>Bidding thresholds</strong>
+                <span className="dd-thresh-bar__currency">{detail.currency}</span>
+              </div>
+              <div className="dd-thresh-bar__meta">
+                <span>DAT mid {detail.marketMid}/mi</span>
+                <span className="dd-thresh-bar__dot" aria-hidden />
+                <span>Range {detail.marketRange}</span>
+                <span className="dd-thresh-bar__dot" aria-hidden />
+                <span>Reviewed {detail.startedAt}</span>
+              </div>
             </div>
-            <div className="is-book">
-              <strong>{detail.bookNowRate}</strong>
-              <span>Book now</span>
+
+            <div className="dd-thresh-bar__metrics">
+              <div className="dd-thresh-tile is-book">
+                <span>Book now</span>
+                <strong>{detail.bookNowRate}</strong>
+                <em>per mile target</em>
+              </div>
+              <div className="dd-thresh-tile is-max">
+                <span>Max buy</span>
+                <strong>{detail.maxBuy}</strong>
+                <em>counter ceiling</em>
+              </div>
+              <div className="dd-thresh-tile is-reject">
+                <span>Reject above</span>
+                <strong>{detail.rejectAbove}</strong>
+                <em>auto-pass line</em>
+              </div>
+              <div className="dd-thresh-tile is-allin">
+                <span>Target all-in</span>
+                <strong>{detail.targetAllIn}</strong>
+                <em>{detail.load.miles.toLocaleString()} mi · {detail.load.equipment}</em>
+              </div>
             </div>
-            <div className="is-reject">
-              <strong>{detail.rejectAbove}</strong>
-              <span>Reject above</span>
+
+            <div className="dd-thresh-bar__scale">
+              <div className="dd-thresh-bar__track" aria-hidden>
+                <span className="dd-thresh-bar__fill" />
+                <i className="is-book" style={{ left: '38%' }} />
+                <i className="is-max" style={{ left: '58%' }} />
+                <i className="is-reject" style={{ left: '78%' }} />
+              </div>
+              <div className="dd-thresh-bar__legend">
+                <span>
+                  <i className="is-book" /> Book {detail.bookNowRate}
+                </span>
+                <span>
+                  <i className="is-max" /> Max {detail.maxBuy}
+                </span>
+                <span>
+                  <i className="is-reject" /> Reject {detail.rejectAbove}
+                </span>
+                <span className="dd-thresh-bar__note">{detail.thresholdNote}</span>
+              </div>
             </div>
           </div>
-          <button
-            type="button"
-            className={cn('dd-thresh-bar__btn', posted && 'is-posted')}
-            onClick={goFindPost}
-          >
-            {posted ? (
-              <>
-                <Pause size={14} fill="currentColor" />
-                Posted to Sourcing
-              </>
-            ) : (
-              <>
-                <Check size={14} />
-                Post to Sourcing
-              </>
-            )}
-          </button>
+
+          <div className="dd-thresh-bar__cta">
+            <button
+              type="button"
+              className={cn('dd-thresh-bar__btn', posted && 'is-posted')}
+              onClick={goFindPost}
+            >
+              {posted ? (
+                <>
+                  <Pause size={14} fill="currentColor" />
+                  Posted to Sourcing
+                </>
+              ) : (
+                <>
+                  <Check size={14} />
+                  Post to Sourcing
+                </>
+              )}
+            </button>
+            <span className="dd-thresh-bar__cta-hint">
+              {posted ? 'Continue in Find & Post' : 'Opens Find & Post workflow'}
+            </span>
+          </div>
         </div>
       </section>
 
