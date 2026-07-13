@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import {
   AppliedFiltersRow,
   SrDataTable,
+  TagPopover,
   type SrColumn,
 } from '@/components/report'
 import { LifecycleRail } from '@/components/report/LifecycleRail'
@@ -61,9 +62,23 @@ export function CarrierSourcingReportPage({
   const [filters, setFilters] = useState<ReportFilters>({ ...DEFAULT_FILTERS })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
+  const [rowTags, setRowTags] = useState<Record<string, string[]>>({
+    '11436778': ['Priority'],
+    '11440520': ['Hot lane', 'Hazmat'],
+    '11402376': ['Appointment'],
+    '11445002': ['Border', 'Team driver'],
+    '11445007': ['Reefer'],
+    '11445011': ['High value', 'Priority'],
+    '11445015': ['Hot lane'],
+    '11445018': ['Appointment', 'Reefer'],
+  })
 
   const patch = useCallback((p: Partial<ReportFilters>) => {
     setFilters((prev) => ({ ...prev, ...p }))
+  }, [])
+
+  const setTagsFor = useCallback((id: string, tags: string[]) => {
+    setRowTags((prev) => ({ ...prev, [id]: tags }))
   }, [])
 
   const mergedFilters = useMemo(
@@ -117,10 +132,11 @@ export function CarrierSourcingReportPage({
         key: 'tags',
         header: 'Tags',
         thClassName: 'col-tags',
-        cell: () => (
-          <button type="button" className="sr-tag-btn" onClick={(e) => e.stopPropagation()}>
-            + Tag
-          </button>
+        cell: (row) => (
+          <TagPopover
+            tags={rowTags[row.id] ?? []}
+            onChange={(tags) => setTagsFor(row.id, tags)}
+          />
         ),
       },
       {
@@ -138,7 +154,7 @@ export function CarrierSourcingReportPage({
       },
       {
         key: 'stage',
-        header: 'Stage & Sub Stage',
+        header: 'Stage',
         thClassName: 'col-stage',
         cell: (row) => (
           <div className="sr-stage-cell">
@@ -214,7 +230,7 @@ export function CarrierSourcingReportPage({
         cell: (row) => <span className="sr-team">{row.team}</span>,
       },
     ],
-    []
+    [rowTags, setTagsFor]
   )
 
   return (
@@ -310,7 +326,7 @@ export function CarrierSourcingReportPage({
               wrapClassName="sr-table-wrap--flush"
               tableClassName="sr-table--ops"
               maxHeight="none"
-              footerBar={`${LIFECYCLE_DISPLAY.all.toLocaleString()} loads`}
+              footerBar={`${filtered.length.toLocaleString()} loads`}
             />
           ) : (
             <div className="sr-cards-board">
