@@ -157,13 +157,13 @@
   border-color: var(--sr-mode-mexico-border);
 }
 
-/* ── Meta strip (compact) ── */
+/* ── Meta strip (label over value) ── */
 .dd-meta {
   display: flex;
   flex-wrap: nowrap;
-  align-items: center;
-  gap: 14px;
-  padding: 6px 16px;
+  align-items: stretch;
+  gap: 0;
+  padding: 8px 12px;
   background: #ffffff;
   border-bottom: 1px solid var(--sr-border-1);
   flex-shrink: 0;
@@ -172,37 +172,51 @@
 
 .dd-meta__item {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
   min-width: 0;
   flex-shrink: 0;
+  padding: 2px 14px;
+  position: relative;
+}
+
+.dd-meta__item + .dd-meta__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: #eceff3;
 }
 
 .dd-meta__item > span {
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--sr-text-meta);
+  color: #8a949f;
   white-space: nowrap;
+  line-height: 1.1;
 }
 
 .dd-meta__item strong {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--sr-text-primary);
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #0f1a2a;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .dd-currency {
   display: inline-flex !important;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .dd-flag {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
 }
 
@@ -212,13 +226,14 @@
   align-items: center;
   height: 18px;
   padding: 0 7px;
-  border-radius: 4px;
+  border-radius: 999px;
   background: #eef1f5;
   color: var(--sr-text-secondary);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
   line-height: 1;
+  width: fit-content;
 }
 
 .dd-billing--pending {
@@ -3267,8 +3282,12 @@
 @media (max-width: 1100px) {
   .dd-meta {
     flex-wrap: wrap;
-    row-gap: 6px;
-    padding: 8px 12px;
+    row-gap: 8px;
+    padding: 8px 8px;
+  }
+
+  .dd-meta__item {
+    padding: 2px 12px;
   }
 
   .dd-route {
@@ -3300,7 +3319,12 @@
   }
 
   .dd-meta__item {
-    gap: 4px;
+    gap: 3px;
+    min-width: calc(33.33% - 4px);
+  }
+
+  .dd-meta__item + .dd-meta__item::before {
+    display: none;
   }
 
   .dd-stop__line1,
