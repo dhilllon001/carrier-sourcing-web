@@ -29,7 +29,7 @@ const NAV = [
 
 export default function App() {
   const [nav, setNav] = useState<(typeof NAV)[number]['id']>('sourcing')
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [refreshKey, setRefreshKey] = useState(0)

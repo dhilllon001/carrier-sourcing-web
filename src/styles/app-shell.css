@@ -336,25 +336,36 @@ button {
   min-height: 0;
 }
 
-.sr-page--split {
+/* Lifecycle + table share one aligned row */
+.sr-page__split {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: clamp(168px, 10vw, 220px) minmax(0, 1fr);
   gap: 10px;
   align-items: stretch;
+}
+
+.sr-page__split.is-life-collapsed {
+  grid-template-columns: 52px minmax(0, 1fr);
+}
+
+.sr-page__split .sr-life-rail,
+.sr-page__split .sr-card--table {
+  min-height: 0;
   height: 100%;
+  align-self: stretch;
 }
 
-.sr-page--split.is-life-collapsed {
-  grid-template-columns: 52px 1fr;
-}
-
-.sr-page__main {
+.sr-page__split .sr-card--table {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-width: 0;
+}
+
+.sr-page__split .sr-card--table .sr-table-wrap {
+  flex: 1;
   min-height: 0;
-  overflow: auto;
+  max-height: none;
 }
 
 /* Lifecycle left rail (~10%) — matches screenshot accordion cards */
@@ -1017,8 +1028,8 @@ button {
 }
 
 @media (max-width: 900px) {
-  .sr-page--split,
-  .sr-page--split.is-life-collapsed {
+  .sr-page__split,
+  .sr-page__split.is-life-collapsed {
     grid-template-columns: 1fr;
   }
 

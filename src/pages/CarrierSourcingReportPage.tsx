@@ -181,73 +181,73 @@ export function CarrierSourcingReportPage({
   )
 
   return (
-    <div className={cn('sr-page sr-page--split', lifeCollapsed && 'is-life-collapsed')}>
-      <LifecycleRail
-        collapsed={lifeCollapsed}
-        onToggle={() => setLifeCollapsed((v) => !v)}
-        stage={filters.stage}
-        subStage={filters.subStage}
-        onSelectAll={() => patch({ stage: 'ALL', subStage: 'ALL' })}
-        onSelectStage={(stage) => patch({ stage, subStage: 'ALL' })}
-        onSelectSubStage={(stage, sub) => patch({ stage, subStage: sub })}
-      />
-
-      <div className="sr-page__main">
-        <div className="sr-express-rail">
-          <div className="sr-express-group" role="group" aria-label="Mode">
-            {(
-              [
-                ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot, 'spot'],
-                ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited, 'expedited'],
-                ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed, 'managed'],
-              ] as const
-            ).map(([key, label, count, tone]) => (
-              <button
-                key={key}
-                type="button"
-                className={cn(
-                  'sr-express-card',
-                  `sr-express-card--${tone}`,
-                  filters.mode === key && 'is-active'
-                )}
-                onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
-              >
-                <span className="sr-express-card__name">{label}</span>
-                <span className="sr-express-card__value">{count.toLocaleString()}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="sr-express-divider" aria-hidden />
-
-          <div className="sr-express-group" role="group" aria-label="Status">
-            {(
-              [
-                ['NeedCarrier', 'Need carrier', STATUS_DISPLAY_COUNTS.NeedCarrier, 'need'],
-                ['Posted', 'Posted', STATUS_DISPLAY_COUNTS.Posted, 'posted'],
-                ['Covered', 'Covered', STATUS_DISPLAY_COUNTS.Covered, 'covered'],
-              ] as const
-            ).map(([key, label, count, tone]) => (
-              <button
-                key={key}
-                type="button"
-                className={cn(
-                  'sr-express-card',
-                  `sr-express-card--${tone}`,
-                  filters.status === key && 'is-active'
-                )}
-                onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
-              >
-                <span className="sr-express-card__name">{label}</span>
-                <span className="sr-express-card__value">{count.toLocaleString()}</span>
-              </button>
-            ))}
-          </div>
+    <div className="sr-page">
+      <div className="sr-express-rail">
+        <div className="sr-express-group" role="group" aria-label="Mode">
+          {(
+            [
+              ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot, 'spot'],
+              ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited, 'expedited'],
+              ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed, 'managed'],
+            ] as const
+          ).map(([key, label, count, tone]) => (
+            <button
+              key={key}
+              type="button"
+              className={cn(
+                'sr-express-card',
+                `sr-express-card--${tone}`,
+                filters.mode === key && 'is-active'
+              )}
+              onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
+            >
+              <span className="sr-express-card__name">{label}</span>
+              <span className="sr-express-card__value">{count.toLocaleString()}</span>
+            </button>
+          ))}
         </div>
 
-        {appliedFilters.length > 0 && (
-          <AppliedFiltersRow chips={appliedFilters} onClearAll={resetFilters} />
-        )}
+        <div className="sr-express-divider" aria-hidden />
+
+        <div className="sr-express-group" role="group" aria-label="Status">
+          {(
+            [
+              ['NeedCarrier', 'Need carrier', STATUS_DISPLAY_COUNTS.NeedCarrier, 'need'],
+              ['Posted', 'Posted', STATUS_DISPLAY_COUNTS.Posted, 'posted'],
+              ['Covered', 'Covered', STATUS_DISPLAY_COUNTS.Covered, 'covered'],
+            ] as const
+          ).map(([key, label, count, tone]) => (
+            <button
+              key={key}
+              type="button"
+              className={cn(
+                'sr-express-card',
+                `sr-express-card--${tone}`,
+                filters.status === key && 'is-active'
+              )}
+              onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
+            >
+              <span className="sr-express-card__name">{label}</span>
+              <span className="sr-express-card__value">{count.toLocaleString()}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {appliedFilters.length > 0 && (
+        <AppliedFiltersRow chips={appliedFilters} onClearAll={resetFilters} />
+      )}
+
+      <div className={cn('sr-page__split', lifeCollapsed && 'is-life-collapsed')}>
+        <LifecycleRail
+          collapsed={lifeCollapsed}
+          onToggle={() => setLifeCollapsed((v) => !v)}
+          stage={filters.stage}
+          subStage={filters.subStage}
+          onSelectAll={() => patch({ stage: 'ALL', subStage: 'ALL' })}
+          onSelectStage={(stage) => patch({ stage, subStage: 'ALL' })}
+          onSelectSubStage={(stage, sub) => patch({ stage, subStage: sub })}
+        />
 
         <section className="sr-card sr-card--table" style={{ padding: 0, overflow: 'hidden' }}>
           {viewMode === 'table' ? (
@@ -271,7 +271,7 @@ export function CarrierSourcingReportPage({
               emptyTitle="No loads match these filters"
               emptyHint="Clear filters to widen results"
               wrapClassName="sr-table-wrap--flush"
-              maxHeight="min(72vh, 760px)"
+              maxHeight="none"
             />
           ) : (
             <div className="sr-cards-board">
