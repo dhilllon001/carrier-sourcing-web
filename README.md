@@ -1,19 +1,20 @@
-# Carrier Sourcing — UI Redesign
+# Carrier Sourcing — Pearl Reporting UI
 
-Professional redesign prototype of the Carrier Sourcing operations console.
+Enterprise reporting table built on **ChargerFleet / Pearl** design tokens.
 
-## Design direction
+## Live
 
-- Neutral white / gray enterprise system (Apple / Microsoft–inspired)
-- Single blue accent for primary actions and selection
-- Status color used sparingly and only for meaning
-- Dense data preserved — visual noise reduced
+- App: https://carrier-sourcing-web.vercel.app
+- Repo: https://github.com/dhilllon001/carrier-sourcing-web
 
-## Views
+## Deliverables
 
-- **Table** — lifecycle sidebar, mode/status filters, load grid
-- **Cards** — kanban by sourcing stage
-- **Offers & Bids** — carrier list, offer detail, messaging drawer
+1. `src/styles/report-tokens.css` — light report + dark sidebar tokens
+2. `src/styles/sr-table.css` — `.sr-table*` enterprise table system
+3. Filter strip + applied chips — `ReportFilterStrip`, `AppliedFiltersRow`
+4. `usePieChartFilter` + applied filter helpers in `src/lib/report/filters.ts`
+5. `useRowHover` + `RowHoverPopover`
+6. Example page — `src/pages/CarrierSourcingReportPage.tsx`
 
 ## Develop
 
@@ -27,5 +28,3 @@ npm run dev
 ```bash
 npm run build
 ```
-
-Mock data only — not connected to live logistics APIs.
