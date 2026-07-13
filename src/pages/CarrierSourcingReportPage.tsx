@@ -38,9 +38,9 @@ function statusPill(status: ReportLoad['status']) {
   const map = {
     NeedCarrier: 'sr-status-pill--negative',
     Posted: 'sr-status-pill--warning',
-    Covered: 'sr-status-pill--positive',
+    Covered: 'sr-status-pill--neutral',
   } as const
-  const label = status === 'NeedCarrier' ? 'Need carrier' : status
+  const label = status === 'NeedCarrier' ? 'NeedCarrier' : status
   return <span className={`sr-status-pill ${map[status]}`}>{label}</span>
 }
 
@@ -101,80 +101,117 @@ export function CarrierSourcingReportPage({
   const columns: SrColumn<ReportLoad>[] = useMemo(
     () => [
       {
-        key: 'id',
-        header: 'Probill',
+        key: 'mode',
+        header: 'Mode',
+        thClassName: 'col-mode',
         cell: (row) => (
-          <div>
-            <div className="rep-name mono" style={{ color: 'var(--sr-action)' }}>
-              {row.id}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>{row.identifier}</div>
+          <div className="sr-mode-cell">
+            <span className={cn('sr-mode-badge', `sr-mode-badge--${row.mode.toLowerCase()}`)}>
+              {row.mode.toUpperCase()}
+            </span>
+            <span className="sr-mode-detail">{row.modeDetail}</span>
           </div>
         ),
       },
       {
-        key: 'mode',
-        header: 'Mode',
+        key: 'tags',
+        header: 'Tags',
+        thClassName: 'col-tags',
+        cell: () => (
+          <button type="button" className="sr-tag-btn" onClick={(e) => e.stopPropagation()}>
+            + Tag
+          </button>
+        ),
+      },
+      {
+        key: 'id',
+        header: 'Probill',
+        thClassName: 'col-probill',
         cell: (row) => (
-          <div>
-            <div className="rep-name">{row.mode}</div>
-            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>{row.equipment}</div>
+          <div className="sr-probill-cell">
+            <button type="button" className="sr-probill-link">
+              {row.id}
+            </button>
+            <span className="sr-probill-po">{row.identifier}</span>
           </div>
         ),
       },
       {
         key: 'stage',
-        header: 'Stage',
+        header: 'Stage & Sub Stage',
+        thClassName: 'col-stage',
         cell: (row) => (
-          <div>
-            <div className="rep-name">{row.stage}</div>
-            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>{row.subStage}</div>
+          <div className="sr-stage-cell">
+            <span className="sr-stage-main">{row.stage}</span>
+            <span className="sr-stage-sub">{row.subStage}</span>
           </div>
         ),
       },
       {
         key: 'status',
         header: 'Status',
+        thClassName: 'col-status',
         cell: (row) => statusPill(row.status),
       },
       {
         key: 'customer',
         header: 'Customer',
         filter: { type: 'text' },
+        thClassName: 'col-customer',
         cell: (row) => <span className="rep-name">{row.customer}</span>,
+      },
+      {
+        key: 'equipment',
+        header: 'Equip',
+        filter: { type: 'text' },
+        thClassName: 'col-equip',
+        cell: (row) => <span className="sr-equip">{row.equipment}</span>,
       },
       {
         key: 'route',
         header: 'Route',
+        thClassName: 'col-route',
         cell: (row) => (
-          <div>
-            <div style={{ fontWeight: 500 }}>
-              {row.origin} → {row.destination}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>
-              {row.miles.toLocaleString()} mi · {row.pickupDate}
+          <div className="sr-route-cell">
+            <div className="sr-route-line">
+              <div className="sr-route-end">
+                <span className="sr-route-city">{row.origin}</span>
+                <span className="sr-route-time">{row.pickupDate}</span>
+              </div>
+              <div className="sr-route-mid">
+                <span className="sr-route-miles">{row.miles.toLocaleString()} mi</span>
+                <span className="sr-route-dots" aria-hidden />
+              </div>
+              <div className="sr-route-end sr-route-end--right">
+                <span className="sr-route-city">{row.destination}</span>
+                <span className="sr-route-time">{row.deliveryDate}</span>
+              </div>
             </div>
           </div>
         ),
       },
       {
-        key: 'miles',
-        header: 'Miles',
+        key: 'rate',
+        header: 'Rate',
         align: 'right',
-        filter: { type: 'range' },
-        cell: (row) => <span className="mono">{row.miles.toLocaleString()}</span>,
+        thClassName: 'col-rate',
+        cell: (row) => (
+          <span className={cn('mono', !row.rate && 'sr-empty')}>{row.rate ?? '—'}</span>
+        ),
       },
       {
-        key: 'fee',
-        header: 'Fee',
-        align: 'right',
-        filter: { type: 'range' },
-        cell: (row) => <span className="mono">{money(row.fee)}</span>,
+        key: 'broker',
+        header: 'Broker',
+        thClassName: 'col-broker',
+        cell: (row) => (
+          <span className={cn(!row.broker && 'sr-empty')}>{row.broker ?? '—'}</span>
+        ),
       },
       {
         key: 'team',
         header: 'Team',
-        cell: (row) => row.team,
+        thClassName: 'col-team',
+        cell: (row) => <span className="sr-team">{row.team}</span>,
       },
     ],
     []
@@ -271,7 +308,9 @@ export function CarrierSourcingReportPage({
               emptyTitle="No loads match these filters"
               emptyHint="Clear filters to widen results"
               wrapClassName="sr-table-wrap--flush"
+              tableClassName="sr-table--ops"
               maxHeight="none"
+              footerBar={`${LIFECYCLE_DISPLAY.all.toLocaleString()} loads`}
             />
           ) : (
             <div className="sr-cards-board">

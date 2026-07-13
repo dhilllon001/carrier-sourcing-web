@@ -15,6 +15,7 @@ export type ReportLoad = {
   identifier: string
   shiftName: string
   mode: 'Spot' | 'Expedited' | 'Managed'
+  modeDetail: string
   status: 'NeedCarrier' | 'Posted' | 'Covered'
   stage: 'Sourcing' | 'Tender' | 'Award' | 'Booking'
   subStage: SubStage
@@ -24,6 +25,8 @@ export type ReportLoad = {
   destination: string
   miles: number
   fee: number
+  rate?: string
+  broker?: string
   margin: number
   pickupDate: string
   deliveryDate: string
@@ -57,9 +60,7 @@ export const SELECT_FILTER_DEFS: { key: keyof ReportFilters; label: string }[] =
 
 export const COL_FILTER_DEFS = [
   { key: 'customer', label: 'Customer', type: 'text' as const },
-  { key: 'equipment', label: 'Equipment', type: 'text' as const },
-  { key: 'miles', label: 'Miles', type: 'range' as const },
-  { key: 'fee', label: 'Fee', type: 'range' as const },
+  { key: 'equipment', label: 'Equip', type: 'text' as const },
 ]
 
 export const LIFECYCLE = [
@@ -162,6 +163,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-88421',
     shiftName: 'Day',
     mode: 'Spot',
+    modeDetail: 'Power Only',
     status: 'NeedCarrier',
     stage: 'Sourcing',
     subStage: 'Overview',
@@ -181,6 +183,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-99102',
     shiftName: 'Night',
     mode: 'Expedited',
+    modeDetail: 'Hot Shot',
     status: 'NeedCarrier',
     stage: 'Sourcing',
     subStage: 'Find & Post',
@@ -190,6 +193,7 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Houston, TX',
     miles: 1818,
     fee: 4820,
+    rate: '$9.25',
     margin: -2.1,
     pickupDate: 'Jul 13 · 14:30',
     deliveryDate: 'Jul 16 · 09:00',
@@ -200,6 +204,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'Test_12Sept',
     shiftName: 'Day',
     mode: 'Spot',
+    modeDetail: 'Pure Brokerage',
     status: 'Posted',
     stage: 'Tender',
     subStage: 'Offers & Bids',
@@ -219,6 +224,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-77210',
     shiftName: 'Swing',
     mode: 'Managed',
+    modeDetail: 'Contract',
     status: 'Covered',
     stage: 'Booking',
     subStage: 'Resources',
@@ -228,6 +234,8 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Atlanta, GA',
     miles: 716,
     fee: 2680,
+    rate: '$3.40',
+    broker: 'CGL Desk',
     margin: 6.2,
     pickupDate: 'Jul 15 · 06:00',
     deliveryDate: 'Jul 16 · 16:00',
@@ -238,6 +246,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-55019',
     shiftName: 'Day',
     mode: 'Spot',
+    modeDetail: 'Brokerage',
     status: 'NeedCarrier',
     stage: 'Sourcing',
     subStage: 'Overview',
@@ -257,6 +266,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-33088',
     shiftName: 'Night',
     mode: 'Spot',
+    modeDetail: 'Power Only',
     status: 'Covered',
     stage: 'Booking',
     subStage: 'Send Confirmation',
@@ -266,6 +276,8 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Phoenix, AZ',
     miles: 887,
     fee: 2140,
+    rate: '$2.85',
+    broker: 'Southwest',
     margin: 3.1,
     pickupDate: 'Jul 13 · 07:00',
     deliveryDate: 'Jul 15 · 12:00',
@@ -276,6 +288,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-11990',
     shiftName: 'Day',
     mode: 'Expedited',
+    modeDetail: 'Team',
     status: 'NeedCarrier',
     stage: 'Award',
     subStage: 'CMT',
@@ -285,6 +298,7 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Austin, TX',
     miles: 1756,
     fee: 5120,
+    rate: '$9.25',
     margin: -4.6,
     pickupDate: 'Jul 14 · 05:00',
     deliveryDate: 'Jul 16 · 20:00',
@@ -295,6 +309,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-44120',
     shiftName: 'Swing',
     mode: 'Managed',
+    modeDetail: 'Dedicated',
     status: 'Posted',
     stage: 'Tender',
     subStage: 'Finalize Tender',
@@ -304,6 +319,8 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Memphis, TN',
     miles: 292,
     fee: 760,
+    rate: '$3.40',
+    broker: 'CGL Desk',
     margin: 9.0,
     pickupDate: 'Jul 15 · 09:00',
     deliveryDate: 'Jul 15 · 18:00',
@@ -314,6 +331,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-88200',
     shiftName: 'Day',
     mode: 'Spot',
+    modeDetail: 'Pure Brokerage',
     status: 'NeedCarrier',
     stage: 'Sourcing',
     subStage: 'Find & Post',
@@ -333,6 +351,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-22991',
     shiftName: 'Night',
     mode: 'Spot',
+    modeDetail: 'Brokerage',
     status: 'Covered',
     stage: 'Booking',
     subStage: 'Signed Confirmation',
@@ -342,6 +361,8 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Portland, OR',
     miles: 174,
     fee: 620,
+    rate: '$2.85',
+    broker: 'Southwest',
     margin: 11.2,
     pickupDate: 'Jul 13 · 13:00',
     deliveryDate: 'Jul 13 · 19:00',
@@ -352,6 +373,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-67001',
     shiftName: 'Day',
     mode: 'Managed',
+    modeDetail: 'Contract',
     status: 'NeedCarrier',
     stage: 'Award',
     subStage: 'Finalize Carrier Award',
@@ -361,6 +383,8 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Baltimore, MD',
     miles: 168,
     fee: 540,
+    rate: '$3.40',
+    broker: 'CGL Desk',
     margin: 7.3,
     pickupDate: 'Jul 14 · 16:00',
     deliveryDate: 'Jul 15 · 06:00',
@@ -371,6 +395,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-10355',
     shiftName: 'Swing',
     mode: 'Spot',
+    modeDetail: 'Power Only',
     status: 'NeedCarrier',
     stage: 'Sourcing',
     subStage: 'Overview',
@@ -390,6 +415,7 @@ export const reportLoads: ReportLoad[] = [
     identifier: 'PO-90110',
     shiftName: 'Day',
     mode: 'Spot',
+    modeDetail: 'Pure Brokerage',
     status: 'Covered',
     stage: 'Booking',
     subStage: 'Create Contract',
@@ -399,6 +425,8 @@ export const reportLoads: ReportLoad[] = [
     destination: 'Columbus, OH',
     miles: 355,
     fee: 980,
+    rate: '$2.85',
+    broker: 'Southwest',
     margin: 6.8,
     pickupDate: 'Jul 14 · 09:00',
     deliveryDate: 'Jul 15 · 11:00',

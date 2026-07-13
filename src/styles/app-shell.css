@@ -891,6 +891,11 @@ button {
   background: rgba(31, 122, 67, 0.1);
 }
 
+.sr-status-pill--neutral {
+  color: var(--sr-text-secondary);
+  background: var(--sr-surface-2);
+}
+
 .sr-status-pill--warning {
   color: #9a5b00;
   background: rgba(199, 116, 0, 0.12);

@@ -24,6 +24,7 @@ type SrDataTableProps<T extends { id: string }> = {
   hoverSubtitle?: (row: T) => string
   hoverDetails?: (row: T) => HoverDetail[]
   footer?: { label: string; cells: React.ReactNode[] }
+  footerBar?: string
   emptyTitle?: string
   emptyHint?: string
   maxHeight?: string
@@ -42,6 +43,7 @@ export function SrDataTable<T extends { id: string }>({
   hoverSubtitle,
   hoverDetails,
   footer,
+  footerBar,
   emptyTitle = 'No rows',
   emptyHint,
   maxHeight = 'min(58vh, 640px)',
@@ -64,77 +66,84 @@ export function SrDataTable<T extends { id: string }>({
 
   return (
     <>
-      <div className={cn('sr-table-wrap', wrapClassName)} style={{ maxHeight }}>
-        <table className={cn('sr-table', tableClassName)}>
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col.key} className={cn(col.align === 'right' && 'num', col.thClassName)}>
-                  {col.filter && onColFilterChange ? (
-                    <ColumnFilterHeader
-                      label={col.header}
-                      filterKey={col.key}
-                      type={col.filter.type}
-                      value={colFilters[col.key]}
-                      onApply={(key, val) => {
-                        const next = { ...colFilters }
-                        if (val === undefined) delete next[key]
-                        else next[key] = val
-                        onColFilterChange(next)
-                      }}
-                    />
-                  ) : (
-                    col.header
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const selected = selectedIds?.has(row.id)
-              const hoverProps = showHover ? rowHover.bind(row.id, row) : {}
-              return (
-                <tr
-                  key={row.id}
-                  className={cn(
-                    showHover && 'sr-table-row--hoverable',
-                    onRowClick && 'sr-table-row--clickable',
-                    selected && 'is-selected',
-                    rowHover.isHovered(row.id) && 'is-hovered'
-                  )}
-                  onClick={() => onRowClick?.(row)}
-                  {...hoverProps}
-                >
-                  {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={cn(col.align === 'right' && 'num', col.className)}
-                    >
-                      {col.cell(row)}
+      <div className={cn('sr-table-shell', wrapClassName?.includes('flush') && 'is-flush')}>
+        <div className={cn('sr-table-wrap', wrapClassName)} style={{ maxHeight }}>
+          <table className={cn('sr-table', tableClassName)}>
+            <thead>
+              <tr>
+                {columns.map((col) => (
+                  <th key={col.key} className={cn(col.align === 'right' && 'num', col.thClassName)}>
+                    {col.filter && onColFilterChange ? (
+                      <ColumnFilterHeader
+                        label={col.header}
+                        filterKey={col.key}
+                        type={col.filter.type}
+                        value={colFilters[col.key]}
+                        onApply={(key, val) => {
+                          const next = { ...colFilters }
+                          if (val === undefined) delete next[key]
+                          else next[key] = val
+                          onColFilterChange(next)
+                        }}
+                      />
+                    ) : (
+                      col.header
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const selected = selectedIds?.has(row.id)
+                const hoverProps = showHover ? rowHover.bind(row.id, row) : {}
+                return (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      showHover && 'sr-table-row--hoverable',
+                      onRowClick && 'sr-table-row--clickable',
+                      selected && 'is-selected',
+                      rowHover.isHovered(row.id) && 'is-hovered'
+                    )}
+                    onClick={() => onRowClick?.(row)}
+                    {...hoverProps}
+                  >
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        className={cn(col.align === 'right' && 'num', col.className)}
+                      >
+                        {col.cell(row)}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
+            </tbody>
+            {footer && (
+              <tfoot>
+                <tr>
+                  <td className="rep-name">{footer.label}</td>
+                  {footer.cells.map((cell, i) => (
+                    <td key={i} className="num mono">
+                      {cell}
                     </td>
                   ))}
+                  {columns.length > footer.cells.length + 1 &&
+                    Array.from({ length: columns.length - footer.cells.length - 1 }).map((_, i) => (
+                      <td key={`pad-${i}`} />
+                    ))}
                 </tr>
-              )
-            })}
-          </tbody>
-          {footer && (
-            <tfoot>
-              <tr>
-                <td className="rep-name">{footer.label}</td>
-                {footer.cells.map((cell, i) => (
-                  <td key={i} className="num mono">
-                    {cell}
-                  </td>
-                ))}
-                {columns.length > footer.cells.length + 1 &&
-                  Array.from({ length: columns.length - footer.cells.length - 1 }).map((_, i) => (
-                    <td key={`pad-${i}`} />
-                  ))}
-              </tr>
-            </tfoot>
-          )}
-        </table>
+              </tfoot>
+            )}
+          </table>
+        </div>
+        {footerBar && (
+          <div className="sr-table-footerbar">
+            <span>{footerBar}</span>
+          </div>
+        )}
       </div>
 
       {showHover && hoverTitle && hoverDetails && (
