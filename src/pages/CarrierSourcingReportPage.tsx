@@ -1,44 +1,37 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
 import {
   AppliedFiltersRow,
-  BarChart,
-  DonutChart,
-  ReportFilterStrip,
   SrDataTable,
   type SrColumn,
 } from '@/components/report'
-import { usePieChartFilter } from '@/hooks/usePieChartFilter'
+import { LifecycleBattery } from '@/components/report/LifecycleBattery'
 import {
   colFiltersApplied,
   countActiveFilters,
-  dateRangeApplied,
-  presetApplied,
   searchApplied,
   selectApplied,
 } from '@/lib/report/filters'
 import {
   COL_FILTER_DEFS,
-  DATE_PRESETS,
   DEFAULT_FILTERS,
   SELECT_FILTER_DEFS,
+  countByMode,
+  countByStatus,
+  countLifecycle,
   filterReportLoads,
   reportLoads,
   type ReportFilters,
   type ReportLoad,
 } from '@/data/report'
+import { cn } from '@/lib/cn'
 
-const MODE_COLORS: Record<string, string> = {
-  Spot: 'var(--sr-chart-1)',
-  Expedited: 'var(--sr-chart-5)',
-  Managed: 'var(--sr-chart-4)',
-}
+export type ViewMode = 'table' | 'cards'
 
-const STAGE_COLORS: Record<string, string> = {
-  Sourcing: 'var(--sr-chart-1)',
-  Tender: 'var(--sr-chart-2)',
-  Award: 'var(--sr-chart-3)',
-  Booking: 'var(--sr-chart-4)',
+type CarrierSourcingReportPageProps = {
+  search: string
+  onSearchChange: (value: string) => void
+  viewMode: ViewMode
+  refreshKey: number
 }
 
 function statusPill(status: ReportLoad['status']) {
@@ -52,10 +45,19 @@ function statusPill(status: ReportLoad['status']) {
 }
 
 function money(n: number) {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+  return n.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  })
 }
 
-export function CarrierSourcingReportPage() {
+export function CarrierSourcingReportPage({
+  search,
+  onSearchChange,
+  viewMode,
+  refreshKey,
+}: CarrierSourcingReportPageProps) {
   const [filters, setFilters] = useState<ReportFilters>({ ...DEFAULT_FILTERS })
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -63,90 +65,52 @@ export function CarrierSourcingReportPage() {
     setFilters((prev) => ({ ...prev, ...p }))
   }, [])
 
+  // Keep header search in sync with page filter state
+  const mergedFilters = useMemo(
+    () => ({ ...filters, search }),
+    [filters, search]
+  )
+
   const resetFilters = useCallback(() => {
     setFilters({ ...DEFAULT_FILTERS })
+    onSearchChange('')
     setSelectedId(null)
-  }, [])
+  }, [onSearchChange])
 
-  const filtered = useMemo(() => filterReportLoads(reportLoads, filters), [filters])
-
-  // Charts ignore their own dimension so other slices stay visible
-  const modeChartRows = useMemo(
-    () => filterReportLoads(reportLoads, filters, { ignoreKey: 'mode' }),
-    [filters]
-  )
-  const stageChartRows = useMemo(
-    () => filterReportLoads(reportLoads, filters, { ignoreKey: 'stage' }),
-    [filters]
+  const filtered = useMemo(
+    () => filterReportLoads(reportLoads, mergedFilters),
+    [mergedFilters, refreshKey]
   )
 
-  const modeSlices = useMemo(() => {
-    const counts = { Spot: 0, Expedited: 0, Managed: 0 }
-    for (const row of modeChartRows) counts[row.mode]++
-    return (Object.keys(counts) as Array<keyof typeof counts>).map((id) => ({
-      id,
-      label: id,
-      value: counts[id],
-      color: MODE_COLORS[id],
-    }))
-  }, [modeChartRows])
-
-  const stageBars = useMemo(() => {
-    const counts = { Sourcing: 0, Tender: 0, Award: 0, Booking: 0 }
-    for (const row of stageChartRows) counts[row.stage]++
-    return (Object.keys(counts) as Array<keyof typeof counts>).map((id) => ({
-      id,
-      label: id,
-      value: counts[id],
-      color: STAGE_COLORS[id],
-    }))
-  }, [stageChartRows])
-
-  const modeChart = usePieChartFilter(filters, patch, 'mode')
-  const stageChart = usePieChartFilter(filters, patch, 'stage')
+  const modeCounts = useMemo(() => countByMode(reportLoads), [])
+  const statusCounts = useMemo(() => countByStatus(reportLoads), [])
+  const lifecycle = useMemo(() => countLifecycle(reportLoads), [])
 
   const appliedFilters = useMemo(
     () => [
-      ...presetApplied(
-        filters.datePreset,
-        [...DATE_PRESETS],
-        DEFAULT_FILTERS.datePreset,
-        (datePreset) => patch({ datePreset })
-      ),
-      ...dateRangeApplied(filters.dateFrom, filters.dateTo, {
-        from: DEFAULT_FILTERS.dateFrom,
-        to: DEFAULT_FILTERS.dateTo,
-      }, (next) => patch(next)),
-      ...searchApplied(filters.search, () => patch({ search: '' })),
-      ...selectApplied(filters, SELECT_FILTER_DEFS, patch),
+      ...searchApplied(search, () => onSearchChange('')),
+      ...selectApplied(mergedFilters, SELECT_FILTER_DEFS, (p) => {
+        const next = { ...p }
+        if (next.stage === 'ALL') next.subStage = 'ALL'
+        if ('search' in next) onSearchChange(String(next.search ?? ''))
+        patch(next)
+      }),
       ...colFiltersApplied(filters.colFilters, COL_FILTER_DEFS, (colFilters) =>
         patch({ colFilters })
       ),
     ],
-    [filters, patch]
+    [mergedFilters, filters.colFilters, search, onSearchChange, patch]
   )
 
   const activeCount = useMemo(
     () =>
       countActiveFilters(
-        filters as unknown as Record<string, unknown>,
-        ['identifier', 'shiftName', 'mode', 'status', 'stage'],
+        mergedFilters as unknown as Record<string, unknown>,
+        ['mode', 'status', 'stage', 'subStage'],
         filters.colFilters
-      ) +
-      (filters.datePreset !== DEFAULT_FILTERS.datePreset ? 1 : 0) +
-      (filters.dateFrom !== DEFAULT_FILTERS.dateFrom ? 1 : 0) +
-      (filters.dateTo !== DEFAULT_FILTERS.dateTo ? 1 : 0),
-    [filters]
+      ),
+    [mergedFilters, filters.colFilters]
   )
-
-  const totals = useMemo(() => {
-    const miles = filtered.reduce((s, r) => s + r.miles, 0)
-    const fee = filtered.reduce((s, r) => s + r.fee, 0)
-    const margin = filtered.length
-      ? filtered.reduce((s, r) => s + r.margin, 0) / filtered.length
-      : 0
-    return { miles, fee, margin, count: filtered.length }
-  }, [filtered])
 
   const columns: SrColumn<ReportLoad>[] = useMemo(
     () => [
@@ -155,10 +119,37 @@ export function CarrierSourcingReportPage() {
         header: 'Probill',
         cell: (row) => (
           <div>
-            <div className="rep-name mono">{row.id}</div>
+            <div className="rep-name mono" style={{ color: 'var(--sr-action)' }}>
+              {row.id}
+            </div>
             <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>{row.identifier}</div>
           </div>
         ),
+      },
+      {
+        key: 'mode',
+        header: 'Mode',
+        cell: (row) => (
+          <div>
+            <div className="rep-name">{row.mode}</div>
+            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>{row.equipment}</div>
+          </div>
+        ),
+      },
+      {
+        key: 'stage',
+        header: 'Stage',
+        cell: (row) => (
+          <div>
+            <div className="rep-name">{row.stage}</div>
+            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>{row.subStage}</div>
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (row) => statusPill(row.status),
       },
       {
         key: 'customer',
@@ -167,25 +158,18 @@ export function CarrierSourcingReportPage() {
         cell: (row) => <span className="rep-name">{row.customer}</span>,
       },
       {
-        key: 'mode',
-        header: 'Mode',
-        cell: (row) => row.mode,
-      },
-      {
-        key: 'stage',
-        header: 'Stage',
-        cell: (row) => row.stage,
-      },
-      {
-        key: 'status',
-        header: 'Status',
-        cell: (row) => statusPill(row.status),
-      },
-      {
-        key: 'equipment',
-        header: 'Equipment',
-        filter: { type: 'text' },
-        cell: (row) => row.equipment,
+        key: 'route',
+        header: 'Route',
+        cell: (row) => (
+          <div>
+            <div style={{ fontWeight: 500 }}>
+              {row.origin} → {row.destination}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--sr-text-meta)' }}>
+              {row.miles.toLocaleString()} mi · {row.pickupDate}
+            </div>
+          </div>
+        ),
       },
       {
         key: 'miles',
@@ -202,223 +186,169 @@ export function CarrierSourcingReportPage() {
         cell: (row) => <span className="mono">{money(row.fee)}</span>,
       },
       {
-        key: 'margin',
-        header: 'Margin',
-        align: 'right',
-        cell: (row) => (
-          <span className={`mono ${row.margin >= 0 ? 'val-positive' : 'val-negative'}`}>
-            {row.margin >= 0 ? '+' : ''}
-            {row.margin.toFixed(1)}%
-          </span>
-        ),
-      },
-      {
-        key: 'shiftName',
-        header: 'Shift',
-        cell: (row) => row.shiftName,
+        key: 'team',
+        header: 'Team',
+        cell: (row) => row.team,
       },
     ],
     []
   )
 
-  const stripItems = [
-    {
-      key: 'mode-all',
-      label: 'All modes',
-      active: filters.mode === 'ALL',
-      onClick: () => patch({ mode: 'ALL' }),
-    },
-    ...(['Spot', 'Expedited', 'Managed'] as const).map((m) => ({
-      key: `mode-${m}`,
-      label: m,
-      active: filters.mode === m,
-      onClick: () => patch({ mode: m }),
-      onClear: () => patch({ mode: 'ALL' }),
-    })),
-    {
-      key: 'status-need',
-      label: 'Need carrier',
-      active: filters.status === 'NeedCarrier',
-      onClick: () => patch({ status: 'NeedCarrier' }),
-      onClear: () => patch({ status: 'ALL' }),
-    },
-    {
-      key: 'status-covered',
-      label: 'Covered',
-      active: filters.status === 'Covered',
-      onClick: () => patch({ status: 'Covered' }),
-      onClear: () => patch({ status: 'ALL' }),
-    },
-  ]
-
   return (
     <div className="sr-page">
-      <div className="sr-kpi-grid">
-        <article className="sr-card sr-card--hoverable sr-card__pad">
-          <div className="sr-card__meta">Loads</div>
-          <div className="sr-kpi__value">{totals.count.toLocaleString()}</div>
-          <div className="sr-kpi__delta is-pos">Filtered set</div>
-        </article>
-        <article className="sr-card sr-card--hoverable sr-card__pad">
-          <div className="sr-card__meta">Total miles</div>
-          <div className="sr-kpi__value">{totals.miles.toLocaleString()}</div>
-          <div className="sr-kpi__delta is-pos">Across lanes</div>
-        </article>
-        <article className="sr-card sr-card--hoverable sr-card__pad">
-          <div className="sr-card__meta">Total fees</div>
-          <div className="sr-kpi__value">{money(totals.fee)}</div>
-          <div className="sr-kpi__delta is-pos">Booked value</div>
-        </article>
-        <article className="sr-card sr-card--hoverable sr-card__pad">
-          <div className="sr-card__meta">Avg margin</div>
-          <div className="sr-kpi__value">{totals.margin.toFixed(1)}%</div>
-          <div className={`sr-kpi__delta ${totals.margin >= 0 ? 'is-pos' : 'is-neg'}`}>
-            {totals.margin >= 0 ? 'Healthy' : 'Below target'}
-          </div>
-        </article>
-      </div>
-
-      <div className="sr-charts-row">
-        <section className="sr-card sr-card__pad">
-          <h3 className="sr-card__title">Mode mix</h3>
-          <p className="sr-card__meta">Click a slice to filter · click again to clear</p>
-          <div style={{ marginTop: 14 }}>
-            <DonutChart
-              slices={modeSlices}
-              centerLabel="loads"
-              selectedIds={modeChart.selectedSliceIds}
-              onSliceClick={modeChart.onSliceClick}
-            />
-          </div>
-        </section>
-        <section className="sr-card sr-card__pad">
-          <h3 className="sr-card__title">Lifecycle volume</h3>
-          <p className="sr-card__meta">Stage distribution with hover sync</p>
-          <div style={{ marginTop: 14 }}>
-            <BarChart
-              items={stageBars}
-              selectedIds={stageChart.selectedSliceIds}
-              onBarClick={stageChart.onSliceClick}
-            />
-          </div>
-        </section>
-      </div>
-
-      <ReportFilterStrip items={stripItems} activeCount={activeCount} onReset={resetFilters}>
-        <label className="sr-search">
-          <Search size={14} strokeWidth={1.75} />
-          <input
-            value={filters.search}
-            onChange={(e) => patch({ search: e.target.value })}
-            placeholder="Search probill, customer, equipment…"
-          />
-        </label>
-        <select
-          className="sr-select"
-          value={filters.datePreset}
-          onChange={(e) => patch({ datePreset: e.target.value })}
-          aria-label="Date preset"
-        >
-          {DATE_PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <select
-          className="sr-select"
-          value={filters.shiftName}
-          onChange={(e) => patch({ shiftName: e.target.value })}
-          aria-label="Shift"
-        >
-          <option value="ALL">All shifts</option>
-          <option value="Day">Day</option>
-          <option value="Swing">Swing</option>
-          <option value="Night">Night</option>
-        </select>
-        <select
-          className="sr-select"
-          value={filters.identifier}
-          onChange={(e) => patch({ identifier: e.target.value })}
-          aria-label="Identifier"
-        >
-          <option value="ALL">All identifiers</option>
-          {[...new Set(reportLoads.map((r) => r.identifier))].map((id) => (
-            <option key={id} value={id}>
-              {id}
-            </option>
-          ))}
-        </select>
-      </ReportFilterStrip>
-
-      <AppliedFiltersRow chips={appliedFilters} onClearAll={resetFilters} />
-
-      <section className="sr-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 14px',
-            borderBottom: '1px solid var(--sr-border-1)',
-            background: 'var(--sr-surface-2)',
-          }}
-        >
-          <div>
-            <h3 className="sr-card__title" style={{ margin: 0 }}>
-              Load detail
-            </h3>
-            <p className="sr-card__meta">
-              {filtered.length.toLocaleString()} rows · hover for lane details
-            </p>
+      <div className="sr-filter-panel">
+        <div className="sr-filter-group-row">
+          <span className="sr-filter-label">Mode</span>
+          <div className="sr-chips">
+            {(
+              [
+                ['ALL', 'All', modeCounts.All],
+                ['Spot', 'Spot', modeCounts.Spot],
+                ['Expedited', 'Expedited', modeCounts.Expedited],
+                ['Managed', 'Managed', modeCounts.Managed],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                className={cn('sr-chip', filters.mode === key && 'is-active')}
+                onClick={() => patch({ mode: key })}
+              >
+                {label}
+                <span className="sr-chip__count">{count}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <SrDataTable
-          rows={filtered}
-          columns={columns}
-          colFilters={filters.colFilters}
-          onColFilterChange={(colFilters) => patch({ colFilters })}
-          selectedIds={selectedId ? new Set([selectedId]) : undefined}
-          onRowClick={(row) => setSelectedId(row.id)}
-          hoverTitle={(row) => row.customer}
-          hoverSubtitle={(row) => `${row.origin} → ${row.destination}`}
-          hoverDetails={(row) => [
-            { label: 'Probill', value: row.id },
-            { label: 'Miles', value: row.miles.toLocaleString() },
-            { label: 'Fee', value: money(row.fee) },
-            { label: 'Margin', value: `${row.margin.toFixed(1)}%` },
-            { label: 'Team', value: row.team },
-            { label: 'Shift', value: row.shiftName },
-          ]}
-          footer={{
-            label: 'Totals',
-            cells: [
-              null,
-              null,
-              null,
-              null,
-              null,
-              <span key="m" className="mono">
-                {totals.miles.toLocaleString()}
-              </span>,
-              <span key="f" className="mono">
-                {money(totals.fee)}
-              </span>,
-              <span
-                key="g"
-                className={`mono ${totals.margin >= 0 ? 'val-positive' : 'val-negative'}`}
+        <div className="sr-filter-group-row">
+          <span className="sr-filter-label">Status</span>
+          <div className="sr-chips">
+            {(
+              [
+                ['ALL', 'All', statusCounts.All],
+                ['NeedCarrier', 'Need carrier', statusCounts.NeedCarrier],
+                ['Posted', 'Posted', statusCounts.Posted],
+                ['Covered', 'Covered', statusCounts.Covered],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                className={cn('sr-chip', filters.status === key && 'is-active')}
+                onClick={() => patch({ status: key })}
               >
-                {totals.margin.toFixed(1)}%
-              </span>,
-              null,
-            ],
-          }}
-          emptyTitle="No loads match these filters"
-          emptyHint="Clear chips or Reset to widen the set"
-          wrapClassName="sr-table-wrap--flush"
-          maxHeight="min(52vh, 560px)"
-        />
+                {label}
+                <span className="sr-chip__count">{count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <LifecycleBattery
+        blocks={lifecycle}
+        totalCount={reportLoads.length}
+        stage={filters.stage}
+        subStage={filters.subStage}
+        onSelectAll={() => patch({ stage: 'ALL', subStage: 'ALL' })}
+        onSelectStage={(stage) => patch({ stage, subStage: 'ALL' })}
+        onSelectSubStage={(stage, sub) => patch({ stage, subStage: sub })}
+      />
+
+      {appliedFilters.length > 0 && (
+        <AppliedFiltersRow chips={appliedFilters} onClearAll={resetFilters} />
+      )}
+
+      {activeCount > 0 && appliedFilters.length === 0 && null}
+
+      <section className="sr-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="sr-table-toolbar">
+          <div>
+            <h3 className="sr-card__title" style={{ margin: 0 }}>
+              Loads
+            </h3>
+            <p className="sr-card__meta">
+              {filtered.length.toLocaleString()} result{filtered.length === 1 ? '' : 's'}
+              {activeCount > 0 ? ` · ${activeCount} filter${activeCount === 1 ? '' : 's'} active` : ''}
+            </p>
+          </div>
+          {activeCount > 0 && (
+            <button type="button" className="sr-btn sr-btn--ghost sr-btn--sm" onClick={resetFilters}>
+              Reset ({activeCount})
+            </button>
+          )}
+        </div>
+
+        {viewMode === 'table' ? (
+          <SrDataTable
+            rows={filtered}
+            columns={columns}
+            colFilters={filters.colFilters}
+            onColFilterChange={(colFilters) => patch({ colFilters })}
+            selectedIds={selectedId ? new Set([selectedId]) : undefined}
+            onRowClick={(row) => setSelectedId(row.id)}
+            hoverTitle={(row) => row.customer}
+            hoverSubtitle={(row) => `${row.origin} → ${row.destination}`}
+            hoverDetails={(row) => [
+              { label: 'Probill', value: row.id },
+              { label: 'Stage', value: `${row.stage} / ${row.subStage}` },
+              { label: 'Status', value: row.status },
+              { label: 'Miles', value: row.miles.toLocaleString() },
+              { label: 'Fee', value: money(row.fee) },
+              { label: 'Team', value: row.team },
+            ]}
+            emptyTitle="No loads match these filters"
+            emptyHint="Clear lifecycle, mode, or status filters to widen results"
+            wrapClassName="sr-table-wrap--flush"
+            maxHeight="min(58vh, 620px)"
+          />
+        ) : (
+          <div className="sr-cards-board">
+            {lifecycle.map((block) => {
+              const cards = filtered.filter((r) => r.stage === block.stage)
+              return (
+                <section key={block.stage} className="sr-cards-col">
+                  <div className="sr-cards-col__head">
+                    <span className="sr-battery__num">{block.number}</span>
+                    <strong>{block.stage}</strong>
+                    <span className="sr-battery__count">{cards.length}</span>
+                  </div>
+                  <div className="sr-cards-col__body">
+                    {cards.map((row) => (
+                      <button
+                        key={row.id}
+                        type="button"
+                        className={cn(
+                          'sr-load-card',
+                          selectedId === row.id && 'is-selected'
+                        )}
+                        onClick={() => setSelectedId(row.id)}
+                      >
+                        <div className="sr-load-card__top">
+                          <span className="sr-load-card__id">{row.id}</span>
+                          {statusPill(row.status)}
+                        </div>
+                        <div className="sr-load-card__customer">{row.customer}</div>
+                        <div className="sr-load-card__meta">
+                          {row.mode} · {row.subStage} · {row.equipment}
+                        </div>
+                        <div className="sr-load-card__route">
+                          <span>{row.origin}</span>
+                          <span className="sr-load-card__miles">{row.miles} mi</span>
+                          <span>{row.destination}</span>
+                        </div>
+                      </button>
+                    ))}
+                    {cards.length === 0 && (
+                      <div className="sr-cards-empty">No loads in this stage</div>
+                    )}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+        )}
       </section>
     </div>
   )
