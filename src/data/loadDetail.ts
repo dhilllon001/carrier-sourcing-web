@@ -35,6 +35,12 @@ export type CommodityLine = {
   bol: string
   qty: string
   weight: string
+  description?: string
+  pieces?: string
+  classCode?: string
+  hazmat?: boolean
+  dims?: string
+  stackable?: boolean
 }
 
 export type CarrierRow = {
@@ -122,6 +128,9 @@ export type LoadDetail = {
     consignee: string
     customer: string
     tender: string
+    bol?: string
+    appointment?: string
+    trailer?: string
   }
   stops: RouteStop[]
   commodities: CommodityLine[]
@@ -462,12 +471,24 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
             bol: `${poNumber}-001`,
             qty: `${(h % 4000) + 40} PCS`,
             weight: `${(h % 20000) + 1200} LBS`,
+            description: 'Finished auto parts · palletized',
+            pieces: `${(h % 40) + 12}`,
+            classCode: '70',
+            hazmat: false,
+            dims: '48×40×52 in',
+            stackable: true,
           },
           {
             probill: `P${Number(load.id) + 1}`,
             bol: `${poNumber}-002`,
             qty: `${(h % 80) + 10} PCS`,
             weight: `${(h % 2000) + 400} LBS`,
+            description: 'Corrugated packaging · floor loaded',
+            pieces: `${(h % 20) + 4}`,
+            classCode: '55',
+            hazmat: load.miles > 1200,
+            dims: '40×48×36 in',
+            stackable: false,
           },
         ]
       : [
@@ -476,6 +497,12 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
             bol: poNumber,
             qty: `${(h % 6) + 1} SKIDS`,
             weight: `${(h % 2000) + 500} LBS`,
+            description: `${load.equipment} freight · standard`,
+            pieces: `${(h % 8) + 2}`,
+            classCode: '65',
+            hazmat: false,
+            dims: '48×40×48 in',
+            stackable: true,
           },
         ]
 
@@ -523,10 +550,13 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
     tags: [],
     references: {
       pro: `PRO-${load.id}`,
-      shipper: '',
-      consignee: '',
-      customer: '',
-      tender: '',
+      shipper: `SHP-${(h % 90000) + 10000}`,
+      consignee: `CNS-${(h % 80000) + 20000}`,
+      customer: load.identifier,
+      tender: `TND-${load.id.slice(-4)}`,
+      bol: poNumber,
+      appointment: load.pickupDate,
+      trailer: load.equipment,
     },
     stops,
     commodities,

@@ -8,7 +8,9 @@ import {
   ExternalLink,
   FileText,
   Layers,
+  MapPin,
   Pencil,
+  Plus,
   RefreshCw,
   Search,
   PanelRightClose,
@@ -25,6 +27,7 @@ import { cn } from '@/lib/cn'
 import {
   buildLoadDetail,
   isFindPost,
+  type CommodityLine,
   type DetailStage,
   type LoadDetail,
 } from '@/data/loadDetail'
@@ -204,28 +207,67 @@ function SummaryTab({
   onTags: (t: string[]) => void
 }) {
   const [activeProbill, setActiveProbill] = useState(detail.commodities[0]?.probill)
+  const [commodities, setCommodities] = useState<CommodityLine[]>(detail.commodities)
+
+  useEffect(() => {
+    setCommodities(detail.commodities)
+    setActiveProbill(detail.commodities[0]?.probill)
+  }, [detail.commodities])
+
+  const activeLines = commodities.filter((c) => c.probill === activeProbill)
+  const pickup = detail.stops.find((s) => s.kind === 'Pickup') ?? detail.stops[0]
+  const delivery =
+    [...detail.stops].reverse().find((s) => s.kind === 'Delivery') ??
+    detail.stops[detail.stops.length - 1]
+
+  const addCommodity = () => {
+    const n = commodities.length + 1
+    const line: CommodityLine = {
+      probill: activeProbill || `P${detail.load.id}`,
+      bol: `${detail.poNumber}-${String(n).padStart(3, '0')}`,
+      qty: '1 SKID',
+      weight: '500 LBS',
+      description: 'New commodity line',
+      pieces: '1',
+      classCode: '70',
+      hazmat: false,
+      dims: '48×40×40 in',
+      stackable: true,
+    }
+    setCommodities((prev) => [...prev, line])
+  }
+
+  const addProbill = () => {
+    const next = `P${Number(detail.load.id) + commodities.length + 1}`
+    const line: CommodityLine = {
+      probill: next,
+      bol: `${detail.poNumber}-NEW`,
+      qty: '1 SKID',
+      weight: '500 LBS',
+      description: 'Added commodity · awaiting confirmation',
+      pieces: '1',
+      classCode: '70',
+      hazmat: false,
+      dims: '48×40×40 in',
+      stackable: true,
+    }
+    setCommodities((prev) => [...prev, line])
+    setActiveProbill(next)
+  }
+
+  const probills = [...new Set(commodities.map((c) => c.probill))]
 
   return (
     <div className="dd-summary">
-      <section className="dd-card dd-bid">
-        <div className="dd-bid__top">
+      <section className="dd-card dd-thresh">
+        <div className="dd-thresh__head">
           <div>
-            <div className="dd-card__title">
-              Bidding thresholds <span className="dd-card__soft">{detail.currency}</span>
-            </div>
-            <div className="dd-bid__legend">
-              <span>
-                <i className="dd-bid__swatch dd-bid__swatch--max" /> Max buy
-              </span>
-              <span>
-                <i className="dd-bid__swatch dd-bid__swatch--book" /> Book now
-              </span>
-              <span>
-                <i className="dd-bid__swatch dd-bid__swatch--reject" /> Reject above
-              </span>
-            </div>
+            <div className="dd-card__title">Bidding thresholds</div>
+            <p className="dd-card__hint">
+              Guide offers against book-now, max buy, and reject rules · {detail.currency}
+            </p>
           </div>
-          <div className="dd-bid__actions">
+          <div className="dd-thresh__actions">
             <button type="button" className="dd-icon-btn" aria-label="Edit thresholds">
               <Pencil size={14} />
             </button>
@@ -235,109 +277,263 @@ function SummaryTab({
             </button>
           </div>
         </div>
-        <div className="dd-bid__scale" aria-hidden>
-          <div className="dd-bid__track">
-            <span className="dd-bid__mark dd-bid__mark--max" />
-            <span className="dd-bid__mark dd-bid__mark--book" />
-            <span className="dd-bid__mark dd-bid__mark--reject" />
-          </div>
+
+        <div className="dd-thresh__grid">
+          <article className="dd-thresh-tile dd-thresh-tile--book">
+            <span className="dd-thresh-tile__label">Book now</span>
+            <strong>{detail.bookNowRate}</strong>
+            <em>Target acceptance rate</em>
+          </article>
+          <article className="dd-thresh-tile dd-thresh-tile--max">
+            <span className="dd-thresh-tile__label">Max buy</span>
+            <strong>{detail.maxBuy}</strong>
+            <em>Ceiling before escalation</em>
+          </article>
+          <article className="dd-thresh-tile dd-thresh-tile--reject">
+            <span className="dd-thresh-tile__label">Reject above</span>
+            <strong>{detail.rejectAbove}</strong>
+            <em>Auto-reject threshold</em>
+          </article>
+          <article className="dd-thresh-tile">
+            <span className="dd-thresh-tile__label">Market</span>
+            <strong>{detail.market === '—' ? detail.bookNowRate : detail.market}</strong>
+            <em>Lane indication · {detail.load.miles.toLocaleString()} mi</em>
+          </article>
+        </div>
+
+        <div className="dd-thresh__bar" aria-hidden>
+          <div className="dd-thresh__fill" />
+          <span className="dd-thresh__tick is-book" title="Book now" />
+          <span className="dd-thresh__tick is-max" title="Max buy" />
+          <span className="dd-thresh__tick is-reject" title="Reject above" />
+        </div>
+        <div className="dd-thresh__legend">
+          <span>
+            <i className="is-book" /> Book now {detail.bookNowRate}
+          </span>
+          <span>
+            <i className="is-max" /> Max buy {detail.maxBuy}
+          </span>
+          <span>
+            <i className="is-reject" /> Reject above {detail.rejectAbove}
+          </span>
         </div>
       </section>
 
       <div className="dd-summary__grid">
-        <section className="dd-card">
+        <section className="dd-card dd-apple-group">
           <div className="dd-card__head">
             <div className="dd-card__title">Order information</div>
             <button type="button" className="dd-icon-btn" aria-label="Edit order">
               <Pencil size={14} />
             </button>
           </div>
-          <div className="dd-fields">
-            <Field label="Order #" value={detail.orderNumber} link />
-            <Field label="PO #" value={detail.poNumber} />
-            <Field label="Division" value={detail.division} />
-            <Field label="Order category" value={detail.orderCategory} />
-            <Field label="Properties" value={detail.properties} />
-            <Field label="Execution type" value={detail.execution} link />
-            <Field label="Cargo value" value={detail.cargoValue} empty={!detail.cargoValue} />
+          <div className="dd-list">
+            <div className="dd-list__row">
+              <span>Order #</span>
+              <strong className="is-link">{detail.orderNumber}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>PO #</span>
+              <strong>{detail.poNumber}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Division</span>
+              <strong>{detail.division}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Order category</span>
+              <strong>{detail.orderCategory}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Properties</span>
+              <strong>{detail.properties}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Execution</span>
+              <strong className="is-link">{detail.execution}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Cargo value</span>
+              <strong>{detail.cargoValue || '—'}</strong>
+            </div>
           </div>
         </section>
 
-        <section className="dd-card">
+        <section className="dd-card dd-apple-group">
           <div className="dd-card__head">
             <div className="dd-card__title">Customer & service</div>
           </div>
-          <div className="dd-fields">
-            <Field label="Customer" value={detail.load.customer} link />
-            <Field label="Sales rep" value={detail.salesRep} />
-            <Field label="CSR" value={detail.csr} />
-            <Field label="Account manager" value={detail.accountManager} />
-            <div className="dd-field">
-              <div className="dd-field__label">Mode</div>
-              <div className="dd-field__value">
+          <div className="dd-list">
+            <div className="dd-list__row">
+              <span>Customer</span>
+              <strong className="is-link">{detail.load.customer}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Sales rep</span>
+              <strong>{detail.salesRep}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>CSR</span>
+              <strong>{detail.csr}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Account manager</span>
+              <strong>{detail.accountManager}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Mode</span>
+              <strong>
                 <ModeBadge mode={detail.load.mode} />
-              </div>
+              </strong>
             </div>
-            <Field label="Type" value={detail.type} />
-            <div className="dd-field">
-              <div className="dd-field__label">Tags</div>
-              <div className="dd-field__value">
+            <div className="dd-list__row">
+              <span>Type</span>
+              <strong>{detail.type}</strong>
+            </div>
+            <div className="dd-list__row dd-list__row--tags">
+              <span>Tags</span>
+              <strong>
                 <TagPopover tags={tags} onChange={onTags} />
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="dd-card dd-apple-group dd-commodity">
+          <div className="dd-card__head">
+            <div>
+              <div className="dd-card__title">Commodity & routing</div>
+              <p className="dd-card__hint">Stops workflow and freight lines on this load</p>
+            </div>
+            <div className="dd-commodity__actions">
+              <button type="button" className="dd-pill-btn" onClick={addCommodity}>
+                <Plus size={14} />
+                Line
+              </button>
+              <button type="button" className="dd-pill-btn" onClick={addProbill}>
+                <Plus size={14} />
+                Probill
+              </button>
+            </div>
+          </div>
+
+          <div className="dd-route-flow">
+            <div className="dd-route-flow__step">
+              <span className="dd-route-flow__dot is-pu" />
+              <div>
+                <span>Pickup</span>
+                <strong>{pickup?.facility ?? '—'}</strong>
+                <em>
+                  {pickup?.city} · {pickup?.when}
+                </em>
+              </div>
+            </div>
+            <div className="dd-route-flow__bridge">
+              <MapPin size={12} />
+              <span>{detail.load.miles.toLocaleString()} mi</span>
+            </div>
+            <div className="dd-route-flow__step">
+              <span className="dd-route-flow__dot is-del" />
+              <div>
+                <span>Delivery</span>
+                <strong>{delivery?.facility ?? '—'}</strong>
+                <em>
+                  {delivery?.city} · {delivery?.when}
+                </em>
               </div>
             </div>
           </div>
-        </section>
 
-        <section className="dd-card dd-commodity">
-          <div className="dd-card__head">
-            <div className="dd-card__title">Commodity & routing</div>
+          <div className="dd-probill-tabs">
+            {probills.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={cn(activeProbill === p && 'is-active')}
+                onClick={() => setActiveProbill(p)}
+              >
+                {p}
+              </button>
+            ))}
           </div>
-          {detail.commodities.length > 1 && (
-            <div className="dd-probill-tabs">
-              {detail.commodities.map((c) => (
-                <button
-                  key={c.probill}
-                  type="button"
-                  className={cn(activeProbill === c.probill && 'is-active')}
-                  onClick={() => setActiveProbill(c.probill)}
-                >
-                  {c.probill}
-                </button>
-              ))}
-            </div>
-          )}
-          <table className="dd-mini-table">
-            <thead>
-              <tr>
-                <th>BOL #</th>
-                <th>QTY</th>
-                <th>Weight</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detail.commodities
-                .filter((c) => c.probill === activeProbill)
-                .map((c) => (
-                  <tr key={c.bol}>
-                    <td className="mono">{c.bol}</td>
-                    <td>{c.qty}</td>
-                    <td>{c.weight}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+
+          <div className="dd-commodity-lines">
+            {activeLines.map((c) => (
+              <article key={`${c.probill}-${c.bol}`} className="dd-commodity-line">
+                <div className="dd-commodity-line__top">
+                  <strong>{c.description ?? 'Commodity'}</strong>
+                  <div className="dd-commodity-line__tags">
+                    {c.hazmat && <span className="dd-tag-haz">Hazmat</span>}
+                    {c.stackable && <span className="dd-tag-ok">Stackable</span>}
+                    <span className="dd-tag-status">Class {c.classCode ?? '—'}</span>
+                  </div>
+                </div>
+                <div className="dd-commodity-line__grid">
+                  <span>
+                    BOL <em className="mono">{c.bol}</em>
+                  </span>
+                  <span>
+                    Qty <em>{c.qty}</em>
+                  </span>
+                  <span>
+                    Weight <em>{c.weight}</em>
+                  </span>
+                  <span>
+                    Pieces <em>{c.pieces ?? '—'}</em>
+                  </span>
+                  <span>
+                    Dims <em>{c.dims ?? '—'}</em>
+                  </span>
+                  <span>
+                    Equip <em>{detail.load.equipment}</em>
+                  </span>
+                </div>
+              </article>
+            ))}
+            {activeLines.length === 0 && (
+              <div className="dd-empty-state">No commodity lines on this probill</div>
+            )}
+          </div>
         </section>
 
-        <section className="dd-card dd-refs">
+        <section className="dd-card dd-apple-group dd-refs">
           <div className="dd-card__head">
             <div className="dd-card__title">References</div>
           </div>
-          <div className="dd-fields dd-fields--wide">
-            <Field label="PRO #" value={detail.references.pro} mono />
-            <Field label="Shipper ref" value={detail.references.shipper} empty />
-            <Field label="Consignee ref" value={detail.references.consignee} empty />
-            <Field label="Customer ref" value={detail.references.customer} empty />
-            <Field label="Tender ref" value={detail.references.tender} empty />
+          <div className="dd-list dd-list--2">
+            <div className="dd-list__row">
+              <span>PRO #</span>
+              <strong className="mono">{detail.references.pro}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Shipper ref</span>
+              <strong className="mono">{detail.references.shipper || '—'}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Consignee ref</span>
+              <strong className="mono">{detail.references.consignee || '—'}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Customer ref</span>
+              <strong className="mono">{detail.references.customer || '—'}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Tender ref</span>
+              <strong className="mono">{detail.references.tender || '—'}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>BOL ref</span>
+              <strong className="mono">{detail.references.bol || '—'}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Appointment</span>
+              <strong>{detail.references.appointment || '—'}</strong>
+            </div>
+            <div className="dd-list__row">
+              <span>Trailer / equip</span>
+              <strong>{detail.references.trailer || '—'}</strong>
+            </div>
           </div>
         </section>
       </div>
