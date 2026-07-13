@@ -8,6 +8,7 @@ import {
   ExternalLink,
   FileText,
   Layers,
+  Pause,
   Pencil,
   Plus,
   RefreshCw,
@@ -175,13 +176,18 @@ function SummaryTab({
   detail,
   tags,
   onTags,
+  onPostToSourcing,
 }: {
   detail: LoadDetail
   tags: string[]
   onTags: (t: string[]) => void
+  onPostToSourcing: () => void
 }) {
   const [activeProbill, setActiveProbill] = useState(detail.commodities[0]?.probill)
   const [commodities, setCommodities] = useState<CommodityLine[]>(detail.commodities)
+  const [posted, setPosted] = useState(
+    detail.load.subStage === 'Find & Post' || detail.load.status === 'Posted'
+  )
 
   useEffect(() => {
     setCommodities(detail.commodities)
@@ -225,10 +231,55 @@ function SummaryTab({
     setActiveProbill(next)
   }
 
+  const goFindPost = () => {
+    setPosted(true)
+    onPostToSourcing()
+  }
+
   const probills = [...new Set(commodities.map((c) => c.probill))]
 
   return (
     <div className="dd-summary dd-overview">
+      <section className="dd-thresh-bar">
+        <div className="dd-thresh-bar__head">
+          <strong>Bidding thresholds</strong>
+          <span className="dd-thresh-bar__currency">{detail.currency}</span>
+        </div>
+        <div className="dd-thresh-bar__body">
+          <div className="dd-thresh-bar__metrics">
+            <div className="is-max">
+              <strong>{detail.maxBuy}</strong>
+              <span>Max buy</span>
+            </div>
+            <div className="is-book">
+              <strong>{detail.bookNowRate}</strong>
+              <span>Book now</span>
+            </div>
+            <div className="is-reject">
+              <strong>{detail.rejectAbove}</strong>
+              <span>Reject above</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className={cn('dd-thresh-bar__btn', posted && 'is-posted')}
+            onClick={goFindPost}
+          >
+            {posted ? (
+              <>
+                <Pause size={14} fill="currentColor" />
+                Posted to Sourcing
+              </>
+            ) : (
+              <>
+                <Check size={14} />
+                Post to Sourcing
+              </>
+            )}
+          </button>
+        </div>
+      </section>
+
       <div className="dd-ov-panels">
         <section className="dd-ov-panel">
           <div className="dd-ov-panel__title">
@@ -962,7 +1013,15 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             ) : (
               <>
                 {tab === 'summary' && (
-                  <SummaryTab detail={detail} tags={tags} onTags={setTags} />
+                  <SummaryTab
+                    detail={detail}
+                    tags={tags}
+                    onTags={setTags}
+                    onPostToSourcing={() => {
+                      setStage('Sourcing')
+                      setSubStage('Find & Post')
+                    }}
+                  />
                 )}
                 {tab === 'instructions' && (
                   <InstructionsTab

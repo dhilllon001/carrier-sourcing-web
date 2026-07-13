@@ -5304,3 +5304,132 @@
     border-bottom: 1px solid #eceff3;
   }
 }
+
+
+/* Overview bidding thresholds bar */
+.dd-thresh-bar {
+  background: #f5f7fd;
+  border: 1px solid #c9d4f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.dd-thresh-bar__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dd-thresh-bar__head strong {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3b4f8a;
+}
+
+.dd-thresh-bar__currency {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: #e8ecf4;
+  color: #3d4a5c;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dd-thresh-bar__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dd-thresh-bar__metrics {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  flex: 1;
+}
+
+.dd-thresh-bar__metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 18px 2px 0;
+  margin-right: 18px;
+  border-right: 1px solid #d7deec;
+  min-width: 0;
+}
+
+.dd-thresh-bar__metrics > div:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.dd-thresh-bar__metrics strong {
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.dd-thresh-bar__metrics span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-style: italic;
+  color: #8a949f;
+}
+
+.dd-thresh-bar__metrics .is-max strong { color: #c47a28; }
+.dd-thresh-bar__metrics .is-book strong { color: #1f7a43; }
+.dd-thresh-bar__metrics .is-reject strong { color: #b42318; }
+
+.dd-thresh-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: #7b8fd4;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+
+.dd-thresh-bar__btn:hover {
+  background: #6a7fc9;
+}
+
+.dd-thresh-bar__btn.is-posted {
+  background: #8b9bd8;
+}
+
+@media (max-width: 900px) {
+  .dd-thresh-bar__body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dd-thresh-bar__metrics {
+    flex-wrap: wrap;
+    gap: 8px 0;
+  }
+
+  .dd-thresh-bar__btn {
+    width: 100%;
+  }
+}
