@@ -183,10 +183,6 @@ function SummaryTab({
   }, [detail.commodities])
 
   const activeLines = commodities.filter((c) => c.probill === activeProbill)
-  const pickup = detail.stops.find((s) => s.kind === 'Pickup') ?? detail.stops[0]
-  const delivery =
-    [...detail.stops].reverse().find((s) => s.kind === 'Delivery') ??
-    detail.stops[detail.stops.length - 1]
 
   const addCommodity = () => {
     const n = commodities.length + 1
@@ -227,67 +223,10 @@ function SummaryTab({
 
   return (
     <div className="dd-summary dd-overview">
-      <section className="dd-ov-rates">
-        <div className="dd-ov-rates__head">
-          <div className="dd-card__title">Bidding thresholds</div>
-          <div className="dd-ov-rates__actions">
-            <span className="dd-ov-currency">{detail.currency}</span>
-            <button type="button" className="dd-icon-btn" aria-label="Edit thresholds">
-              <Pencil size={14} />
-            </button>
-            <button type="button" className="dd-btn dd-btn--primary">
-              <Check size={14} />
-              Post to Sourcing
-            </button>
-          </div>
-        </div>
-        <div className="dd-ov-rates__row">
-          <div className="dd-ov-metric is-book">
-            <span>Book now</span>
-            <strong>{detail.bookNowRate}</strong>
-          </div>
-          <div className="dd-ov-metric is-max">
-            <span>Max buy</span>
-            <strong>{detail.maxBuy}</strong>
-          </div>
-          <div className="dd-ov-metric is-reject">
-            <span>Reject above</span>
-            <strong>{detail.rejectAbove}</strong>
-          </div>
-          <div className="dd-ov-metric">
-            <span>Market · miles</span>
-            <strong>
-              {detail.market === '—' ? detail.bookNowRate : detail.market}
-              <em>{detail.load.miles.toLocaleString()} mi</em>
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="dd-ov-lane">
-        <div className="dd-ov-lane__stop">
-          <span>Pickup</span>
-          <strong>{pickup?.facility ?? '—'}</strong>
-          <em>
-            {pickup?.city} · {pickup?.when}
-          </em>
-        </div>
-        <div className="dd-ov-lane__mid">
-          <span className="dd-ov-miles">{detail.load.miles.toLocaleString()} mi</span>
-        </div>
-        <div className="dd-ov-lane__stop is-end">
-          <span>Delivery</span>
-          <strong>{delivery?.facility ?? '—'}</strong>
-          <em>
-            {delivery?.city} · {delivery?.when}
-          </em>
-        </div>
-      </section>
-
       <div className="dd-ov-panels">
         <section className="dd-ov-panel">
           <div className="dd-ov-panel__title">
-            <span>Order</span>
+            <span>Order information</span>
             <button type="button" className="dd-icon-btn" aria-label="Edit order">
               <Pencil size={13} />
             </button>
@@ -408,7 +347,7 @@ function SummaryTab({
       <section className="dd-ov-freight">
         <div className="dd-ov-freight__head">
           <div className="dd-ov-panel__title">
-            <span>Commodity</span>
+            <span>Commodity & routing</span>
           </div>
           <div className="dd-ov-freight__tools">
             <div className="dd-probill-tabs">
