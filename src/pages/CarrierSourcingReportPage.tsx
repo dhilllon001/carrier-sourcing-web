@@ -7,7 +7,6 @@ import {
 import { LifecycleBattery } from '@/components/report/LifecycleBattery'
 import {
   colFiltersApplied,
-  countActiveFilters,
   searchApplied,
   selectApplied,
 } from '@/lib/report/filters'
@@ -102,16 +101,6 @@ export function CarrierSourcingReportPage({
     [mergedFilters, filters.colFilters, search, onSearchChange, patch]
   )
 
-  const activeCount = useMemo(
-    () =>
-      countActiveFilters(
-        mergedFilters as unknown as Record<string, unknown>,
-        ['mode', 'status', 'stage', 'subStage'],
-        filters.colFilters
-      ),
-    [mergedFilters, filters.colFilters]
-  )
-
   const columns: SrColumn<ReportLoad>[] = useMemo(
     () => [
       {
@@ -196,53 +185,47 @@ export function CarrierSourcingReportPage({
 
   return (
     <div className="sr-page">
-      <div className="sr-filter-panel">
-        <div className="sr-filter-group-row">
-          <span className="sr-filter-label">Mode</span>
-          <div className="sr-chips">
-            {(
-              [
-                ['ALL', 'All', modeCounts.All],
-                ['Spot', 'Spot', modeCounts.Spot],
-                ['Expedited', 'Expedited', modeCounts.Expedited],
-                ['Managed', 'Managed', modeCounts.Managed],
-              ] as const
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                type="button"
-                className={cn('sr-chip', filters.mode === key && 'is-active')}
-                onClick={() => patch({ mode: key })}
-              >
-                {label}
-                <span className="sr-chip__count">{count}</span>
-              </button>
-            ))}
-          </div>
+      <div className="sr-express-rail">
+        <div className="sr-express-group" role="group" aria-label="Mode">
+          {(
+            [
+              ['Spot', 'Spot', modeCounts.Spot],
+              ['Expedited', 'Expedited', modeCounts.Expedited],
+              ['Managed', 'Managed', modeCounts.Managed],
+            ] as const
+          ).map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              className={cn('sr-express-card', filters.mode === key && 'is-active')}
+              onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
+            >
+              <span className="sr-express-card__name">{label}</span>
+              <span className="sr-express-card__value">{count}</span>
+            </button>
+          ))}
         </div>
 
-        <div className="sr-filter-group-row">
-          <span className="sr-filter-label">Status</span>
-          <div className="sr-chips">
-            {(
-              [
-                ['ALL', 'All', statusCounts.All],
-                ['NeedCarrier', 'Need carrier', statusCounts.NeedCarrier],
-                ['Posted', 'Posted', statusCounts.Posted],
-                ['Covered', 'Covered', statusCounts.Covered],
-              ] as const
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                type="button"
-                className={cn('sr-chip', filters.status === key && 'is-active')}
-                onClick={() => patch({ status: key })}
-              >
-                {label}
-                <span className="sr-chip__count">{count}</span>
-              </button>
-            ))}
-          </div>
+        <div className="sr-express-divider" aria-hidden />
+
+        <div className="sr-express-group" role="group" aria-label="Status">
+          {(
+            [
+              ['NeedCarrier', 'Need carrier', statusCounts.NeedCarrier],
+              ['Posted', 'Posted', statusCounts.Posted],
+              ['Covered', 'Covered', statusCounts.Covered],
+            ] as const
+          ).map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              className={cn('sr-express-card', filters.status === key && 'is-active')}
+              onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
+            >
+              <span className="sr-express-card__name">{label}</span>
+              <span className="sr-express-card__value">{count}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -252,34 +235,25 @@ export function CarrierSourcingReportPage({
         stage={filters.stage}
         subStage={filters.subStage}
         onSelectAll={() => patch({ stage: 'ALL', subStage: 'ALL' })}
-        onSelectStage={(stage) => patch({ stage, subStage: 'ALL' })}
-        onSelectSubStage={(stage, sub) => patch({ stage, subStage: sub })}
+        onSelectStage={(stage) =>
+          patch({
+            stage: filters.stage === stage && filters.subStage === 'ALL' ? 'ALL' : stage,
+            subStage: 'ALL',
+          })
+        }
+        onSelectSubStage={(stage, sub) =>
+          patch({
+            stage,
+            subStage: filters.subStage === sub ? 'ALL' : sub,
+          })
+        }
       />
 
       {appliedFilters.length > 0 && (
         <AppliedFiltersRow chips={appliedFilters} onClearAll={resetFilters} />
       )}
 
-      {activeCount > 0 && appliedFilters.length === 0 && null}
-
-      <section className="sr-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="sr-table-toolbar">
-          <div>
-            <h3 className="sr-card__title" style={{ margin: 0 }}>
-              Loads
-            </h3>
-            <p className="sr-card__meta">
-              {filtered.length.toLocaleString()} result{filtered.length === 1 ? '' : 's'}
-              {activeCount > 0 ? ` · ${activeCount} filter${activeCount === 1 ? '' : 's'} active` : ''}
-            </p>
-          </div>
-          {activeCount > 0 && (
-            <button type="button" className="sr-btn sr-btn--ghost sr-btn--sm" onClick={resetFilters}>
-              Reset ({activeCount})
-            </button>
-          )}
-        </div>
-
+      <section className="sr-card sr-card--table" style={{ padding: 0, overflow: 'hidden' }}>
         {viewMode === 'table' ? (
           <SrDataTable
             rows={filtered}
@@ -299,9 +273,9 @@ export function CarrierSourcingReportPage({
               { label: 'Team', value: row.team },
             ]}
             emptyTitle="No loads match these filters"
-            emptyHint="Clear lifecycle, mode, or status filters to widen results"
+            emptyHint="Clear filters to widen results"
             wrapClassName="sr-table-wrap--flush"
-            maxHeight="min(58vh, 620px)"
+            maxHeight="min(68vh, 720px)"
           />
         ) : (
           <div className="sr-cards-board">
@@ -310,9 +284,9 @@ export function CarrierSourcingReportPage({
               return (
                 <section key={block.stage} className="sr-cards-col">
                   <div className="sr-cards-col__head">
-                    <span className="sr-battery__num">{block.number}</span>
+                    <span className="sr-pipeline__num">{block.number}</span>
                     <strong>{block.stage}</strong>
-                    <span className="sr-battery__count">{cards.length}</span>
+                    <span className="sr-pipeline__value">{cards.length}</span>
                   </div>
                   <div className="sr-cards-col__body">
                     {cards.map((row) => (

@@ -24,65 +24,62 @@ export function LifecycleBattery({
   onSelectSubStage,
 }: LifecycleBatteryProps) {
   const max = Math.max(...blocks.map((b) => b.count), 1)
+  const activeBlock = blocks.find((b) => b.stage === stage)
 
   return (
-    <section className="sr-battery" aria-label="Lifecycle filters">
-      <div className="sr-battery__head">
-        <div>
-          <div className="sr-battery__eyebrow">Lifecycle</div>
-          <h2 className="sr-battery__title">Pipeline stages</h2>
-        </div>
+    <section className="sr-pipeline" aria-label="Lifecycle pipeline">
+      <div className="sr-pipeline__row" role="list">
         <button
           type="button"
-          className={cn('sr-battery__all', stage === 'ALL' && subStage === 'ALL' && 'is-active')}
+          className={cn(
+            'sr-pipeline__seg sr-pipeline__seg--all',
+            stage === 'ALL' && subStage === 'ALL' && 'is-active'
+          )}
           onClick={onSelectAll}
+          role="listitem"
         >
-          All stages
-          <strong>{totalCount.toLocaleString()}</strong>
+          <span className="sr-pipeline__name">All</span>
+          <span className="sr-pipeline__value">{totalCount.toLocaleString()}</span>
         </button>
-      </div>
 
-      <div className="sr-battery__track" role="list">
         {blocks.map((block) => {
-          const fill = Math.max(8, (block.count / max) * 100)
-          const stageActive = stage === block.stage && subStage === 'ALL'
+          const fill = Math.max(12, (block.count / max) * 100)
+          const stageActive = stage === block.stage
           return (
-            <div key={block.stage} className="sr-battery__cell" role="listitem">
-              <button
-                type="button"
-                className={cn('sr-battery__stage', stageActive && 'is-active')}
-                onClick={() => onSelectStage(block.stage)}
-              >
-                <div className="sr-battery__stage-top">
-                  <span className="sr-battery__num">{block.number}</span>
-                  <span className="sr-battery__stage-name">{block.stage}</span>
-                  <span className="sr-battery__count">{block.count.toLocaleString()}</span>
-                </div>
-                <div className="sr-battery__meter" aria-hidden>
-                  <span className="sr-battery__meter-fill" style={{ width: `${fill}%` }} />
-                </div>
-              </button>
-
-              <div className="sr-battery__subs">
-                {block.items.map((item) => {
-                  const active = subStage === item.label
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      className={cn('sr-battery__sub', active && 'is-active')}
-                      onClick={() => onSelectSubStage(block.stage, item.label)}
-                    >
-                      <span>{item.label}</span>
-                      <span className="sr-battery__sub-count">{item.count}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <button
+              key={block.stage}
+              type="button"
+              role="listitem"
+              className={cn('sr-pipeline__seg', stageActive && 'is-active')}
+              onClick={() => onSelectStage(block.stage)}
+            >
+              <span className="sr-pipeline__num">{block.number}</span>
+              <span className="sr-pipeline__name">{block.stage}</span>
+              <span className="sr-pipeline__value">{block.count.toLocaleString()}</span>
+              <span className="sr-pipeline__meter" aria-hidden>
+                <span style={{ width: `${fill}%` }} />
+              </span>
+            </button>
           )
         })}
       </div>
+
+      {activeBlock && (
+        <div className="sr-pipeline__subs" role="list">
+          {activeBlock.items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              role="listitem"
+              className={cn('sr-pipeline__sub', subStage === item.label && 'is-active')}
+              onClick={() => onSelectSubStage(activeBlock.stage, item.label)}
+            >
+              <span>{item.label}</span>
+              <strong>{item.count}</strong>
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
