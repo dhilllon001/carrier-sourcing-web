@@ -3336,3 +3336,196 @@
     max-width: 100%;
   }
 }
+
+
+/* Rich bid cards + offer facts */
+.dd-bids-panel {
+  gap: 8px;
+  padding: 10px;
+}
+
+.dd-bids-list__head {
+  align-items: flex-start;
+}
+
+.dd-bids-list__head .dd-muted {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.dd-bid-filters {
+  gap: 5px;
+}
+
+.dd-bid-filters button {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+
+.dd-bid-cards {
+  gap: 8px;
+}
+
+.dd-bid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 12px;
+  border: 1px solid #e6e9ee;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 26, 42, 0.04);
+  text-align: left;
+}
+
+.dd-bid-card:hover {
+  border-color: #d0d5dd;
+  box-shadow: 0 4px 12px rgba(15, 26, 42, 0.06);
+}
+
+.dd-bid-card.is-selected {
+  border-color: #0f1a2a;
+  box-shadow: 0 0 0 1px #0f1a2a, 0 4px 12px rgba(15, 26, 42, 0.08);
+  background: #fff;
+}
+
+.dd-bid-card.is-best:not(.is-selected) {
+  border-color: #cce7d8;
+  background: #fcfefd;
+}
+
+.dd-bid-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.dd-bid-card__stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dd-bid-card__stats span {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a949f;
+}
+
+.dd-bid-card__stats strong {
+  font-size: 13px;
+  font-weight: 750;
+  color: #0f1a2a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-bid-card__stats strong.is-pos {
+  color: #1f7a43;
+}
+
+.dd-bid-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+  margin-top: 10px;
+}
+
+.dd-bid-card__grid > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #8a949f;
+  min-width: 0;
+}
+
+.dd-bid-card__grid em {
+  font-style: normal;
+  font-weight: 650;
+  color: #0f1a2a;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-bid-card__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #eef0f3;
+  font-size: 11px;
+  color: #6b7685;
+}
+
+.dd-wa__head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dd-wa__channel {
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #eef1f5;
+  color: #3d4a5c;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dd-wa-card {
+  min-width: 280px;
+}
+
+.dd-wa-card__facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0 12px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.dd-wa-card__facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dd-wa-card__facts span {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a949f;
+}
+
+.dd-wa-card__facts strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f1a2a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-offers__grid {
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+}

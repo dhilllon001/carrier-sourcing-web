@@ -217,6 +217,7 @@ export function OffersBidsView({
     },
   ])
   const bid = detail.bids.find((b) => b.id === selected) ?? detail.bids[0]
+  const bestBid = detail.bids.find((b) => b.best) ?? detail.bids[0]
   const counts = useMemo(() => {
     const base = {
       All: detail.bids.length,
@@ -281,8 +282,11 @@ export function OffersBidsView({
       <div className="dd-offers__grid">
         <aside className="dd-bids-panel">
           <div className="dd-bids-list__head">
-            <strong>Carrier Bids</strong>
-            <span className="dd-best-pill">Best {bid?.amount ?? '—'}</span>
+            <div>
+              <strong>Carrier Bids</strong>
+              <div className="dd-muted">{detail.bids.length} offers on this load</div>
+            </div>
+            <span className="dd-best-pill">Best {bestBid?.amount ?? '—'}</span>
           </div>
           <label className="dd-search dd-search--sm dd-search--fixed">
             <Search size={13} />
@@ -311,21 +315,58 @@ export function OffersBidsView({
                 <div className="dd-bid-card__top">
                   <div className="dd-bid-card__identity">
                     <strong>{b.carrier}</strong>
-                    <span className="dd-bid-card__meta">MC# {b.mc}</span>
+                    <span className="dd-bid-card__meta">
+                      MC# {b.mc}
+                      {b.dot ? ` · DOT ${b.dot}` : ''}
+                    </span>
                   </div>
                   <div className="dd-bid-card__tags">
                     {b.best && <span className="dd-tag-best">Best</span>}
                     <span className="dd-tag-status">{b.status}</span>
                   </div>
                 </div>
-                <div className="dd-bid-card__row">
-                  <div className="dd-bid-card__bid">
-                    <span>Bid</span>
+
+                <div className="dd-bid-card__stats">
+                  <div>
+                    <span>Bid / mi</span>
                     <strong>{b.amount}</strong>
                   </div>
-                  <span className={cn('dd-bid-card__delta', b.vsTarget.startsWith('-') && 'is-pos')}>
-                    {b.vsTarget}
+                  <div>
+                    <span>All-in</span>
+                    <strong>{b.allIn ?? '—'}</strong>
+                  </div>
+                  <div>
+                    <span>vs target</span>
+                    <strong className={cn(b.vsTarget.startsWith('-') && 'is-pos')}>
+                      {b.vsTarget.replace(' vs Target', '')}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="dd-bid-card__grid">
+                  <span>
+                    Equip <em>{b.equipment ?? '—'}</em>
                   </span>
+                  <span>
+                    Source <em>{b.source ?? '—'}</em>
+                  </span>
+                  <span>
+                    DH-P <em>{b.dhP ?? '—'}</em>
+                  </span>
+                  <span>
+                    DH-D <em>{b.dhD ?? '—'}</em>
+                  </span>
+                  <span>
+                    Loads <em>{b.loads ?? '—'}</em>
+                  </span>
+                  <span>
+                    Via <em>{b.channel ?? '—'}</em>
+                  </span>
+                </div>
+
+                <div className="dd-bid-card__foot">
+                  <span>{b.contact ?? 'Dispatch'}</span>
+                  <span>{b.updated ?? b.sentAt ?? '—'}</span>
                 </div>
               </button>
             ))}
@@ -338,9 +379,16 @@ export function OffersBidsView({
               <div className="dd-wa__head">
                 <div>
                   <strong>{bid.carrier}</strong>
-                  <div className="dd-muted">MC# {bid.mc}</div>
+                  <div className="dd-muted">
+                    MC# {bid.mc}
+                    {bid.contact ? ` · ${bid.contact}` : ''}
+                    {bid.phone ? ` · ${bid.phone}` : ''}
+                  </div>
                 </div>
-                <span className="dd-tag-status">{bid.status}</span>
+                <div className="dd-wa__head-right">
+                  <span className="dd-tag-status">{bid.status}</span>
+                  <span className="dd-wa__channel">{bid.channel ?? 'Chat'}</span>
+                </div>
               </div>
 
               <div className="dd-wa__thread">
@@ -355,9 +403,29 @@ export function OffersBidsView({
                       </div>
                       <div className="dd-wa-card__rate">
                         <span>All-in</span>
-                        <strong>{bid.amount}</strong>
+                        <strong>{bid.allIn ?? bid.amount}</strong>
                       </div>
                     </div>
+
+                    <div className="dd-wa-card__facts">
+                      <div>
+                        <span>Rate / mi</span>
+                        <strong>{bid.amount}</strong>
+                      </div>
+                      <div>
+                        <span>Equipment</span>
+                        <strong>{bid.equipment ?? detail.load.equipment}</strong>
+                      </div>
+                      <div>
+                        <span>Miles</span>
+                        <strong>{detail.load.miles.toLocaleString()} mi</strong>
+                      </div>
+                      <div>
+                        <span>Channel</span>
+                        <strong>{bid.channel ?? '—'}</strong>
+                      </div>
+                    </div>
+
                     <div className="dd-wa-route">
                       <div className="dd-wa-route__rail" aria-hidden>
                         <span className="dd-wa-route__dot is-pu" />
@@ -382,7 +450,7 @@ export function OffersBidsView({
                       </div>
                     </div>
                   </div>
-                  <span className="dd-wa-time">12:34 PM</span>
+                  <span className="dd-wa-time">{bid.sentAt?.split(' · ').pop() ?? '12:34 PM'}</span>
                 </div>
 
                 {messages.map((m) => (

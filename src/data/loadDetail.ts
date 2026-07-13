@@ -67,6 +67,19 @@ export type BidOffer = {
   vsTarget: string
   status: 'Drafted' | 'Pending' | 'Countered' | 'Accepted' | 'Rejected' | 'Closed' | 'Sent'
   best?: boolean
+  source?: string
+  equipment?: string
+  rpm?: string
+  allIn?: string
+  dhP?: string
+  dhD?: string
+  loads?: number
+  updated?: string
+  contact?: string
+  phone?: string
+  email?: string
+  channel?: 'Email' | 'WhatsApp' | 'Phone' | 'DAT'
+  sentAt?: string
 }
 
 export type DocFile = {
@@ -290,18 +303,46 @@ export const SAMPLE_BIDS: BidOffer[] = [
     id: 'b1',
     carrier: 'TestCarrier Rohan',
     mc: 'Test12345664',
+    dot: '3842911',
     amount: '$0.93',
+    allIn: '$2,418',
     vsTarget: '-$0.07 vs Target',
     status: 'Sent',
     best: true,
+    source: 'Past',
+    equipment: 'Dry Van 53′',
+    rpm: '$0.93',
+    dhP: '18 mi',
+    dhD: '42 mi',
+    loads: 14,
+    updated: '12m ago',
+    contact: 'Rohan K.',
+    phone: '+1 (312) 555-0142',
+    email: 'rohan@testcarrier.example',
+    channel: 'WhatsApp',
+    sentAt: 'Today · 12:34 PM',
   },
   {
     id: 'b2',
     carrier: 'Midwest Power Haul',
     mc: '712904',
+    dot: '2910448',
     amount: '$1.05',
+    allIn: '$2,730',
     vsTarget: '+$0.05 vs Target',
     status: 'Pending',
+    source: 'DAT',
+    equipment: 'Reefer 53′',
+    rpm: '$1.05',
+    dhP: '31 mi',
+    dhD: '12 mi',
+    loads: 6,
+    updated: '2h ago',
+    contact: 'Jamie Holt',
+    phone: '+1 (816) 555-0199',
+    email: 'dispatch@midwestpower.example',
+    channel: 'Email',
+    sentAt: 'Today · 10:08 AM',
   },
 ]
 
