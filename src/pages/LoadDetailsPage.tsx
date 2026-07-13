@@ -39,37 +39,6 @@ type LoadDetailsPageProps = {
   onBack: () => void
 }
 
-function Field({
-  label,
-  value,
-  link,
-  empty,
-  mono,
-}: {
-  label: string
-  value?: string
-  link?: boolean
-  empty?: boolean
-  mono?: boolean
-}) {
-  const blank = empty || value == null || value === ''
-  return (
-    <div className="dd-field">
-      <div className="dd-field__label">{label}</div>
-      <div
-        className={cn(
-          'dd-field__value',
-          link && !blank && 'is-link',
-          blank && 'is-empty',
-          mono && 'mono'
-        )}
-      >
-        {blank ? '—' : value}
-      </div>
-    </div>
-  )
-}
-
 function ModeBadge({ mode }: { mode: ReportLoad['mode'] }) {
   return (
     <span className={cn('dd-mode', `dd-mode--${mode.toLowerCase()}`)}>
@@ -706,49 +675,101 @@ function DetailRail({
   }
 
   return (
-    <aside className="dd-rail">
+    <aside className="dd-rail dd-rail--ov">
       <div className="dd-rail__head">
-        <span className="dd-card__title">Rate · Coverage</span>
+        <div>
+          <span className="dd-rail__title">Rate · Coverage</span>
+          <p className="dd-rail__hint">{detail.currency} · {detail.load.miles.toLocaleString()} mi</p>
+        </div>
         <button type="button" className="dd-icon-btn" aria-label="Collapse right rail" onClick={onToggle}>
           <PanelRightClose size={14} />
         </button>
       </div>
 
-      <section className="dd-card dd-rail-card">
-        <div className="dd-card__title">Rate context</div>
-        <div className="dd-fields">
-          <Field label="Book now rate" value={detail.bookNowRate} mono />
-          <Field label="Max buy" value={detail.maxBuy} mono />
-          <Field label="Market" value={detail.market} empty={detail.market === '—'} />
+      <section className="dd-rail-panel">
+        <div className="dd-rail-panel__title">Rate context</div>
+        <div className="dd-rail-metrics">
+          <div className="is-book">
+            <span>Book now</span>
+            <strong>{detail.bookNowRate}</strong>
+          </div>
+          <div className="is-max">
+            <span>Max buy</span>
+            <strong>{detail.maxBuy}</strong>
+          </div>
+          <div className="is-reject">
+            <span>Reject above</span>
+            <strong>{detail.rejectAbove}</strong>
+          </div>
+          <div>
+            <span>Market</span>
+            <strong>{detail.market === '—' ? detail.bookNowRate : detail.market}</strong>
+          </div>
         </div>
       </section>
 
-      <section className="dd-card dd-rail-card">
-        <div className="dd-card__title">Coverage & ownership</div>
-        <div className="dd-fields">
-          <Field label="Type" value={detail.type} />
-          <Field label="Broker" value={detail.load.broker} empty={!detail.load.broker} />
-          <Field label="Team" value={detail.load.team} />
-          <Field label="Cargo value" value={detail.cargoValue} empty={!detail.cargoValue} />
+      <section className="dd-rail-panel">
+        <div className="dd-rail-panel__title">Coverage & ownership</div>
+        <div className="dd-rail-facts">
+          <div>
+            <span>Type</span>
+            <strong>{detail.type}</strong>
+          </div>
+          <div>
+            <span>Broker</span>
+            <strong>{detail.load.broker || '—'}</strong>
+          </div>
+          <div>
+            <span>Team</span>
+            <strong>{detail.load.team}</strong>
+          </div>
+          <div>
+            <span>Cargo value</span>
+            <strong>{detail.cargoValue || '—'}</strong>
+          </div>
+          <div>
+            <span>Mode</span>
+            <strong>
+              <ModeBadge mode={detail.load.mode} />
+            </strong>
+          </div>
+          <div>
+            <span>Equipment</span>
+            <strong>{detail.load.equipment}</strong>
+          </div>
         </div>
       </section>
 
-      <section className="dd-card dd-rail-card">
-        <div className="dd-card__title">Area coverage</div>
-        <div className="dd-fields">
-          <Field label="Origin" value={detail.load.origin} />
-          <Field label="Destination" value={detail.load.destination} />
-          <Field label="Miles" value={detail.load.miles.toLocaleString()} mono />
-          <Field label="Equipment" value={detail.load.equipment} />
+      <section className="dd-rail-panel">
+        <div className="dd-rail-panel__title">Area coverage</div>
+        <div className="dd-rail-lane">
+          <div>
+            <span>Origin</span>
+            <strong>{detail.load.origin}</strong>
+          </div>
+          <span className="dd-rail-miles">{detail.load.miles.toLocaleString()} mi</span>
+          <div className="is-end">
+            <span>Destination</span>
+            <strong>{detail.load.destination}</strong>
+          </div>
         </div>
       </section>
 
-      <section className="dd-card dd-rail-card">
-        <div className="dd-card__title">Sub-stage state</div>
-        <div className="dd-fields">
-          <Field label="Action" value={detail.action} />
-          <Field label="Status" value={detail.subStatus} />
-          <Field label="Started" value={detail.startedAt} />
+      <section className="dd-rail-panel">
+        <div className="dd-rail-panel__title">Sub-stage state</div>
+        <div className="dd-rail-facts">
+          <div>
+            <span>Action</span>
+            <strong>{detail.action}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong>{detail.subStatus}</strong>
+          </div>
+          <div className="dd-rail-facts__wide">
+            <span>Started</span>
+            <strong>{detail.startedAt}</strong>
+          </div>
         </div>
       </section>
     </aside>
