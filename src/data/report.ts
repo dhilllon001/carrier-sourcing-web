@@ -113,44 +113,44 @@ export const STATUS_DISPLAY_COUNTS = {
 } as const
 
 export const LIFECYCLE_DISPLAY = {
-  all: 8672,
+  all: 8709,
   stages: [
     {
       stage: 'Sourcing' as const,
       number: '01',
-      count: 3564,
+      count: 3568,
       items: [
-        { label: 'Overview', count: 2102 },
-        { label: 'Find & Post', count: 1462 },
+        { label: 'Overview', count: 3529 },
+        { label: 'Find & Post', count: 39 },
       ],
     },
     {
       stage: 'Tender' as const,
       number: '02',
-      count: 1063,
+      count: 63,
       items: [
-        { label: 'Offers & Bids', count: 641 },
-        { label: 'Finalize Tender', count: 422 },
+        { label: 'Offers & Bids', count: 45 },
+        { label: 'Finalize Tender', count: 18 },
       ],
     },
     {
       stage: 'Award' as const,
       number: '03',
-      count: 820,
+      count: 20,
       items: [
-        { label: 'CMT', count: 512 },
-        { label: 'Finalize Carrier Award', count: 308 },
+        { label: 'CMT', count: 10 },
+        { label: 'Finalize Carrier Award', count: 10 },
       ],
     },
     {
       stage: 'Booking' as const,
       number: '04',
-      count: 5025,
+      count: 5058,
       items: [
-        { label: 'Create Contract', count: 890 },
-        { label: 'Send Confirmation', count: 1204 },
-        { label: 'Signed Confirmation', count: 1580 },
-        { label: 'Resources', count: 1351 },
+        { label: 'Create Contract', count: 13 },
+        { label: 'Send Confirmation', count: 2199 },
+        { label: 'Signed Confirmation', count: 62 },
+        { label: 'Resources', count: 2784 },
       ],
     },
   ],

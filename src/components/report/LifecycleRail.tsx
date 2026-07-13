@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { LIFECYCLE_DISPLAY } from '@/data/report'
 
@@ -23,27 +24,33 @@ export function LifecycleRail({
   onSelectStage,
   onSelectSubStage,
 }: LifecycleRailProps) {
+  const [openStages, setOpenStages] = useState<Record<string, boolean>>({
+    Sourcing: true,
+    Tender: true,
+    Award: true,
+    Booking: true,
+  })
+
+  const toggleOpen = (stageName: string) => {
+    setOpenStages((prev) => ({ ...prev, [stageName]: !prev[stageName] }))
+  }
+
   return (
     <aside className={cn('sr-life-rail', collapsed && 'is-collapsed')}>
       <div className="sr-life-rail__head">
-        {!collapsed && (
-          <div>
-            <div className="sr-life-rail__eyebrow">Lifecycle</div>
-            <div className="sr-life-rail__title">Stages</div>
-          </div>
-        )}
+        {!collapsed && <div className="sr-life-rail__eyebrow">Lifecycle</div>}
         <button
           type="button"
           className="sr-life-rail__toggle"
           aria-label={collapsed ? 'Expand lifecycle' : 'Collapse lifecycle'}
           onClick={onToggle}
         >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
 
       {!collapsed && (
-        <>
+        <div className="sr-life-rail__body">
           <button
             type="button"
             className={cn(
@@ -52,55 +59,81 @@ export function LifecycleRail({
             )}
             onClick={onSelectAll}
           >
-            <span>All stages</span>
+            <span>All Stages</span>
             <strong>{LIFECYCLE_DISPLAY.all.toLocaleString()}</strong>
           </button>
 
-          <div className="sr-life-rail__list">
+          <div className="sr-life-rail__sections">
             {LIFECYCLE_DISPLAY.stages.map((block) => {
+              const isOpen = openStages[block.stage] !== false
               const stageActive = stage === block.stage && subStage === 'ALL'
               return (
-                <div key={block.stage} className="sr-life-rail__block">
-                  <button
-                    type="button"
-                    className={cn('sr-life-rail__stage', stageActive && 'is-active')}
-                    onClick={() => {
-                      if (stage === block.stage && subStage === 'ALL') onSelectAll()
-                      else onSelectStage(block.stage)
-                    }}
-                    title={block.stage}
-                  >
-                    <span className="sr-life-rail__num">{block.number}</span>
-                    <span className="sr-life-rail__name">{block.stage}</span>
-                    <span className="sr-life-rail__count">{block.count.toLocaleString()}</span>
-                  </button>
-
-                  <div className="sr-life-rail__subs">
-                    {block.items.map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        className={cn(
-                          'sr-life-rail__sub',
-                          subStage === item.label && 'is-active'
-                        )}
-                        onClick={() =>
-                          onSelectSubStage(
-                            block.stage,
-                            subStage === item.label ? 'ALL' : item.label
-                          )
-                        }
-                      >
-                        <span>{item.label}</span>
-                        <span>{item.count.toLocaleString()}</span>
-                      </button>
-                    ))}
+                <section
+                  key={block.stage}
+                  className={cn('sr-life-section', stageActive && 'is-active')}
+                >
+                  <div className="sr-life-section__head">
+                    <button
+                      type="button"
+                      className={cn(
+                        'sr-life-section__stage',
+                        stageActive && 'is-active'
+                      )}
+                      onClick={() => {
+                        if (stage === block.stage && subStage === 'ALL') onSelectAll()
+                        else onSelectStage(block.stage)
+                      }}
+                    >
+                      <span className="sr-life-section__num">{block.number}</span>
+                      <span className="sr-life-section__name">{block.stage}</span>
+                      <span className="sr-life-section__badge">
+                        {block.count.toLocaleString()}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="sr-life-section__chevron"
+                      aria-label={isOpen ? `Collapse ${block.stage}` : `Expand ${block.stage}`}
+                      aria-expanded={isOpen}
+                      onClick={() => toggleOpen(block.stage)}
+                    >
+                      <ChevronDown
+                        size={14}
+                        className={cn(!isOpen && 'is-rotated')}
+                      />
+                    </button>
                   </div>
-                </div>
+
+                  {isOpen && (
+                    <div className="sr-life-section__body">
+                      {block.items.map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          className={cn(
+                            'sr-life-section__sub',
+                            subStage === item.label && 'is-active'
+                          )}
+                          onClick={() =>
+                            onSelectSubStage(
+                              block.stage,
+                              subStage === item.label ? 'ALL' : item.label
+                            )
+                          }
+                        >
+                          <span>{item.label}</span>
+                          <span className="sr-life-section__sub-count">
+                            {item.count.toLocaleString()}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </section>
               )
             })}
           </div>
-        </>
+        </div>
       )}
 
       {collapsed && (
@@ -111,7 +144,7 @@ export function LifecycleRail({
               'sr-life-rail__mini-btn',
               stage === 'ALL' && subStage === 'ALL' && 'is-active'
             )}
-            title="All stages"
+            title="All Stages"
             onClick={onSelectAll}
           >
             All
