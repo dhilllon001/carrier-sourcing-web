@@ -48,6 +48,10 @@ button {
   grid-template-columns: 72px 1fr;
 }
 
+.sr-app.is-details {
+  grid-template-columns: 1fr;
+}
+
 .sr-sidebar {
   display: flex;
   flex-direction: column;

@@ -45,7 +45,8 @@ export default function App() {
   const inDetails = Boolean(openLoad)
 
   return (
-    <div className={cn('sr-app', collapsed && 'is-collapsed')}>
+    <div className={cn('sr-app', collapsed && 'is-collapsed', inDetails && 'is-details')}>
+      {!inDetails && (
       <aside className={cn('sr-sidebar', collapsed && 'is-collapsed')}>
         <div className="sr-sidebar__brand">
           <div className="sr-sidebar__mark">CS</div>
@@ -75,7 +76,7 @@ export default function App() {
                 key={item.id}
                 type="button"
                 title={item.label}
-                className={cn('sr-sidebar__nav-link', nav === item.id && !inDetails && 'is-active')}
+                className={cn('sr-sidebar__nav-link', nav === item.id && 'is-active')}
                 onClick={() => {
                   setNav(item.id)
                   setOpenLoadId(null)
@@ -102,6 +103,7 @@ export default function App() {
           )}
         </div>
       </aside>
+      )}
 
       <div className="sr-main">
         {inDetails && openLoad ? (

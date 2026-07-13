@@ -96,8 +96,8 @@ function DetailLifecycle({
   if (collapsed) {
     return (
       <button type="button" className="dd-life-float" onClick={onToggle}>
-        <Layers size={14} />
-        <span>Stages</span>
+        <Layers size={13} />
+        <span className="dd-flap__text">Stages</span>
       </button>
     )
   }
@@ -634,7 +634,7 @@ function DetailRail({
   if (collapsed) {
     return (
       <button type="button" className="dd-rail-float" onClick={onToggle}>
-        Rate · Coverage
+        <span className="dd-flap__text">Rate · Coverage</span>
       </button>
     )
   }
@@ -744,12 +744,26 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         <div className="dd-meta__item">
           <span>Billing</span>
           <strong>
-            <span className="dd-pill">{detail.billing}</span>
+            <span
+              className={cn(
+                'dd-pill',
+                detail.billing === 'PENDING' && 'dd-pill--pending',
+                detail.billing === 'READY' && 'dd-pill--ready',
+                detail.billing === 'INVOICED' && 'dd-pill--invoiced'
+              )}
+            >
+              {detail.billing}
+            </span>
           </strong>
         </div>
         <div className="dd-meta__item">
           <span>Currency</span>
-          <strong>{detail.currency}</strong>
+          <strong className="dd-currency">
+            <span className="dd-flag" aria-hidden>
+              {detail.currency === 'CAD' ? '🇨🇦' : '🇺🇸'}
+            </span>
+            {detail.currency}
+          </strong>
         </div>
         <div className="dd-meta__item">
           <span>Execution</span>
@@ -787,20 +801,32 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
 
       <div className="dd-route">
         {detail.stops.map((stop, i) => (
-          <div key={`${stop.facility}-${i}`} className="dd-stop">
-            <div className="dd-stop__kind">
-              {stop.kind}
-              {stop.index ? ` ${stop.index}` : ''}
-            </div>
-            <div className="dd-stop__when">{stop.when}</div>
-            <div className="dd-stop__facility">{stop.facility}</div>
-            <div className="dd-stop__addr">{stop.address}</div>
-            <div className={cn('dd-stop__status', `is-${stop.statusTone}`)}>
-              {stop.status}
-            </div>
+          <div key={`${stop.facility}-${i}`} className="dd-route__pair">
+            <article
+              className={cn(
+                'dd-stop',
+                stop.kind === 'Delivery' ? 'dd-stop--delivery' : 'dd-stop--pickup'
+              )}
+            >
+              <div className="dd-stop__line1">
+                <span className="dd-stop__kind">
+                  {stop.kind}
+                  {stop.index ? ` ${stop.index}` : ''}
+                </span>
+                <span className="dd-stop__when">{stop.when}</span>
+                <span className={cn('dd-stop__status', `is-${stop.statusTone}`)}>
+                  {stop.status}
+                </span>
+              </div>
+              <div className="dd-stop__line2">
+                <span className="dd-stop__facility">{stop.facility}</span>
+                <span className="dd-stop__addr">{stop.address}</span>
+              </div>
+            </article>
             {i < detail.stops.length - 1 && (
-              <div className="dd-stop__bridge" aria-hidden>
-                <span>{load.miles.toLocaleString()} mi</span>
+              <div className="dd-route__bridge" aria-hidden>
+                <span className="dd-route__miles">{load.miles.toLocaleString()} mi</span>
+                <span className="dd-route__line" />
               </div>
             )}
           </div>
