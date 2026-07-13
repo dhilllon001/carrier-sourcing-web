@@ -321,11 +321,21 @@ export function OffersBidsView({
                   </div>
                   <div className="dd-bid-card__tags">
                     {b.best && <span className="dd-tag-best">Best</span>}
-                    <span className="dd-tag-status">{b.status}</span>
+                    <span
+                      className={cn(
+                        'dd-tag-status',
+                        b.status === 'Accepted' && 'is-accepted',
+                        b.status === 'Pending' && 'is-pending',
+                        b.status === 'Sent' && 'is-sent',
+                        b.status === 'Rejected' && 'is-rejected'
+                      )}
+                    >
+                      {b.status}
+                    </span>
                   </div>
                 </div>
 
-                <div className="dd-bid-card__stats">
+                <div className="dd-bid-card__stats" aria-label="Bid metrics">
                   <div>
                     <span>Bid / mi</span>
                     <strong>{b.amount}</strong>
@@ -342,26 +352,32 @@ export function OffersBidsView({
                   </div>
                 </div>
 
-                <div className="dd-bid-card__grid">
-                  <span>
-                    Equip <em>{b.equipment ?? '—'}</em>
-                  </span>
-                  <span>
-                    Source <em>{b.source ?? '—'}</em>
-                  </span>
-                  <span>
-                    DH-P <em>{b.dhP ?? '—'}</em>
-                  </span>
-                  <span>
-                    DH-D <em>{b.dhD ?? '—'}</em>
-                  </span>
-                  <span>
-                    Loads <em>{b.loads ?? '—'}</em>
-                  </span>
-                  <span>
-                    Via <em>{b.channel ?? '—'}</em>
-                  </span>
-                </div>
+                <dl className="dd-bid-card__facts">
+                  <div>
+                    <dt>Equip</dt>
+                    <dd>{b.equipment ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Source</dt>
+                    <dd>{b.source ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>DH-P</dt>
+                    <dd>{b.dhP ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>DH-D</dt>
+                    <dd>{b.dhD ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Loads</dt>
+                    <dd>{b.loads ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Via</dt>
+                    <dd>{b.channel ?? '—'}</dd>
+                  </div>
+                </dl>
 
                 <div className="dd-bid-card__foot">
                   <span>{b.contact ?? 'Dispatch'}</span>
@@ -385,7 +401,15 @@ export function OffersBidsView({
                   </div>
                 </div>
                 <div className="dd-wa__head-right">
-                  <span className="dd-tag-status">{bid.status}</span>
+                  <span
+                    className={cn(
+                      'dd-tag-status',
+                      bid.status === 'Accepted' && 'is-accepted',
+                      bid.status === 'Pending' && 'is-pending'
+                    )}
+                  >
+                    {bid.status}
+                  </span>
                   <span className="dd-wa__channel">{bid.channel ?? 'Chat'}</span>
                 </div>
               </div>
