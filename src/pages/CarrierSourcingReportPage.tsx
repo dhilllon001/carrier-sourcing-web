@@ -259,57 +259,53 @@ export function CarrierSourcingReportPage({
 
   return (
     <div className="sr-page">
-      <div className="sr-express-rail">
+      <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">
         <div className="sr-express-group" role="group" aria-label="Mode">
-          {(
-            [
-              ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot, 'spot'],
-              ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited, 'expedited'],
-              ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed, 'managed'],
-              ['Mexico', 'Mexico', MODE_DISPLAY_COUNTS.Mexico, 'mexico'],
-              ['PowerOnly', 'P/O', MODE_DISPLAY_COUNTS.PowerOnly, 'power'],
-            ] as const
-          ).map(([key, label, count, tone]) => (
-            <button
-              key={key}
-              type="button"
-              className={cn(
-                'sr-express-card',
-                `sr-express-card--${tone}`,
-                filters.mode === key && 'is-active'
-              )}
-              onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
-            >
-              <span className="sr-express-card__name">{label}</span>
-              <span className="sr-express-card__value">{count.toLocaleString()}</span>
-            </button>
-          ))}
+          <span className="sr-express-group__label">Mode</span>
+          <div className="sr-express-segment">
+            {(
+              [
+                ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot],
+                ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited],
+                ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed],
+                ['Mexico', 'Mexico', MODE_DISPLAY_COUNTS.Mexico],
+                ['PowerOnly', 'P/O', MODE_DISPLAY_COUNTS.PowerOnly],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                className={cn('sr-express-chip', filters.mode === key && 'is-active')}
+                onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
+              >
+                <span className="sr-express-chip__name">{label}</span>
+                <span className="sr-express-chip__value">{count.toLocaleString()}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="sr-express-divider" aria-hidden />
-
         <div className="sr-express-group" role="group" aria-label="Status">
-          {(
-            [
-              ['NeedCarrier', 'Need carrier', STATUS_DISPLAY_COUNTS.NeedCarrier, 'need'],
-              ['Posted', 'Posted', STATUS_DISPLAY_COUNTS.Posted, 'posted'],
-              ['Covered', 'Covered', STATUS_DISPLAY_COUNTS.Covered, 'covered'],
-            ] as const
-          ).map(([key, label, count, tone]) => (
-            <button
-              key={key}
-              type="button"
-              className={cn(
-                'sr-express-card',
-                `sr-express-card--${tone}`,
-                filters.status === key && 'is-active'
-              )}
-              onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
-            >
-              <span className="sr-express-card__name">{label}</span>
-              <span className="sr-express-card__value">{count.toLocaleString()}</span>
-            </button>
-          ))}
+          <span className="sr-express-group__label">Status</span>
+          <div className="sr-express-segment">
+            {(
+              [
+                ['NeedCarrier', 'Need carrier', STATUS_DISPLAY_COUNTS.NeedCarrier],
+                ['Posted', 'Posted', STATUS_DISPLAY_COUNTS.Posted],
+                ['Covered', 'Covered', STATUS_DISPLAY_COUNTS.Covered],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                className={cn('sr-express-chip', filters.status === key && 'is-active')}
+                onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
+              >
+                <span className="sr-express-chip__name">{label}</span>
+                <span className="sr-express-chip__value">{count.toLocaleString()}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
