@@ -51,6 +51,22 @@ export type CarrierRow = {
   loads: number
   legs: number
   favorite?: boolean
+  phone?: string
+  email?: string
+  offer?: string
+  configRate?: string
+  updated?: string
+}
+
+export type BidOffer = {
+  id: string
+  carrier: string
+  mc: string
+  dot?: string
+  amount: string
+  vsTarget: string
+  status: 'Drafted' | 'Pending' | 'Countered' | 'Accepted' | 'Rejected' | 'Closed' | 'Sent'
+  best?: boolean
 }
 
 export type DocFile = {
@@ -100,6 +116,7 @@ export type LoadDetail = {
   completedSubs: number
   totalSubs: number
   carriers: CarrierRow[]
+  bids: BidOffer[]
   documents: DocFile[]
   carrierInstructions: string
   internalInstructions: string
@@ -175,9 +192,10 @@ const PEOPLE = [
 const CARRIERS: CarrierRow[] = [
   {
     id: 'c1',
-    name: 'AUTO LINEAS EDGAR DE RL DE CV',
+    name: 'UACL LOGISTICS LLC',
+    mc: '884120',
     dot: '27D8',
-    source: 'PAST',
+    source: 'DAT',
     lastUsed: '27 May, 14:59',
     lastUsedRel: '2m ago',
     dhP: 0,
@@ -186,11 +204,16 @@ const CARRIERS: CarrierRow[] = [
     loads: 279,
     legs: 1,
     favorite: true,
+    phone: '+1 (416) 555-0142',
+    email: 'dispatch@uacl.example',
+    offer: 'Not sent',
+    configRate: '—',
+    updated: '2m ago',
   },
   {
     id: 'c2',
-    name: 'TRANS-MEX FREIGHT LLC',
-    mc: '884221',
+    name: 'KULDIP TRANSPORT INC',
+    mc: '712904',
     source: 'PAST',
     lastUsed: '12 Jun, 09:12',
     lastUsedRel: '4d ago',
@@ -199,11 +222,16 @@ const CARRIERS: CarrierRow[] = [
     lastRate: '$210',
     loads: 64,
     legs: 2,
+    phone: '+1 (905) 555-0198',
+    email: 'ops@kuldip.example',
+    offer: 'Not sent',
+    configRate: '$1.85',
+    updated: '1h ago',
   },
   {
     id: 'c3',
     name: 'MIDWEST POWER HAUL INC',
-    mc: '712904',
+    mc: '551002',
     source: 'DAT',
     lastUsed: '01 Jul, 16:40',
     lastUsedRel: '12d ago',
@@ -212,11 +240,16 @@ const CARRIERS: CarrierRow[] = [
     lastRate: '$980',
     loads: 12,
     legs: 1,
+    phone: '+1 (312) 555-0110',
+    email: 'rates@midwestpower.example',
+    offer: 'Sent',
+    configRate: '$2.10',
+    updated: '3d ago',
   },
   {
     id: 'c4',
     name: 'ONTARIO EXPRESS CARRIERS',
-    mc: '551002',
+    mc: '339811',
     source: 'PAST',
     lastUsed: '08 Jul, 11:05',
     lastUsedRel: '5d ago',
@@ -226,11 +259,16 @@ const CARRIERS: CarrierRow[] = [
     loads: 41,
     legs: 1,
     favorite: true,
+    phone: '+1 (647) 555-0177',
+    email: 'desk@ontarioexpress.example',
+    offer: 'Not sent',
+    configRate: '—',
+    updated: '5d ago',
   },
   {
     id: 'c5',
     name: 'PEAK FLATBED SOLUTIONS',
-    mc: '339811',
+    mc: '229441',
     source: 'NEW',
     lastUsed: '—',
     lastUsedRel: 'Never',
@@ -239,6 +277,31 @@ const CARRIERS: CarrierRow[] = [
     lastRate: '—',
     loads: 0,
     legs: 0,
+    phone: '+1 (214) 555-0133',
+    email: 'new@peakflatbed.example',
+    offer: 'Not sent',
+    configRate: '—',
+    updated: '—',
+  },
+]
+
+export const SAMPLE_BIDS: BidOffer[] = [
+  {
+    id: 'b1',
+    carrier: 'TestCarrier Rohan',
+    mc: 'Test12345664',
+    amount: '$0.93',
+    vsTarget: '-$0.07 vs Target',
+    status: 'Sent',
+    best: true,
+  },
+  {
+    id: 'b2',
+    carrier: 'Midwest Power Haul',
+    mc: '712904',
+    amount: '$1.05',
+    vsTarget: '+$0.05 vs Target',
+    status: 'Pending',
   },
 ]
 
@@ -430,6 +493,7 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
     completedSubs,
     totalSubs,
     carriers: CARRIERS,
+    bids: SAMPLE_BIDS,
     documents: [
       {
         id: 'd1',

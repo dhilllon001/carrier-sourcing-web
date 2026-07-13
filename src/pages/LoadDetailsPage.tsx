@@ -8,16 +8,19 @@ import {
   ExternalLink,
   FileText,
   Layers,
-  Mail,
-  MessageCircle,
   Pencil,
   RefreshCw,
   Search,
-  Star,
   PanelRightClose,
-  PanelRightOpen,
 } from 'lucide-react'
 import { TagPopover } from '@/components/report/TagPopover'
+import {
+  FindPostView,
+  FinalizeTenderView,
+  ManualOfferModal,
+  OffersBidsView,
+  PostMarketplaceModal,
+} from '@/components/details/StageViews'
 import { cn } from '@/lib/cn'
 import {
   buildLoadDetail,
@@ -95,9 +98,9 @@ function DetailLifecycle({
 
   if (collapsed) {
     return (
-      <button type="button" className="dd-life-float" onClick={onToggle}>
+      <button type="button" className="dd-life-bar" onClick={onToggle} aria-label="Expand lifecycle stages">
         <Layers size={13} />
-        <span className="dd-flap__text">Stages</span>
+        <span>Stages</span>
       </button>
     )
   }
@@ -530,97 +533,6 @@ function DocumentsTab({ detail }: { detail: LoadDetail }) {
   )
 }
 
-function FindPostTab({ detail }: { detail: LoadDetail }) {
-  const [q, setQ] = useState('')
-  const rows = detail.carriers.filter(
-    (c) =>
-      !q ||
-      c.name.toLowerCase().includes(q.toLowerCase()) ||
-      (c.mc ?? '').includes(q) ||
-      (c.dot ?? '').toLowerCase().includes(q.toLowerCase())
-  )
-
-  return (
-    <div className="dd-find">
-      <div className="dd-find__bar">
-        <label className="dd-docs__search dd-find__search">
-          <Search size={13} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search carrier, MC #, or contact…"
-          />
-        </label>
-        <div className="dd-find__chips">
-          <span>Mode: {detail.load.mode}</span>
-          <span>Workflow: Simultaneous</span>
-        </div>
-        <div className="dd-find__actions">
-          <button type="button" className="dd-btn">
-            <Mail size={14} />
-            Blast Email
-          </button>
-          <button type="button" className="dd-btn">
-            <MessageCircle size={14} />
-            Blast WhatsApp
-          </button>
-          <button type="button" className="dd-btn dd-btn--primary">
-            Post to Load Board
-          </button>
-        </div>
-      </div>
-
-      <div className="dd-card dd-find__table-wrap">
-        <table className="dd-carrier-table">
-          <thead>
-            <tr>
-              <th>Carrier</th>
-              <th>MC # / DOT #</th>
-              <th>Source</th>
-              <th>Last used</th>
-              <th>DH-P</th>
-              <th>DH-D</th>
-              <th>Last rate</th>
-              <th>Loads</th>
-              <th>Legs</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((c) => (
-              <tr key={c.id}>
-                <td>
-                  <div className="dd-carrier-name">
-                    {c.favorite && <Star size={12} className="is-star" />}
-                    <span>{c.name}</span>
-                  </div>
-                </td>
-                <td className="mono">
-                  {c.mc ? `MC: ${c.mc}` : c.dot ? `DOT: ${c.dot}` : '—'}
-                </td>
-                <td>
-                  <span className={cn('dd-source', `dd-source--${c.source.toLowerCase()}`)}>
-                    {c.source}
-                  </span>
-                </td>
-                <td>
-                  <div className="dd-last-used">
-                    <span>{c.lastUsed}</span>
-                    <span>{c.lastUsedRel}</span>
-                  </div>
-                </td>
-                <td className="mono">{c.dhP}</td>
-                <td className="mono">{c.dhD}</td>
-                <td className="mono">{c.lastRate}</td>
-                <td className="mono">{c.loads}</td>
-                <td className="mono">{c.legs}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
 
 function DetailRail({
   detail,
@@ -633,8 +545,8 @@ function DetailRail({
 }) {
   if (collapsed) {
     return (
-      <button type="button" className="dd-rail-float" onClick={onToggle}>
-        <span className="dd-flap__text">Rate · Coverage</span>
+      <button type="button" className="dd-rail-bar" onClick={onToggle} aria-label="Expand rate coverage">
+        <span>Rate — Coverage</span>
       </button>
     )
   }
@@ -642,7 +554,7 @@ function DetailRail({
   return (
     <aside className="dd-rail">
       <div className="dd-rail__head">
-        <span className="dd-card__title">Context</span>
+        <span className="dd-card__title">Rate · Coverage</span>
         <button type="button" className="dd-icon-btn" aria-label="Collapse right rail" onClick={onToggle}>
           <PanelRightClose size={14} />
         </button>
@@ -668,6 +580,16 @@ function DetailRail({
       </section>
 
       <section className="dd-card dd-rail-card">
+        <div className="dd-card__title">Area coverage</div>
+        <div className="dd-fields">
+          <Field label="Origin" value={detail.load.origin} />
+          <Field label="Destination" value={detail.load.destination} />
+          <Field label="Miles" value={detail.load.miles.toLocaleString()} mono />
+          <Field label="Equipment" value={detail.load.equipment} />
+        </div>
+      </section>
+
+      <section className="dd-card dd-rail-card">
         <div className="dd-card__title">Sub-stage state</div>
         <div className="dd-fields">
           <Field label="Action" value={detail.action} />
@@ -688,6 +610,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
   const [railCollapsed, setRailCollapsed] = useState(false)
   const [tags, setTags] = useState<string[]>(base.tags)
+  const [postOpen, setPostOpen] = useState(false)
+  const [offerOpen, setOfferOpen] = useState(false)
 
   useEffect(() => {
     setDetail(base)
@@ -696,7 +620,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setTags(base.tags)
   }, [base, load])
 
-  const showFindPost = isFindPost(subStage) && stage === 'Sourcing'
+  const stageWorkspace =
+    isFindPost(subStage) ||
+    subStage === 'Offers & Bids' ||
+    subStage === 'Finalize Tender'
 
   return (
     <div className="dd-page">
@@ -849,7 +776,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           onSelect={(s, sub) => {
             setStage(s)
             setSubStage(sub)
-            if (isFindPost(sub)) setTab('summary')
+            setTab('summary')
           }}
         />
 
@@ -871,25 +798,23 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                 {label}
               </button>
             ))}
-            {railCollapsed && (
-              <button
-                type="button"
-                className="dd-tabs__rail"
-                onClick={() => setRailCollapsed(false)}
-              >
-                <PanelRightOpen size={14} />
-                Context
-              </button>
-            )}
           </div>
 
           <div className="dd-main__content">
-            {tab === 'summary' &&
-              (showFindPost ? (
-                <FindPostTab detail={detail} />
-              ) : (
-                <SummaryTab detail={detail} tags={tags} onTags={setTags} />
-              ))}
+            {tab === 'summary' && (
+              <>
+                {isFindPost(subStage) && (
+                  <FindPostView detail={detail} onPostLoad={() => setPostOpen(true)} />
+                )}
+                {subStage === 'Offers & Bids' && (
+                  <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
+                )}
+                {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
+                {!stageWorkspace && (
+                  <SummaryTab detail={detail} tags={tags} onTags={setTags} />
+                )}
+              </>
+            )}
             {tab === 'instructions' && (
               <InstructionsTab
                 detail={detail}
@@ -902,11 +827,26 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         </div>
 
         <DetailRail
-          detail={{ ...detail, action: subStage === 'Find & Post' ? 'Find & post' : detail.action }}
+          detail={{
+            ...detail,
+            action:
+              subStage === 'Find & Post'
+                ? 'Find & post'
+                : subStage === 'Offers & Bids'
+                  ? 'Negotiate offers'
+                  : subStage === 'Finalize Tender'
+                    ? 'Confirm carrier'
+                    : detail.action,
+          }}
           collapsed={railCollapsed}
           onToggle={() => setRailCollapsed((v) => !v)}
         />
       </div>
+
+      {postOpen && (
+        <PostMarketplaceModal detail={detail} onClose={() => setPostOpen(false)} />
+      )}
+      {offerOpen && <ManualOfferModal onClose={() => setOfferOpen(false)} />}
     </div>
   )
 }
