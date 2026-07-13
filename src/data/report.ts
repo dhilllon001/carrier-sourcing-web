@@ -99,6 +99,63 @@ export const LIFECYCLE = [
   },
 ]
 
+/** Mock display volumes (ops-scale) for filter cards / lifecycle rail */
+export const MODE_DISPLAY_COUNTS = {
+  Spot: 8517,
+  Expedited: 1240,
+  Managed: 2131,
+} as const
+
+export const STATUS_DISPLAY_COUNTS = {
+  NeedCarrier: 6477,
+  Posted: 1061,
+  Covered: 2134,
+} as const
+
+export const LIFECYCLE_DISPLAY = {
+  all: 8672,
+  stages: [
+    {
+      stage: 'Sourcing' as const,
+      number: '01',
+      count: 3564,
+      items: [
+        { label: 'Overview', count: 2102 },
+        { label: 'Find & Post', count: 1462 },
+      ],
+    },
+    {
+      stage: 'Tender' as const,
+      number: '02',
+      count: 1063,
+      items: [
+        { label: 'Offers & Bids', count: 641 },
+        { label: 'Finalize Tender', count: 422 },
+      ],
+    },
+    {
+      stage: 'Award' as const,
+      number: '03',
+      count: 820,
+      items: [
+        { label: 'CMT', count: 512 },
+        { label: 'Finalize Carrier Award', count: 308 },
+      ],
+    },
+    {
+      stage: 'Booking' as const,
+      number: '04',
+      count: 5025,
+      items: [
+        { label: 'Create Contract', count: 890 },
+        { label: 'Send Confirmation', count: 1204 },
+        { label: 'Signed Confirmation', count: 1580 },
+        { label: 'Resources', count: 1351 },
+      ],
+    },
+  ],
+}
+
 export const reportLoads: ReportLoad[] = [
   {
     id: '11436778',
