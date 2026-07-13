@@ -3,15 +3,23 @@ import {
   AlertTriangle,
   ArrowRight,
   Check,
+  Download,
   ExternalLink,
   FileText,
+  Plus,
   RefreshCw,
+  Send,
   ShieldCheck,
   Truck,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { LoadDetail } from '@/data/loadDetail'
 import { StageActionBar } from '@/components/details/StageActionBar'
+import {
+  CARRIER_CONFIRMATION_ID,
+  CARRIER_CONFIRMATION_PDF,
+  CarrierConfirmationPdf,
+} from '@/components/details/CarrierConfirmationPdf'
 
 function awardedBid(detail: LoadDetail) {
   return (
@@ -692,9 +700,9 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
       )}
 
       {step === 3 && (
-        <div className="dd-stgrid">
+        <div className="dd-confirm-layout">
           <section className="dd-stpanel dd-stpanel--hero">
-            <div className="dd-stpanel__title">Carrier confirmation</div>
+            <div className="dd-stpanel__title">Carrier information</div>
             <div className="dd-award-hero">
               <div>
                 <strong>{awarded?.carrier ?? 'No carrier'}</strong>
@@ -705,6 +713,32 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
               <div className="dd-award-hero__rate">
                 <span>Confirm at</span>
                 <strong>{awarded?.allIn ?? awarded?.amount ?? '—'}</strong>
+              </div>
+            </div>
+            <div className="dd-ov-facts" style={{ marginTop: 10 }}>
+              <div>
+                <span>Document</span>
+                <strong className="mono">Carrier_Confirmation_{CARRIER_CONFIRMATION_ID}.pdf</strong>
+              </div>
+              <div>
+                <span>Contract #</span>
+                <strong className="mono">{CARRIER_CONFIRMATION_ID}</strong>
+              </div>
+              <div>
+                <span>Contact</span>
+                <strong>{awarded?.contact ?? '—'}</strong>
+              </div>
+              <div>
+                <span>Email</span>
+                <strong>{awarded?.email ?? '—'}</strong>
+              </div>
+              <div>
+                <span>Phone</span>
+                <strong>{awarded?.phone ?? '—'}</strong>
+              </div>
+              <div>
+                <span>MC #</span>
+                <strong className="mono">{awarded?.mc ?? '—'}</strong>
               </div>
             </div>
             <div className="dd-checklist" style={{ marginTop: 12 }}>
@@ -721,6 +755,7 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
               ))}
             </div>
           </section>
+          <CarrierConfirmationPdf />
         </div>
       )}
     </div>
@@ -736,97 +771,166 @@ export function BookingStageView({
   kind: 'Send Confirmation' | 'Signed Confirmation' | 'Resources'
 }) {
   const awarded = awardedBid(detail)
-  const copy =
-    kind === 'Send Confirmation'
-      ? {
-          title: 'Send Confirmation',
-          action: 'Send to carrier',
-        }
-      : kind === 'Signed Confirmation'
-        ? {
-            title: 'Signed Confirmation',
-            action: 'Mark signed',
+  const [note, setNote] = useState('')
+  const [ccName, setCcName] = useState('Sukhdeep')
+  const contactLabel = awarded
+    ? `${awarded.contact ?? awarded.carrier}${awarded.email ? ` [${awarded.email}]` : ''}`
+    : 'Select carrier contact…'
+
+  if (kind === 'Resources') {
+    return (
+      <div className="dd-stage dd-stage--apple">
+        <StageActionBar
+          label="Resources"
+          actions={
+            <>
+              <button type="button" className="dd-pill-btn" aria-label="Refresh">
+                <RefreshCw size={14} />
+              </button>
+              <button type="button" className="dd-pill-btn">
+                <FileText size={14} />
+                Preview
+              </button>
+              <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
+                <Check size={14} />
+                Assign resources
+              </button>
+            </>
           }
-        : {
-            title: 'Resources',
-            action: 'Assign resources',
-          }
+        />
+
+        <MetricStrip
+          items={[
+            { label: 'Carrier', value: awarded?.carrier ?? '—' },
+            { label: 'All-in', value: awarded?.allIn ?? awarded?.amount ?? '—', tone: 'book' },
+            { label: 'Customer', value: detail.load.customer },
+            { label: 'Miles', value: `${detail.load.miles.toLocaleString()} mi` },
+          ]}
+        />
+
+        <div className="dd-stgrid dd-stgrid--2">
+          <Facts
+            title="Shipment"
+            rows={[
+              { label: 'Probill', value: detail.load.id, mono: true },
+              { label: 'Customer', value: detail.load.customer, link: true },
+              { label: 'Carrier', value: awarded?.carrier ?? '—' },
+              { label: 'Rate', value: awarded?.allIn ?? awarded?.amount ?? '—', mono: true },
+              { label: 'Origin', value: detail.load.origin },
+              { label: 'Destination', value: detail.load.destination },
+              { label: 'Equipment', value: detail.load.equipment },
+              { label: 'Team', value: detail.load.team },
+            ]}
+          />
+          <Facts
+            title="Resource board"
+            rows={[
+              { label: 'Driver', value: 'Unassigned' },
+              { label: 'Tractor', value: 'Unassigned' },
+              { label: 'Trailer', value: detail.load.equipment },
+              { label: 'Tracking', value: 'FourKites · pending' },
+              { label: 'Dispatcher', value: detail.csr },
+              { label: 'Ready to execute', value: 'No' },
+            ]}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const isSigned = kind === 'Signed Confirmation'
 
   return (
     <div className="dd-stage dd-stage--apple">
       <StageActionBar
-        label={copy.title}
+        label={isSigned ? 'Signed Confirmation' : 'Send Confirmation'}
+        leading={
+          <span className="dd-chip-soft">Contract {CARRIER_CONFIRMATION_ID} · DocuSign</span>
+        }
         actions={
           <>
-            <button type="button" className="dd-pill-btn" aria-label="Refresh">
-              <RefreshCw size={14} />
-            </button>
-            <button type="button" className="dd-pill-btn">
-              <FileText size={14} />
-              Preview
-            </button>
+            <a className="dd-pill-btn" href={CARRIER_CONFIRMATION_PDF} download>
+              <Download size={14} />
+              Download
+            </a>
             <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
-              <Check size={14} />
-              {copy.action}
+              {isSigned ? (
+                <>
+                  <Check size={14} />
+                  Mark signed
+                </>
+              ) : (
+                <>
+                  <Send size={14} />
+                  Send
+                </>
+              )}
             </button>
           </>
         }
       />
 
-      <MetricStrip
-        items={[
-          { label: 'Carrier', value: awarded?.carrier ?? '—' },
-          { label: 'All-in', value: awarded?.allIn ?? awarded?.amount ?? '—', tone: 'book' },
-          { label: 'Customer', value: detail.load.customer },
-          {
-            label: 'Miles',
-            value: `${detail.load.miles.toLocaleString()} mi`,
-          },
-        ]}
-      />
+      <div className="dd-confirm-layout">
+        <section className="dd-stpanel dd-send-form">
+          <div className="dd-stpanel__title">
+            {isSigned ? 'Carrier acknowledgement' : 'Send carrier confirmation'}
+          </div>
+          <p className="dd-stpanel__q">
+            Contract {CARRIER_CONFIRMATION_ID} — select contacts and{' '}
+            {isSigned ? 'track the signed packet.' : 'send via DocuSign.'}
+          </p>
 
-      <div className="dd-stgrid dd-stgrid--2">
-        <Facts
-          title="Shipment"
-          rows={[
-            { label: 'Probill', value: detail.load.id, mono: true },
-            { label: 'Customer', value: detail.load.customer, link: true },
-            { label: 'Carrier', value: awarded?.carrier ?? '—' },
-            { label: 'Rate', value: awarded?.allIn ?? awarded?.amount ?? '—', mono: true },
-            { label: 'Origin', value: detail.load.origin },
-            { label: 'Destination', value: detail.load.destination },
-            { label: 'Equipment', value: detail.load.equipment },
-            { label: 'Team', value: detail.load.team },
-          ]}
-        />
-        <Facts
-          title={kind === 'Resources' ? 'Resource board' : 'Confirmation status'}
-          rows={
-            kind === 'Resources'
-              ? [
-                  { label: 'Driver', value: 'Unassigned' },
-                  { label: 'Tractor', value: 'Unassigned' },
-                  { label: 'Trailer', value: detail.load.equipment },
-                  { label: 'Tracking', value: 'FourKites · pending' },
-                  { label: 'Dispatcher', value: detail.csr },
-                  { label: 'Ready to execute', value: 'No' },
-                ]
-              : [
-                  { label: 'Packet', value: 'Rate confirmation.pdf' },
-                  { label: 'Sent via', value: awarded?.channel ?? 'Email' },
-                  { label: 'Sent to', value: awarded?.email ?? awarded?.phone ?? '—' },
-                  {
-                    label: 'Ack status',
-                    value: kind === 'Signed Confirmation' ? 'Signed' : 'Pending',
-                  },
-                  {
-                    label: 'Signed by',
-                    value: kind === 'Signed Confirmation' ? awarded?.contact ?? '—' : '—',
-                  },
-                  { label: 'SLA', value: 'Within 4 hours' },
-                ]
-          }
-        />
+          <label className="dd-field">
+            <span>
+              Carrier contact <i>*</i>
+            </span>
+            <div className="dd-contact-chip">{contactLabel}</div>
+            <em>Primary carrier recipient for this confirmation</em>
+          </label>
+
+          <label className="dd-field">
+            <span>Email CC</span>
+            <div className="dd-cc-row">
+              <input value={ccName} onChange={(e) => setCcName(e.target.value)} />
+              <span className="dd-cc-domain">@chargerlogistics.com</span>
+              <button type="button" className="dd-cc-add" aria-label="Add CC">
+                <Plus size={14} />
+              </button>
+            </div>
+            <em>Internal recipients copied on the confirmation</em>
+          </label>
+
+          <label className="dd-field">
+            <span>Note</span>
+            <textarea
+              rows={5}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note (optional)."
+            />
+          </label>
+
+          <div className="dd-ov-facts" style={{ marginTop: 4 }}>
+            <div>
+              <span>Document</span>
+              <strong className="mono">Carrier_Confirmation_{CARRIER_CONFIRMATION_ID}.pdf</strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>{isSigned ? 'Signed · on file' : 'Ready to send'}</strong>
+            </div>
+            <div>
+              <span>Carrier</span>
+              <strong>{awarded?.carrier ?? '—'}</strong>
+            </div>
+            <div>
+              <span>All-in</span>
+              <strong>{awarded?.allIn ?? awarded?.amount ?? '—'}</strong>
+            </div>
+          </div>
+        </section>
+
+        <CarrierConfirmationPdf title={`Carrier Confirmation · ${CARRIER_CONFIRMATION_ID}`} />
       </div>
     </div>
   )
