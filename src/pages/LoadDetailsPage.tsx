@@ -673,10 +673,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           <strong>
             <span
               className={cn(
-                'dd-pill',
-                detail.billing === 'PENDING' && 'dd-pill--pending',
-                detail.billing === 'READY' && 'dd-pill--ready',
-                detail.billing === 'INVOICED' && 'dd-pill--invoiced'
+                'dd-billing',
+                detail.billing === 'PENDING' && 'dd-billing--pending',
+                detail.billing === 'READY' && 'dd-billing--ready',
+                detail.billing === 'INVOICED' && 'dd-billing--invoiced'
               )}
             >
               {detail.billing}
@@ -747,13 +747,15 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               </div>
               <div className="dd-stop__line2">
                 <span className="dd-stop__facility">{stop.facility}</span>
+                <span className="dd-stop__sep" aria-hidden>
+                  ·
+                </span>
                 <span className="dd-stop__addr">{stop.address}</span>
               </div>
             </article>
             {i < detail.stops.length - 1 && (
               <div className="dd-route__bridge" aria-hidden>
                 <span className="dd-route__miles">{load.miles.toLocaleString()} mi</span>
-                <span className="dd-route__line" />
               </div>
             )}
           </div>

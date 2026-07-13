@@ -70,7 +70,7 @@ export function FindPostView({
           />
         </label>
 
-        <span className="dd-pill">Workflow · Simultaneous</span>
+        <span className="dd-chip-soft">Workflow · Simultaneous</span>
 
         <div className="dd-find__actions">
           <button type="button" className="dd-pill-btn" aria-label="Refresh">
@@ -262,7 +262,7 @@ export function OffersBidsView({
   return (
     <div className="dd-stage dd-offers">
       <div className="dd-stage__toolbar">
-        <span className="dd-pill">Workflow · Simultaneous</span>
+        <span className="dd-chip-soft">Workflow · Simultaneous</span>
         <div className="dd-stage__toolbar-spacer" />
         <button type="button" className="dd-pill-btn">
           <RefreshCw size={14} />

@@ -157,35 +157,40 @@
   border-color: var(--sr-mode-mexico-border);
 }
 
-/* ── Meta strip ── */
+/* ── Meta strip (compact) ── */
 .dd-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 20px;
-  padding: 12px 16px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 16px;
   background: #ffffff;
   border-bottom: 1px solid var(--sr-border-1);
   flex-shrink: 0;
+  overflow-x: auto;
 }
 
 .dd-meta__item {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .dd-meta__item > span {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 650;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--sr-text-meta);
+  white-space: nowrap;
 }
 
 .dd-meta__item strong {
   font-size: 12px;
-  font-weight: 550;
+  font-weight: 600;
   color: var(--sr-text-primary);
   white-space: nowrap;
 }
@@ -193,53 +198,60 @@
 .dd-currency {
   display: inline-flex !important;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .dd-flag {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
 }
 
-.dd-pill {
+/* Billing status — keep compact; never share oversized toolbar .dd-pill */
+.dd-billing {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 4px;
   background: #eef1f5;
   color: var(--sr-text-secondary);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1;
 }
 
-.dd-pill--pending {
-  background: #fff4e5;
-  color: #b45309;
-  border: 1px solid #f5d39a;
+.dd-billing--pending {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
 }
 
-.dd-pill--ready {
-  background: #e8f6ee;
-  color: #1f7a43;
-  border: 1px solid #b7e0c6;
+.dd-billing--ready {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
+.dd-billing--invoiced {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.dd-pill--pending,
+.dd-pill--ready,
 .dd-pill--invoiced {
-  background: #eef4fb;
-  color: var(--sr-action);
-  border: 1px solid #c5d8f0;
+  /* legacy aliases if any remain */
 }
 
-/* ── Route strip ── */
+/* ── Route strip (compact, no connector lines) ── */
 .dd-route {
   display: flex;
   align-items: stretch;
   gap: 0;
-  padding: 12px 16px;
-  background:
-    linear-gradient(180deg, #f4f6f9 0%, #e9eef4 100%);
+  padding: 8px 16px;
+  background: #f7f8fa;
   border-bottom: 1px solid var(--sr-border-1);
   overflow-x: auto;
   flex-shrink: 0;
@@ -255,24 +267,18 @@
 .dd-stop {
   position: relative;
   flex: 1;
-  min-width: 240px;
-  padding: 12px 14px;
-  border: 1px solid rgba(15, 26, 42, 0.08);
-  border-radius: 12px;
-  box-shadow:
-    0 1px 2px rgba(15, 26, 42, 0.04),
-    0 8px 20px rgba(15, 26, 42, 0.04);
+  min-width: 200px;
+  padding: 8px 12px 8px 14px;
+  border: 1px solid #e6e9ee;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
   overflow: hidden;
 }
 
-.dd-stop--pickup {
-  background:
-    linear-gradient(135deg, #ffffff 0%, #f7fafc 55%, #eef5fb 100%);
-}
-
+.dd-stop--pickup,
 .dd-stop--delivery {
-  background:
-    linear-gradient(135deg, #ffffff 0%, #f8faf8 55%, #eef6f1 100%);
+  background: #fff;
 }
 
 .dd-stop::before {
@@ -285,52 +291,60 @@
 }
 
 .dd-stop--pickup::before {
-  background: linear-gradient(180deg, #5795e3, #1e5faa);
+  background: #1e5faa;
 }
 
 .dd-stop--delivery::before {
-  background: linear-gradient(180deg, #3d9b68, #1f7a43);
+  background: #1f7a43;
 }
 
 .dd-stop__line1 {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .dd-stop__line2 {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 6px;
   min-width: 0;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .dd-stop__kind {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--sr-text-meta);
   flex-shrink: 0;
 }
 
 .dd-stop__when {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 650;
   color: var(--sr-text-primary);
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .dd-stop__facility {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 650;
   color: var(--sr-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 46%;
+}
+
+.dd-stop__sep {
+  color: #c5ccd6;
+  flex-shrink: 0;
 }
 
 .dd-stop__addr {
@@ -362,34 +376,33 @@
 }
 
 .dd-route__bridge {
-  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 72px;
+  width: auto;
+  min-width: 56px;
   flex-shrink: 0;
-  padding: 0 6px;
+  padding: 0 8px;
 }
 
 .dd-route__miles {
-  font-size: 10.5px;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--sr-text-secondary);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--sr-border-1);
+  color: #0f1a2a;
+  background: #fff;
+  border: 1px solid #dfe3e8;
   border-radius: 999px;
-  padding: 2px 8px;
-  z-index: 1;
-  margin-bottom: -1px;
-  box-shadow: 0 2px 6px rgba(15, 26, 42, 0.06);
+  white-space: nowrap;
+  box-shadow: none;
+  margin: 0;
 }
 
 .dd-route__line {
-  width: 100%;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #c5d8f0, #b7e0c6);
+  display: none;
 }
 
 /* ── Body layout ── */
@@ -2516,11 +2529,11 @@
 
 
 /* ── Clean Find tooling + flat table + WhatsApp offers ── */
-.dd-pill {
+.dd-chip-soft {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
   background: #fff;
   border: 1px solid var(--sr-border-1);
@@ -3247,4 +3260,55 @@
   font-weight: 700;
   display: inline-flex;
   align-items: center;
+}
+
+
+/* Detail header responsive */
+@media (max-width: 1100px) {
+  .dd-meta {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .dd-route {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dd-route__pair {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dd-route__bridge {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  .dd-stop {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .dd-top__row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dd-meta__item {
+    gap: 4px;
+  }
+
+  .dd-stop__line1,
+  .dd-stop__line2 {
+    flex-wrap: wrap;
+  }
+
+  .dd-stop__facility {
+    max-width: 100%;
+  }
 }
