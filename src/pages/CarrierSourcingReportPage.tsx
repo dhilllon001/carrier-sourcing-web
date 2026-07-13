@@ -203,8 +203,8 @@ export function CarrierSourcingReportPage({
         key: 'route',
         header: 'Route',
         thClassName: 'col-route',
-        width: 420,
-        minWidth: 300,
+        width: 280,
+        minWidth: 220,
         cell: (row) => (
           <div className="sr-route-cell">
             <div className="sr-route-line">
@@ -212,10 +212,7 @@ export function CarrierSourcingReportPage({
                 <span className="sr-route-city">{row.origin}</span>
                 <span className="sr-route-time">{row.pickupDate}</span>
               </div>
-              <div className="sr-route-mid">
-                <span className="sr-route-miles">{row.miles.toLocaleString()} mi</span>
-                <span className="sr-route-dots" aria-hidden />
-              </div>
+              <span className="sr-route-miles">{row.miles.toLocaleString()} mi</span>
               <div className="sr-route-end sr-route-end--right">
                 <span className="sr-route-city">{row.destination}</span>
                 <span className="sr-route-time">{row.deliveryDate}</span>
