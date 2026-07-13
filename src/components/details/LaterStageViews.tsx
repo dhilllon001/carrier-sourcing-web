@@ -1,41 +1,23 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import {
   AlertTriangle,
   ArrowRight,
   Check,
   ExternalLink,
   FileText,
+  RefreshCw,
   ShieldCheck,
   Truck,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { LoadDetail } from '@/data/loadDetail'
+import { StageActionBar } from '@/components/details/StageActionBar'
 
 function awardedBid(detail: LoadDetail) {
   return (
     detail.bids.find((b) => b.status === 'Accepted') ??
     detail.bids.find((b) => b.best) ??
     detail.bids[0]
-  )
-}
-
-function StageHead({
-  title,
-  hint,
-  actions,
-}: {
-  title: string
-  hint: string
-  actions?: ReactNode
-}) {
-  return (
-    <div className="dd-sthead">
-      <div>
-        <h2>{title}</h2>
-        <p>{hint}</p>
-      </div>
-      {actions ? <div className="dd-sthead__actions">{actions}</div> : null}
-    </div>
   )
 }
 
@@ -86,26 +68,38 @@ export function FinalizeTenderView({ detail }: { detail: LoadDetail }) {
   const checks = [
     { label: 'Insurance on file', ok: true, note: 'COI valid through Dec 2026' },
     { label: 'Authority active', ok: true, note: 'FMCSA common carrier' },
-    { label: 'Rate within max buy', ok: !!awarded && awarded.vsTarget.startsWith('-'), note: `${awarded?.amount ?? '—'} vs ${detail.maxBuy}` },
+    {
+      label: 'Rate within max buy',
+      ok: !!awarded && awarded.vsTarget.startsWith('-'),
+      note: `${awarded?.amount ?? '—'} vs ${detail.maxBuy}`,
+    },
     { label: 'Contact verified', ok: !!awarded?.phone, note: awarded?.phone ?? 'Missing phone' },
     { label: 'Equipment match', ok: true, note: awarded?.equipment ?? detail.load.equipment },
   ]
 
   return (
     <div className="dd-stage dd-stage--apple">
-      <StageHead
-        title="Finalize Tender"
-        hint="Confirm the awarded carrier, review rates, and clear compliance checks."
+      <StageActionBar
+        label="Finalize Tender"
         actions={
-          <button
-            type="button"
-            className="dd-pill-btn dd-pill-btn--emphasis"
-            disabled={!awarded}
-            onClick={() => setConfirmed(true)}
-          >
-            <Check size={14} />
-            {confirmed ? 'Carrier Confirmed' : 'Confirm Carrier'}
-          </button>
+          <>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <FileText size={14} />
+              Export packet
+            </button>
+            <button
+              type="button"
+              className="dd-pill-btn dd-pill-btn--emphasis"
+              disabled={!awarded}
+              onClick={() => setConfirmed(true)}
+            >
+              <Check size={14} />
+              {confirmed ? 'Carrier Confirmed' : 'Confirm Carrier'}
+            </button>
+          </>
         }
       />
 
@@ -224,7 +218,12 @@ export function CmtValidateView({ detail }: { detail: LoadDetail }) {
         detail: `${awarded?.amount ?? '—'} ≤ ${detail.rejectAbove}`,
         ok: true,
       },
-      { id: 'docs', label: 'W9 / COI packet', detail: awarded ? 'On file · 3 docs' : 'Missing', ok: !!awarded },
+      {
+        id: 'docs',
+        label: 'W9 / COI packet',
+        detail: awarded ? 'On file · 3 docs' : 'Missing',
+        ok: !!awarded,
+      },
       { id: 'safety', label: 'Safety score', detail: 'Satisfactory · no out-of-service', ok: true },
       { id: 'watch', label: 'Watchlist screen', detail: 'Clear · no hits', ok: true },
     ],
@@ -241,11 +240,13 @@ export function CmtValidateView({ detail }: { detail: LoadDetail }) {
         </div>
       )}
 
-      <StageHead
-        title="CMT Validate"
-        hint={`Compliance validation · ${ran ? `${passed}/${checks.length} checks passed` : 'Ready to run'}`}
+      <StageActionBar
+        label="CMT Validate"
         actions={
           <>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
             <button type="button" className="dd-pill-btn">
               <ExternalLink size={14} />
               Open FMCSA
@@ -378,14 +379,22 @@ export function FinalizeAwardView({ detail }: { detail: LoadDetail }) {
 
   return (
     <div className="dd-stage dd-stage--apple">
-      <StageHead
-        title="Awaiting carrier acknowledgement"
-        hint="Carrier award confirmation · readiness before booking"
+      <StageActionBar
+        label="Finalize Carrier Award"
         actions={
-          <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
-            Move to Booking
-            <ArrowRight size={14} />
-          </button>
+          <>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <FileText size={14} />
+              View timeline
+            </button>
+            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
+              Move to Booking
+              <ArrowRight size={14} />
+            </button>
+          </>
         }
       />
 
@@ -501,22 +510,31 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
 
   return (
     <div className="dd-stage dd-stage--apple">
-      <div className="dd-stcrumb">
-        Stage · Pre-execution · Create Contract · {steps[step]}
-      </div>
-
-      <StageHead
-        title={`Step ${step + 1} of ${steps.length} — ${steps[step]}`}
-        hint={`Contract creation wizard · ${step} of ${steps.length} steps complete`}
+      <StageActionBar
+        label="Create Contract"
+        leading={<span className="dd-chip-soft">{`Step ${step + 1} · ${steps[step]}`}</span>}
         actions={
-          <button
-            type="button"
-            className="dd-pill-btn dd-pill-btn--emphasis"
-            onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
-          >
-            {step < steps.length - 1 ? `Next: ${steps[step + 1]}` : 'Finish contract'}
-            <ArrowRight size={14} />
-          </button>
+          <>
+            <button
+              type="button"
+              className="dd-pill-btn"
+              disabled={step === 0}
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+            >
+              Back
+            </button>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
+            <button
+              type="button"
+              className="dd-pill-btn dd-pill-btn--emphasis"
+              onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
+            >
+              {step < steps.length - 1 ? `Next: ${steps[step + 1]}` : 'Finish contract'}
+              <ArrowRight size={14} />
+            </button>
+          </>
         }
       />
 
@@ -538,7 +556,9 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
         <div className="dd-ststack">
           <section className="dd-stpanel">
             <div className="dd-stpanel__title-row">
-              <span className="dd-stpanel__title">Contract type — choose first to filter legs & carriers</span>
+              <span className="dd-stpanel__title">
+                Contract type — choose first to filter legs & carriers
+              </span>
               <em className="dd-chip-soft">{contractType}</em>
             </div>
             <p className="dd-stpanel__q">How will this carrier operate on this load?</p>
@@ -656,7 +676,10 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
             rows={[
               { label: 'Trailer type', value: detail.load.equipment },
               { label: 'Contract type', value: contractType },
-              { label: 'Tractor', value: contractType === 'Trailer Move' ? 'Internal' : 'Carrier supplied' },
+              {
+                label: 'Tractor',
+                value: contractType === 'Trailer Move' ? 'Internal' : 'Carrier supplied',
+              },
               {
                 label: 'Reefer setpoint',
                 value: detail.load.equipment.toUpperCase().includes('REEFER') ? '34°F' : 'N/A',
@@ -717,31 +740,36 @@ export function BookingStageView({
     kind === 'Send Confirmation'
       ? {
           title: 'Send Confirmation',
-          hint: 'Email the rate confirmation to the awarded carrier and track acknowledgement.',
           action: 'Send to carrier',
         }
       : kind === 'Signed Confirmation'
         ? {
             title: 'Signed Confirmation',
-            hint: 'Track signed RC return and store the executed packet.',
             action: 'Mark signed',
           }
         : {
             title: 'Resources',
-            hint: 'Assign drivers, equipment, and tracking resources before execute.',
             action: 'Assign resources',
           }
 
   return (
     <div className="dd-stage dd-stage--apple">
-      <StageHead
-        title={copy.title}
-        hint={copy.hint}
+      <StageActionBar
+        label={copy.title}
         actions={
-          <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
-            <Check size={14} />
-            {copy.action}
-          </button>
+          <>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <FileText size={14} />
+              Preview
+            </button>
+            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
+              <Check size={14} />
+              {copy.action}
+            </button>
+          </>
         }
       />
 
@@ -782,21 +810,20 @@ export function BookingStageView({
                   { label: 'Tracking', value: 'FourKites · pending' },
                   { label: 'Dispatcher', value: detail.csr },
                   { label: 'Ready to execute', value: 'No' },
-                  { label: 'Check calls', value: 'Every 4h' },
-                  { label: 'Detention rule', value: '2h free' },
                 ]
               : [
-                  { label: 'Channel', value: 'Email + Portal' },
+                  { label: 'Packet', value: 'Rate confirmation.pdf' },
+                  { label: 'Sent via', value: awarded?.channel ?? 'Email' },
+                  { label: 'Sent to', value: awarded?.email ?? awarded?.phone ?? '—' },
                   {
-                    label: 'Sent at',
-                    value: kind === 'Send Confirmation' ? 'Not sent' : 'Jul 13 · 09:12',
+                    label: 'Ack status',
+                    value: kind === 'Signed Confirmation' ? 'Signed' : 'Pending',
                   },
-                  { label: 'Opened', value: kind === 'Signed Confirmation' ? 'Yes · 09:40' : '—' },
-                  { label: 'Signed', value: kind === 'Signed Confirmation' ? 'Pending' : '—' },
-                  { label: 'Contact', value: awarded?.email ?? '—' },
-                  { label: 'Follow-up', value: 'Auto reminder · 4h' },
-                  { label: 'Template', value: 'RC — Spot standard' },
-                  { label: 'CC desk', value: detail.salesRep },
+                  {
+                    label: 'Signed by',
+                    value: kind === 'Signed Confirmation' ? awarded?.contact ?? '—' : '—',
+                  },
+                  { label: 'SLA', value: 'Within 4 hours' },
                 ]
           }
         />

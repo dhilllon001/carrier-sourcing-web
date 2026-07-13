@@ -5998,3 +5998,14 @@
   background: var(--sr-action-hover) !important;
 }
 
+
+/* Shared stage action bar (Find & Post pattern) */
+.dd-stage-bar {
+  flex-shrink: 0;
+}
+
+.dd-stage--apple > .dd-stage-bar,
+.dd-offers > .dd-stage-bar,
+.dd-find > .dd-stage-bar {
+  margin: 0;
+}

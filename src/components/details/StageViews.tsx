@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { LoadDetail } from '@/data/loadDetail'
+import { StageActionBar } from '@/components/details/StageActionBar'
 
 /* ── Find & Post ── */
 export function FindPostView({
@@ -59,46 +60,47 @@ export function FindPostView({
 
   return (
     <div className="dd-stage dd-find">
-      <div className="dd-find__bar">
-        <label className="dd-search dd-search--toolbar">
-          <Search size={14} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search carrier, MC #, or contact…"
-          />
-        </label>
-
-        <span className="dd-chip-soft">Workflow · Simultaneous</span>
-
-        <div className="dd-find__actions">
-          <button type="button" className="dd-pill-btn" aria-label="Refresh">
-            <RefreshCw size={14} />
-          </button>
-          <button
-            type="button"
-            className="dd-pill-btn"
-            disabled={selected.size === 0}
-            onClick={blast}
-          >
-            <Mail size={14} />
-            Last Email
-          </button>
-          <button
-            type="button"
-            className="dd-pill-btn"
-            disabled={selected.size === 0}
-            onClick={blast}
-          >
-            <MessageCircle size={14} />
-            Last WhatsApp
-          </button>
-          <button type="button" className="dd-pill-btn dd-pill-btn--emphasis" onClick={onPostLoad}>
-            <Share2 size={14} />
-            Post to Load
-          </button>
-        </div>
-      </div>
+      <StageActionBar
+        leading={
+          <label className="dd-search dd-search--toolbar">
+            <Search size={14} />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search carrier, MC #, or contact…"
+            />
+          </label>
+        }
+        actions={
+          <>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
+            <button
+              type="button"
+              className="dd-pill-btn"
+              disabled={selected.size === 0}
+              onClick={blast}
+            >
+              <Mail size={14} />
+              Last Email
+            </button>
+            <button
+              type="button"
+              className="dd-pill-btn"
+              disabled={selected.size === 0}
+              onClick={blast}
+            >
+              <MessageCircle size={14} />
+              Last WhatsApp
+            </button>
+            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis" onClick={onPostLoad}>
+              <Share2 size={14} />
+              Post to Load
+            </button>
+          </>
+        }
+      />
 
       <div className="dd-find__table-wrap">
         <table className="dd-carrier-table">
@@ -261,22 +263,28 @@ export function OffersBidsView({
 
   return (
     <div className="dd-stage dd-offers">
-      <div className="dd-stage__toolbar">
-        <span className="dd-chip-soft">Workflow · Simultaneous</span>
-        <div className="dd-stage__toolbar-spacer" />
-        <button type="button" className="dd-pill-btn">
-          <RefreshCw size={14} />
-          Re-send Offers
-        </button>
-        <button type="button" className="dd-pill-btn">
-          <Check size={14} />
-          Mark reviewed
-        </button>
-        <button type="button" className="dd-pill-btn dd-pill-btn--emphasis" onClick={onAddOffer}>
-          <Plus size={14} />
-          Add Offer
-        </button>
-      </div>
+      <StageActionBar
+        label="Offers · Bids"
+        actions={
+          <>
+            <button type="button" className="dd-pill-btn" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <Mail size={14} />
+              Re-send Offers
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <Check size={14} />
+              Mark reviewed
+            </button>
+            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis" onClick={onAddOffer}>
+              <Plus size={14} />
+              Add Offer
+            </button>
+          </>
+        }
+      />
 
       <div className="dd-offers__grid">
         <aside className="dd-bids-panel">
