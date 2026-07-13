@@ -1016,14 +1016,14 @@ button {
   display: contents;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .sr-page--split,
   .sr-page--split.is-life-collapsed {
     grid-template-columns: 1fr;
   }
 
   .sr-life-rail {
-    max-height: 220px;
+    max-height: 280px;
   }
 
   .sr-express-divider {
