@@ -25,11 +25,7 @@ function ModeChip({ mode }: { mode: string }) {
   )
 }
 
-function WorkflowChip() {
-  return <span className="dd-chip">Workflow: Simultaneous</span>
-}
-
-/* ── Find & Post (purple table) ── */
+/* ── Find & Post ── */
 export function FindPostView({
   detail,
   onPostLoad,
@@ -49,19 +45,6 @@ export function FindPostView({
 
   return (
     <div className="dd-stage dd-find">
-      <div className="dd-stage__head">
-        <div>
-          <h2 className="dd-stage__title">Find &amp; Post</h2>
-          <p className="dd-stage__sub">
-            Search carriers, blast outreach, and post this load to marketplaces.
-          </p>
-        </div>
-        <div className="dd-stage__head-meta">
-          <ModeChip mode={detail.load.mode} />
-          <WorkflowChip />
-        </div>
-      </div>
-
       <div className="dd-find__bar">
         <label className="dd-search">
           <Search size={14} />
@@ -72,33 +55,30 @@ export function FindPostView({
           />
         </label>
 
-        <div className="dd-find__meta">
-          <ModeChip mode={detail.load.mode} />
-          <span className="dd-meta-pill">Last email · 2h ago</span>
-          <span className="dd-meta-pill">Last WhatsApp · —</span>
-        </div>
+        <ModeChip mode={detail.load.mode} />
+        <span className="dd-chip dd-chip--plain">Workflow: Simultaneous</span>
 
         <div className="dd-find__actions">
-          <button type="button" className="dd-icon-btn" aria-label="Refresh">
+          <button type="button" className="dd-btn dd-btn--plain" aria-label="Refresh">
             <RefreshCw size={14} />
           </button>
-          <button type="button" className="dd-btn dd-btn--mail">
+          <button type="button" className="dd-btn dd-btn--plain">
             <Mail size={14} />
-            Blast Email
+            Last Email
           </button>
-          <button type="button" className="dd-btn dd-btn--wa">
+          <button type="button" className="dd-btn dd-btn--plain">
             <MessageCircle size={14} />
-            Blast WhatsApp
+            Last WhatsApp
           </button>
-          <button type="button" className="dd-btn dd-btn--primary" onClick={onPostLoad}>
+          <button type="button" className="dd-btn dd-btn--plain" onClick={onPostLoad}>
             <Share2 size={14} />
             Post to Load
           </button>
         </div>
       </div>
 
-      <div className="dd-card dd-find__table-wrap dd-find__table-wrap--purple">
-        <table className="dd-carrier-table dd-carrier-table--purple">
+      <div className="dd-card dd-find__table-wrap">
+        <table className="dd-carrier-table">
           <thead>
             <tr>
               <th className="col-check" />
@@ -214,34 +194,29 @@ export function OffersBidsView({
 
   return (
     <div className="dd-stage dd-offers">
-      <div className="dd-stage__head">
-        <div>
-          <h2 className="dd-stage__title">Offers &amp; Bids</h2>
-          <p className="dd-stage__sub">Negotiate offers, accept, counter, or reject.</p>
-        </div>
-        <div className="dd-stage__head-meta">
-          <ModeChip mode={detail.load.mode} />
-          <WorkflowChip />
-          <button type="button" className="dd-btn">
-            <RefreshCw size={14} />
-            Re-send Offers
-          </button>
-          <button type="button" className="dd-btn dd-btn--success">
-            <Check size={14} />
-            Mark reviewed
-          </button>
-          <button type="button" className="dd-btn dd-btn--primary" onClick={onAddOffer}>
-            <Plus size={14} />
-            Add Offer
-          </button>
-        </div>
+      <div className="dd-stage__toolbar">
+        <ModeChip mode={detail.load.mode} />
+        <span className="dd-chip dd-chip--plain">Workflow: Simultaneous</span>
+        <div className="dd-stage__toolbar-spacer" />
+        <button type="button" className="dd-btn dd-btn--plain">
+          <RefreshCw size={14} />
+          Re-send Offers
+        </button>
+        <button type="button" className="dd-btn dd-btn--plain">
+          <Check size={14} />
+          Mark reviewed
+        </button>
+        <button type="button" className="dd-btn dd-btn--plain" onClick={onAddOffer}>
+          <Plus size={14} />
+          Add Offer
+        </button>
       </div>
 
       <div className="dd-offers__grid">
         <aside className="dd-card dd-bids-list">
           <div className="dd-bids-list__head">
             <strong>Carrier Bids</strong>
-            <span className="dd-best-pill">Best offer {bid?.amount ?? '—'}</span>
+            <span className="dd-best-pill">Best {bid?.amount ?? '—'}</span>
           </div>
           <label className="dd-search">
             <Search size={13} />
@@ -281,7 +256,7 @@ export function OffersBidsView({
                   </span>
                   <span className="dd-muted">{b.vsTarget}</span>
                 </div>
-                <span className="dd-btn dd-btn--danger-ghost">Reject offer</span>
+                <span className="dd-reject-link">Reject offer</span>
               </button>
             ))}
           </div>
@@ -300,7 +275,8 @@ export function OffersBidsView({
               <div className="dd-bid-thread__body">
                 <article className="dd-offer-bubble">
                   <div className="dd-offer-bubble__id">
-                    Load #{detail.orderNumber} · <strong>{bid.amount}</strong>
+                    Load #{detail.orderNumber}
+                    <strong>{bid.amount}</strong>
                   </div>
                   <div className="dd-offer-bubble__stops">
                     <div>
@@ -316,27 +292,29 @@ export function OffersBidsView({
                   </div>
                 </article>
               </div>
-              <div className="dd-quick-replies">
-                {[
-                  'Can you do $2,500 all-in?',
-                  'What’s your earliest pickup?',
-                  'Confirm equipment type',
-                ].map((t) => (
-                  <button key={t} type="button" onClick={() => setMsg(t)}>
-                    {t}
+              <div className="dd-chat-foot">
+                <div className="dd-quick-replies">
+                  {[
+                    'Can you do $2,500 all-in?',
+                    'What’s your earliest pickup?',
+                    'Confirm equipment type',
+                  ].map((t) => (
+                    <button key={t} type="button" onClick={() => setMsg(t)}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <label className="dd-composer">
+                  <input
+                    value={msg}
+                    onChange={(e) => setMsg(e.target.value)}
+                    placeholder="Type a message…"
+                  />
+                  <button type="button" className="dd-send" aria-label="Send">
+                    <Send size={14} />
                   </button>
-                ))}
+                </label>
               </div>
-              <label className="dd-composer">
-                <input
-                  value={msg}
-                  onChange={(e) => setMsg(e.target.value)}
-                  placeholder="Type a message…"
-                />
-                <button type="button" className="dd-icon-btn" aria-label="Send">
-                  <Send size={14} />
-                </button>
-              </label>
             </>
           ) : (
             <div className="dd-empty-state">No bids yet</div>
@@ -353,14 +331,12 @@ export function FinalizeTenderView({ detail }: { detail: LoadDetail }) {
 
   return (
     <div className="dd-stage">
-      <div className="dd-stage__head">
-        <div>
-          <h2 className="dd-stage__title">Finalize Tender</h2>
-          <p className="dd-stage__sub">
-            Confirm the awarded carrier, review rates, and clear compliance checks.
-          </p>
-        </div>
-        <button type="button" className="dd-btn dd-btn--success" disabled={!awarded}>
+      <div className="dd-stage__toolbar">
+        <p className="dd-stage__hint">
+          Confirm the awarded carrier, review rates, and clear compliance checks.
+        </p>
+        <div className="dd-stage__toolbar-spacer" />
+        <button type="button" className="dd-btn dd-btn--plain" disabled={!awarded}>
           <Check size={14} />
           Confirm Carrier
         </button>

@@ -781,27 +781,29 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         />
 
         <div className="dd-main">
-          <div className="dd-tabs">
-            {(
-              [
-                ['summary', 'Summary'],
-                ['instructions', 'Instructions'],
-                ['documents', 'Documents'],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                className={cn(tab === id && 'is-active')}
-                onClick={() => setTab(id)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {!stageWorkspace && (
+            <div className="dd-tabs">
+              {(
+                [
+                  ['summary', 'Summary'],
+                  ['instructions', 'Instructions'],
+                  ['documents', 'Documents'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={cn(tab === id && 'is-active')}
+                  onClick={() => setTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="dd-main__content">
-            {tab === 'summary' && (
+            {stageWorkspace ? (
               <>
                 {isFindPost(subStage) && (
                   <FindPostView detail={detail} onPostLoad={() => setPostOpen(true)} />
@@ -810,19 +812,22 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                   <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
                 )}
                 {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
-                {!stageWorkspace && (
+              </>
+            ) : (
+              <>
+                {tab === 'summary' && (
                   <SummaryTab detail={detail} tags={tags} onTags={setTags} />
                 )}
+                {tab === 'instructions' && (
+                  <InstructionsTab
+                    detail={detail}
+                    onCarrier={(v) => setDetail((d) => ({ ...d, carrierInstructions: v }))}
+                    onInternal={(v) => setDetail((d) => ({ ...d, internalInstructions: v }))}
+                  />
+                )}
+                {tab === 'documents' && <DocumentsTab detail={detail} />}
               </>
             )}
-            {tab === 'instructions' && (
-              <InstructionsTab
-                detail={detail}
-                onCarrier={(v) => setDetail((d) => ({ ...d, carrierInstructions: v }))}
-                onInternal={(v) => setDetail((d) => ({ ...d, internalInstructions: v }))}
-              />
-            )}
-            {tab === 'documents' && <DocumentsTab detail={detail} />}
           </div>
         </div>
 
