@@ -17,11 +17,17 @@ import {
 import { TagPopover } from '@/components/report/TagPopover'
 import {
   FindPostView,
-  FinalizeTenderView,
   ManualOfferModal,
   OffersBidsView,
   PostMarketplaceModal,
 } from '@/components/details/StageViews'
+import {
+  BookingStageView,
+  CmtValidateView,
+  CreateContractView,
+  FinalizeAwardView,
+  FinalizeTenderView,
+} from '@/components/details/LaterStageViews'
 import { cn } from '@/lib/cn'
 import {
   buildLoadDetail,
@@ -737,7 +743,13 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const stageWorkspace =
     isFindPost(subStage) ||
     subStage === 'Offers & Bids' ||
-    subStage === 'Finalize Tender'
+    subStage === 'Finalize Tender' ||
+    subStage === 'CMT' ||
+    subStage === 'Finalize Carrier Award' ||
+    subStage === 'Create Contract' ||
+    subStage === 'Send Confirmation' ||
+    subStage === 'Signed Confirmation' ||
+    subStage === 'Resources'
 
   return (
     <div className="dd-page">
@@ -935,6 +947,17 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                   <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
                 )}
                 {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
+                {subStage === 'CMT' && <CmtValidateView detail={detail} />}
+                {subStage === 'Finalize Carrier Award' && <FinalizeAwardView detail={detail} />}
+                {subStage === 'Create Contract' && <CreateContractView detail={detail} />}
+                {(subStage === 'Send Confirmation' ||
+                  subStage === 'Signed Confirmation' ||
+                  subStage === 'Resources') && (
+                  <BookingStageView
+                    detail={detail}
+                    kind={subStage as 'Send Confirmation' | 'Signed Confirmation' | 'Resources'}
+                  />
+                )}
               </>
             ) : (
               <>

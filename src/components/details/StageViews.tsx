@@ -11,7 +11,6 @@ import {
   Send,
   Share2,
   Star,
-  Trophy,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -506,56 +505,7 @@ export function OffersBidsView({
   )
 }
 
-/* ── Finalize Tender ── */
-export function FinalizeTenderView({ detail }: { detail: LoadDetail }) {
-  const awarded = detail.bids.find((b) => b.status === 'Accepted')
-
-  return (
-    <div className="dd-stage">
-      <div className="dd-stage__toolbar">
-        <p className="dd-stage__hint">
-          Confirm the awarded carrier, review rates, and clear compliance checks.
-        </p>
-        <div className="dd-stage__toolbar-spacer" />
-        <button type="button" className="dd-btn dd-btn--plain" disabled={!awarded}>
-          <Check size={14} />
-          Confirm Carrier
-        </button>
-      </div>
-
-      {awarded ? (
-        <div className="dd-card dd-finalize-card">
-          <div className="dd-fields dd-fields--wide">
-            <div className="dd-field">
-              <div className="dd-field__label">Carrier</div>
-              <div className="dd-field__value">{awarded.carrier}</div>
-            </div>
-            <div className="dd-field">
-              <div className="dd-field__label">MC #</div>
-              <div className="dd-field__value mono">{awarded.mc}</div>
-            </div>
-            <div className="dd-field">
-              <div className="dd-field__label">Awarded rate</div>
-              <div className="dd-field__value mono">{awarded.amount}</div>
-            </div>
-            <div className="dd-field">
-              <div className="dd-field__label">Team</div>
-              <div className="dd-field__value">{detail.load.team}</div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="dd-card dd-empty-state dd-empty-state--lg">
-          <Trophy size={28} strokeWidth={1.5} />
-          <strong>No awarded carrier yet</strong>
-          <p>Accept a bid in Offers &amp; Bids to populate this view.</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── Post to Marketplace modal ── */
+/* ── Finalize Tender moved to LaterStageViews ── */
 export function PostMarketplaceModal({
   detail,
   onClose,

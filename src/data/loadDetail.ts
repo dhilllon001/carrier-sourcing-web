@@ -316,7 +316,7 @@ export const SAMPLE_BIDS: BidOffer[] = [
     amount: '$0.93',
     allIn: '$2,418',
     vsTarget: '-$0.07 vs Target',
-    status: 'Sent',
+    status: 'Accepted',
     best: true,
     source: 'Past',
     equipment: 'Dry Van 53′',
