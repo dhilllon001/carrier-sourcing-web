@@ -105,6 +105,8 @@ export const MODE_DISPLAY_COUNTS = {
   Spot: 8517,
   Expedited: 1240,
   Managed: 2131,
+  Mexico: 892,
+  PowerOnly: 640,
 } as const
 
 export const STATUS_DISPLAY_COUNTS = {
@@ -357,8 +359,8 @@ export const reportLoads: ReportLoad[] = [
     subStage: 'Signed Confirmation',
     customer: 'Costco Wholesale',
     equipment: 'DRY-VAN',
-    origin: 'Seattle, WA',
-    destination: 'Portland, OR',
+    origin: 'Nuevo Laredo, MX',
+    destination: 'Dallas, TX',
     miles: 174,
     fee: 620,
     rate: '$2.85',
@@ -757,8 +759,8 @@ export const reportLoads: ReportLoad[] = [
     subStage: 'Find & Post',
     customer: 'Intel Components',
     equipment: 'DRY-VAN',
-    origin: 'Phoenix, AZ',
-    destination: 'Austin, TX',
+    origin: 'Laredo, TX',
+    destination: 'Monterrey, MX',
     miles: 980,
     fee: 1764,
     rate: '$1.80',
@@ -925,8 +927,8 @@ export const reportLoads: ReportLoad[] = [
     subStage: 'Resources',
     customer: 'LG Electronics',
     equipment: 'DRY-VAN',
-    origin: 'Atlanta, GA',
-    destination: 'Miami, FL',
+    origin: 'Houston, TX',
+    destination: 'Guadalajara, MX',
     miles: 660,
     fee: 990,
     rate: '$1.50',
@@ -997,7 +999,18 @@ export function filterReportLoads(rows: ReportLoad[], filters: ReportFilters) {
         `${row.id} ${row.identifier} ${row.customer} ${row.equipment} ${row.origin} ${row.destination} ${row.team} ${row.stage} ${row.subStage}`.toLowerCase()
       if (!hay.includes(q)) return false
     }
-    if (filters.mode !== 'ALL' && row.mode !== filters.mode) return false
+    if (filters.mode !== 'ALL') {
+      if (filters.mode === 'Mexico') {
+        const lane = `${row.origin} ${row.destination}`.toLowerCase()
+        if (!/(mexico|\bmx\b|monterrey|guadalajara|tijuana|nuevo)/i.test(lane)) {
+          return false
+        }
+      } else if (filters.mode === 'PowerOnly') {
+        if (!/power/i.test(row.modeDetail)) return false
+      } else if (row.mode !== filters.mode) {
+        return false
+      }
+    }
     if (filters.status !== 'ALL' && row.status !== filters.status) return false
     if (filters.stage !== 'ALL' && row.stage !== filters.stage) return false
     if (filters.subStage !== 'ALL' && row.subStage !== filters.subStage) return false

@@ -145,7 +145,7 @@ export function SrDataTable<T extends { id: string }>({
         <div className={cn('sr-table-wrap', wrapClassName)} style={{ maxHeight }}>
           <table
             className={cn('sr-table', tableClassName)}
-            style={{ minWidth: tableMinWidth, width: tableMinWidth }}
+            style={{ minWidth: tableMinWidth, width: '100%' }}
           >
             <colgroup>
               {columns.map((col) => (

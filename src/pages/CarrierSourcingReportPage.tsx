@@ -203,8 +203,8 @@ export function CarrierSourcingReportPage({
         key: 'route',
         header: 'Route',
         thClassName: 'col-route',
-        width: 360,
-        minWidth: 280,
+        width: 420,
+        minWidth: 300,
         cell: (row) => (
           <div className="sr-route-cell">
             <div className="sr-route-line">
@@ -266,6 +266,8 @@ export function CarrierSourcingReportPage({
               ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot, 'spot'],
               ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited, 'expedited'],
               ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed, 'managed'],
+              ['Mexico', 'Mexico', MODE_DISPLAY_COUNTS.Mexico, 'mexico'],
+              ['PowerOnly', 'P/O', MODE_DISPLAY_COUNTS.PowerOnly, 'power'],
             ] as const
           ).map(([key, label, count, tone]) => (
             <button

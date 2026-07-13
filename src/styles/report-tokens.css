@@ -51,6 +51,27 @@
   --sr-table-selected: #ebf3fc;
   --sr-table-hover-accent: #e8f1fb;
 
+  /* Mode palette — consistent chips / badges / filters */
+  --sr-mode-spot-fg: #7c3aed;
+  --sr-mode-spot-bg: #f3e8ff;
+  --sr-mode-spot-border: #e9d5ff;
+
+  --sr-mode-expedited-fg: #c2410c;
+  --sr-mode-expedited-bg: #fff7ed;
+  --sr-mode-expedited-border: #fed7aa;
+
+  --sr-mode-managed-fg: #4338ca;
+  --sr-mode-managed-bg: #eef2ff;
+  --sr-mode-managed-border: #c7d2fe;
+
+  --sr-mode-mexico-fg: #047857;
+  --sr-mode-mexico-bg: #ecfdf5;
+  --sr-mode-mexico-border: #a7f3d0;
+
+  --sr-mode-power-fg: #1d4ed8;
+  --sr-mode-power-bg: #eff6ff;
+  --sr-mode-power-border: #bfdbfe;
+
   /* Dark sidebar */
   --sr-nav-bg: #1a1d24;
   --sr-nav-text: #e8edf3;

@@ -320,6 +320,14 @@
   color: var(--sr-text-meta);
 }
 
+.sr-applied-row__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sr-text-meta);
+}
+
 .sr-applied-pill {
   display: inline-flex;
   align-items: center;
@@ -333,18 +341,49 @@
   color: var(--sr-text-secondary);
 }
 
+.sr-applied-pill--spot {
+  background: var(--sr-mode-spot-bg);
+  border-color: var(--sr-mode-spot-border);
+  color: var(--sr-mode-spot-fg);
+}
+
+.sr-applied-pill--expedited {
+  background: var(--sr-mode-expedited-bg);
+  border-color: var(--sr-mode-expedited-border);
+  color: var(--sr-mode-expedited-fg);
+}
+
+.sr-applied-pill--managed {
+  background: var(--sr-mode-managed-bg);
+  border-color: var(--sr-mode-managed-border);
+  color: var(--sr-mode-managed-fg);
+}
+
+.sr-applied-pill--mexico {
+  background: var(--sr-mode-mexico-bg);
+  border-color: var(--sr-mode-mexico-border);
+  color: var(--sr-mode-mexico-fg);
+}
+
+.sr-applied-pill--power {
+  background: var(--sr-mode-power-bg);
+  border-color: var(--sr-mode-power-border);
+  color: var(--sr-mode-power-fg);
+}
+
 .sr-applied-pill button {
   display: flex;
   padding: 0;
   border: none;
   background: none;
-  color: var(--sr-text-meta);
+  color: inherit;
+  opacity: 0.7;
   cursor: pointer;
   line-height: 1;
 }
 
 .sr-applied-pill button:hover {
-  color: var(--sr-negative);
+  opacity: 1;
 }
 
 .sr-col-filter-header {
@@ -619,11 +658,13 @@
   min-height: 0;
   height: 100%;
   flex: 1;
+  width: 100%;
 }
 
 .sr-table-shell .sr-table-wrap {
   flex: 1;
   min-height: 0;
+  width: 100%;
 }
 
 .sr-table-footerbar {
@@ -641,7 +682,7 @@
 
 .sr-table--ops {
   table-layout: fixed;
-  width: max-content;
+  width: 100%;
   min-width: 100%;
   font-size: 12.5px;
 }
@@ -762,6 +803,7 @@ body.sr-col-resizing * {
   height: 18px;
   padding: 0 6px;
   border-radius: 4px;
+  border: 1px solid transparent;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -769,18 +811,34 @@ body.sr-col-resizing * {
 }
 
 .sr-mode-badge--spot {
-  color: #6d28d9;
-  background: rgba(124, 58, 237, 0.12);
+  color: var(--sr-mode-spot-fg);
+  background: var(--sr-mode-spot-bg);
+  border-color: var(--sr-mode-spot-border);
 }
 
 .sr-mode-badge--expedited {
-  color: #c2410c;
-  background: rgba(234, 88, 12, 0.14);
+  color: var(--sr-mode-expedited-fg);
+  background: var(--sr-mode-expedited-bg);
+  border-color: var(--sr-mode-expedited-border);
 }
 
 .sr-mode-badge--managed {
-  color: #1e5faa;
-  background: rgba(30, 95, 170, 0.12);
+  color: var(--sr-mode-managed-fg);
+  background: var(--sr-mode-managed-bg);
+  border-color: var(--sr-mode-managed-border);
+}
+
+.sr-mode-badge--mexico {
+  color: var(--sr-mode-mexico-fg);
+  background: var(--sr-mode-mexico-bg);
+  border-color: var(--sr-mode-mexico-border);
+}
+
+.sr-mode-badge--power,
+.sr-mode-badge--poweronly {
+  color: var(--sr-mode-power-fg);
+  background: var(--sr-mode-power-bg);
+  border-color: var(--sr-mode-power-border);
 }
 
 .sr-mode-detail {
@@ -882,16 +940,16 @@ body.sr-col-resizing * {
   position: fixed;
   z-index: 1200;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(15, 26, 42, 0.08);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 26, 42, 0.06);
+  border-radius: 18px;
   box-shadow:
-    0 24px 64px rgba(15, 26, 42, 0.18),
-    0 4px 16px rgba(15, 26, 42, 0.06),
-    0 0 0 0.5px rgba(15, 26, 42, 0.04);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  animation: sr-tag-panel-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    0 28px 80px rgba(15, 26, 42, 0.18),
+    0 8px 24px rgba(15, 26, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  animation: sr-tag-panel-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @keyframes sr-tag-panel-in {
@@ -1237,4 +1295,5 @@ body.sr-col-resizing * {
 
 .sr-page__split .sr-card--table .sr-table-shell {
   flex: 1;
+  width: 100%;
 }

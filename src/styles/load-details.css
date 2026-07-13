@@ -127,24 +127,34 @@
   height: 20px;
   padding: 0 7px;
   border-radius: 4px;
+  border: 1px solid transparent;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
 .dd-mode--spot {
-  background: rgba(87, 149, 227, 0.2);
-  color: #b7d3f5;
+  background: var(--sr-mode-spot-bg);
+  color: var(--sr-mode-spot-fg);
+  border-color: var(--sr-mode-spot-border);
 }
 
 .dd-mode--expedited {
-  background: rgba(194, 120, 40, 0.22);
-  color: #f0d0a8;
+  background: var(--sr-mode-expedited-bg);
+  color: var(--sr-mode-expedited-fg);
+  border-color: var(--sr-mode-expedited-border);
 }
 
 .dd-mode--managed {
-  background: rgba(255, 255, 255, 0.1);
-  color: #d7dee8;
+  background: var(--sr-mode-managed-bg);
+  color: var(--sr-mode-managed-fg);
+  border-color: var(--sr-mode-managed-border);
+}
+
+.dd-mode--mexico {
+  background: var(--sr-mode-mexico-bg);
+  color: var(--sr-mode-mexico-fg);
+  border-color: var(--sr-mode-mexico-border);
 }
 
 /* ── Meta strip ── */
@@ -407,10 +417,15 @@
 
 /* ── Shared chrome ── */
 .dd-card {
-  background: var(--sr-surface-1);
-  border: 1px solid var(--sr-border-1);
-  border-radius: var(--sr-radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 26, 42, 0.06);
+  border-radius: 14px;
   padding: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 26, 42, 0.03),
+    0 8px 24px rgba(15, 26, 42, 0.04);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
 .dd-card__head {
