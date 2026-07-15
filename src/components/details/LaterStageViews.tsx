@@ -6,6 +6,8 @@ import {
   Download,
   ExternalLink,
   FileText,
+  MapPin,
+  Package,
   Plus,
   RefreshCw,
   Send,
@@ -511,16 +513,48 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
   const [contractType, setContractType] = useState<'Brokerage' | 'Power Only' | 'Trailer Move'>(
     'Brokerage'
   )
+  const [arrangedWith, setArrangedWith] = useState('')
+  const [dispatchedBy, setDispatchedBy] = useState(detail.csr)
+  const [role, setRole] = useState('Brokerage Spot')
+  const [category, setCategory] = useState(detail.load.team)
+  const [carrierRef, setCarrierRef] = useState('')
+  const [rate, setRate] = useState(
+    (awardedBid(detail)?.allIn ?? detail.targetAllIn ?? '0').replace(/[^0-9.]/g, '') || '0.00'
+  )
+
   const pickup = detail.stops[0]
   const delivery = detail.stops[detail.stops.length - 1]
-  const steps = ['Load Assignment', 'Contract Properties', 'Driver & Equipment', 'Carrier Confirmation']
   const awarded = awardedBid(detail)
+  const steps = [
+    { label: 'Load Assignment', hint: 'Type · legs · equipment' },
+    { label: 'Contract Properties', hint: 'Terms · ownership · rate' },
+    { label: 'Driver & Equipment', hint: 'Assets · readiness' },
+    { label: 'Carrier Confirmation', hint: 'Packet · review' },
+  ] as const
+
+  const contractOptions = [
+    {
+      label: 'Brokerage' as const,
+      desc: 'Carrier provides truck + trailer',
+      tone: 'is-blue',
+    },
+    {
+      label: 'Power Only' as const,
+      desc: 'Carrier provides truck, we provide trailer',
+      tone: 'is-orange',
+    },
+    {
+      label: 'Trailer Move' as const,
+      desc: 'Moving our trailer between yards',
+      tone: 'is-green',
+    },
+  ]
 
   return (
-    <div className="dd-stage dd-stage--apple">
+    <div className="dd-stage dd-stage--apple dd-wizard">
       <StageActionBar
         label="Create Contract"
-        leading={<span className="dd-chip-soft">{`Step ${step + 1} · ${steps[step]}`}</span>}
+        leading={<span className="dd-chip-soft">{`Step ${step + 1} of ${steps.length}`}</span>}
         actions={
           <>
             <button
@@ -539,170 +573,383 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
               className="dd-pill-btn dd-pill-btn--emphasis"
               onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
             >
-              {step < steps.length - 1 ? `Next: ${steps[step + 1]}` : 'Finish contract'}
+              {step < steps.length - 1 ? `Next: ${steps[step + 1].label}` : 'Finish contract'}
               <ArrowRight size={14} />
             </button>
           </>
         }
       />
 
-      <div className="dd-stepper">
-        {steps.map((s, i) => (
-          <button
-            key={s}
-            type="button"
-            className={cn('dd-stepper__item', i === step && 'is-active', i < step && 'is-done')}
-            onClick={() => setStep(i)}
-          >
-            <span>{i + 1}</span>
-            {s}
-          </button>
-        ))}
+      <div className="dd-wizard__progress">
+        <div className="dd-wizard__progress-head">
+          <div>
+            <strong>{steps[step].label}</strong>
+            <em>
+              Step {step + 1} of {steps.length} · {steps[step].hint}
+            </em>
+          </div>
+          <span className="dd-wizard__pct">{Math.round(((step + 1) / steps.length) * 100)}% complete</span>
+        </div>
+        <div className="dd-wizard__track" aria-hidden>
+          <i style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+        </div>
+        <div className="dd-wizard__steps">
+          {steps.map((s, i) => {
+            const done = i < step
+            const active = i === step
+            return (
+              <button
+                key={s.label}
+                type="button"
+                className={cn(
+                  'dd-wizard__step',
+                  active && 'is-active',
+                  done && 'is-done'
+                )}
+                onClick={() => setStep(i)}
+              >
+                <span className="dd-wizard__bullet">
+                  {done ? <Check size={12} strokeWidth={2.5} /> : i + 1}
+                </span>
+                <span className="dd-wizard__step-copy">
+                  <strong>{s.label}</strong>
+                  <em>{s.hint}</em>
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {step === 0 && (
-        <div className="dd-ststack">
-          <section className="dd-stpanel">
-            <div className="dd-stpanel__title-row">
-              <span className="dd-stpanel__title">
-                Contract type — choose first to filter legs & carriers
-              </span>
-              <em className="dd-chip-soft">{contractType}</em>
+        <div className="dd-wizard__body">
+          <section className="dd-wizard-card">
+            <div className="dd-wizard-card__head">
+              <div>
+                <strong>Contract type</strong>
+                <em>Choose first to filter legs &amp; carriers</em>
+              </div>
+              <span className="dd-wizard-badge is-blue">{contractType}</span>
             </div>
-            <p className="dd-stpanel__q">How will this carrier operate on this load?</p>
-            <div className="dd-choice-list">
-              {(
-                [
-                  ['Brokerage', 'Carrier provides truck + trailer'],
-                  ['Power Only', 'Carrier provides truck, we provide trailer'],
-                  ['Trailer Move', 'Moving our trailer between yards'],
-                ] as const
-              ).map(([label, desc]) => (
-                <button
-                  key={label}
-                  type="button"
-                  className={cn('dd-choice', contractType === label && 'is-active')}
-                  onClick={() => setContractType(label)}
-                >
-                  <div>
-                    <strong>{label}</strong>
-                    <em>{desc}</em>
-                  </div>
-                  {contractType === label && <Check size={14} />}
-                </button>
-              ))}
+            <p className="dd-wizard-card__q">How will this carrier operate on this load?</p>
+            <div className="dd-wizard-choices">
+              {contractOptions.map((opt) => {
+                const selected = contractType === opt.label
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    className={cn('dd-wizard-choice', opt.tone, selected && 'is-active')}
+                    onClick={() => setContractType(opt.label)}
+                  >
+                    <div>
+                      <strong>{opt.label}</strong>
+                      <em>{opt.desc}</em>
+                    </div>
+                    {selected ? (
+                      <span className="dd-wizard-choice__tag">Selected</span>
+                    ) : (
+                      <span className="dd-wizard-choice__radio" />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </section>
 
-          <section className="dd-stpanel">
-            <div className="dd-stpanel__title-row">
-              <span className="dd-stpanel__title">Load — pickup & delivery from this shipment</span>
-              <em className="dd-chip-soft">{detail.load.equipment}</em>
-            </div>
-            <div className="dd-leggrid">
+          <section className="dd-wizard-card">
+            <div className="dd-wizard-card__head">
               <div>
-                <span>Pickup</span>
+                <strong>Load</strong>
+                <em>Pickup &amp; delivery from this shipment</em>
+              </div>
+              <span className="dd-wizard-badge is-neutral">{detail.load.equipment}</span>
+            </div>
+            <div className="dd-wizard-legs">
+              <article className="dd-wizard-leg is-pickup">
+                <div className="dd-wizard-leg__top">
+                  <span>
+                    <MapPin size={12} />
+                    Pickup
+                  </span>
+                  <em>{pickup?.status ?? 'Window'}</em>
+                </div>
                 <strong>{pickup?.facility ?? '—'}</strong>
-                <em>
-                  {pickup?.city} · {pickup?.when}
-                </em>
-                <i>{pickup?.status}</i>
-              </div>
-              <div>
-                <span>Delivery</span>
+                <p>
+                  {pickup?.city ?? '—'}
+                  {pickup?.when ? ` · ${pickup.when}` : ''}
+                </p>
+                <div className="dd-wizard-leg__meta">
+                  <span>Ref</span>
+                  <strong className="mono">{detail.references.shipper || detail.load.id}</strong>
+                </div>
+              </article>
+              <article className="dd-wizard-leg is-delivery">
+                <div className="dd-wizard-leg__top">
+                  <span>
+                    <MapPin size={12} />
+                    Delivery
+                  </span>
+                  <em>{delivery?.status ?? 'Window'}</em>
+                </div>
                 <strong>{delivery?.facility ?? '—'}</strong>
-                <em>
-                  {delivery?.city} · {delivery?.when}
-                </em>
-                <i>{delivery?.status}</i>
-              </div>
+                <p>
+                  {delivery?.city ?? '—'}
+                  {delivery?.when ? ` · ${delivery.when}` : ''}
+                </p>
+                <div className="dd-wizard-leg__meta">
+                  <span>Ref</span>
+                  <strong className="mono">{detail.references.consignee || detail.orderNumber}</strong>
+                </div>
+              </article>
             </div>
           </section>
 
-          <section className="dd-stpanel">
-            <div className="dd-stpanel__title">Equipment type</div>
-            <p className="dd-stpanel__q">
-              Carrier provides the trailer — equipment is auto-selected based on contract type.
-            </p>
-            <div className="dd-choice is-active">
+          <section className="dd-wizard-card">
+            <div className="dd-wizard-card__head">
+              <div>
+                <strong>Equipment type</strong>
+                <em>Auto-selected from contract type and load specs</em>
+              </div>
+              <span className="dd-wizard-badge is-green">Auto</span>
+            </div>
+            <div className="dd-wizard-equip">
+              <div className="dd-wizard-equip__ico">
+                <Truck size={18} />
+              </div>
               <div>
                 <strong>{detail.load.equipment}</strong>
-                <em>Auto-selected for {contractType}</em>
+                <em>
+                  Auto-selected for {contractType} · {detail.load.miles.toLocaleString()} mi lane
+                </em>
               </div>
-              <Check size={14} />
+              <Check size={16} className="dd-wizard-equip__check" />
             </div>
           </section>
         </div>
       )}
 
       {step === 1 && (
-        <div className="dd-stgrid dd-stgrid--2">
-          <Facts
-            title="Contract properties"
-            rows={[
-              { label: 'Contract type', value: contractType },
-              { label: 'Currency', value: detail.currency },
-              { label: 'Book now', value: detail.bookNowRate, mono: true },
-              { label: 'Awarded rate', value: awarded?.amount ?? '—', mono: true },
-              { label: 'All-in', value: awarded?.allIn ?? '—', mono: true },
-              { label: 'Payment terms', value: 'Net 30' },
-              { label: 'Fuel surcharge', value: 'Included' },
-              { label: 'Accessorials', value: 'Detention · layover' },
-            ]}
-          />
-          <Facts
-            title="Ownership"
-            rows={[
-              { label: 'Carrier', value: awarded?.carrier ?? '—' },
-              { label: 'MC #', value: awarded?.mc ?? '—', mono: true },
-              { label: 'Team', value: detail.load.team },
-              { label: 'Broker', value: detail.load.broker || '—' },
-              { label: 'Sales rep', value: detail.salesRep },
-              { label: 'CSR', value: detail.csr },
-              { label: 'Account mgr', value: detail.accountManager },
-              { label: 'Division', value: detail.division, wide: true },
-            ]}
-          />
+        <div className="dd-wizard__body">
+          {!awarded && (
+            <div className="dd-stbanner">
+              <AlertTriangle size={14} />
+              No awarded carrier on this leg yet — fill terms manually for the packet.
+            </div>
+          )}
+          <section className="dd-wizard-card">
+            <div className="dd-wizard-card__head">
+              <div>
+                <strong>Contract terms</strong>
+                <em>Fill assignment and rate details for this contract</em>
+              </div>
+              <span className="dd-wizard-badge is-blue">{detail.currency}</span>
+            </div>
+            <div className="dd-wizard-form">
+              <label className="dd-wizard-field">
+                <span>
+                  Arranged with <i>*</i>
+                </span>
+                <select value={arrangedWith} onChange={(e) => setArrangedWith(e.target.value)}>
+                  <option value="">Select carrier contact…</option>
+                  {awarded && (
+                    <option value={awarded.contact ?? awarded.carrier}>
+                      {awarded.contact ?? awarded.carrier}
+                      {awarded.email ? ` · ${awarded.email}` : ''}
+                    </option>
+                  )}
+                  <option value="Dispatch desk">Dispatch desk</option>
+                </select>
+                <em>Primary contact at this carrier for this contract</em>
+              </label>
+              <label className="dd-wizard-field">
+                <span>
+                  Dispatched by <i>*</i>
+                </span>
+                <select value={dispatchedBy} onChange={(e) => setDispatchedBy(e.target.value)}>
+                  <option value={detail.csr}>{detail.csr}</option>
+                  <option value={detail.salesRep}>{detail.salesRep}</option>
+                  <option value={detail.accountManager}>{detail.accountManager}</option>
+                </select>
+                <em>Internal user owning this contract</em>
+              </label>
+              <label className="dd-wizard-field">
+                <span>
+                  Rate <i>*</i>
+                </span>
+                <div className="dd-wizard-rate">
+                  <em>{detail.currency} $</em>
+                  <input value={rate} onChange={(e) => setRate(e.target.value)} />
+                </div>
+                <em>Agreed total payable to carrier</em>
+              </label>
+              <label className="dd-wizard-field">
+                <span>
+                  Role <i>*</i>
+                </span>
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
+                  <option>Brokerage Spot</option>
+                  <option>Power Only</option>
+                  <option>Dedicated</option>
+                  <option>Trailer Move</option>
+                </select>
+                <em>Movement type for this contract</em>
+              </label>
+              <label className="dd-wizard-field">
+                <span>
+                  Category <i>*</i>
+                </span>
+                <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value={detail.load.team}>{detail.load.team}</option>
+                  <option>Ontario</option>
+                  <option>Midwest</option>
+                  <option>West</option>
+                </select>
+                <em>Operating region / category bucket</em>
+              </label>
+              <label className="dd-wizard-field">
+                <span>Carrier reference (optional)</span>
+                <input
+                  value={carrierRef}
+                  onChange={(e) => setCarrierRef(e.target.value)}
+                  placeholder="e.g. CR-2026-0412"
+                />
+                <em>Carrier&apos;s own internal load / PO number</em>
+              </label>
+            </div>
+          </section>
+
+          <div className="dd-wizard-split">
+            <Facts
+              title="Rate summary"
+              rows={[
+                { label: 'Contract type', value: contractType },
+                { label: 'Book now', value: detail.bookNowRate, mono: true },
+                { label: 'Awarded rate', value: awarded?.amount ?? '—', mono: true },
+                { label: 'All-in draft', value: `$${rate || '0.00'}`, mono: true },
+                { label: 'Payment terms', value: 'Net 30' },
+                { label: 'Fuel surcharge', value: 'Included' },
+              ]}
+            />
+            <Facts
+              title="Ownership"
+              rows={[
+                { label: 'Carrier', value: awarded?.carrier ?? '—' },
+                { label: 'MC #', value: awarded?.mc ?? '—', mono: true },
+                { label: 'Team', value: detail.load.team },
+                { label: 'Broker', value: detail.load.broker || '—' },
+                { label: 'Sales rep', value: detail.salesRep },
+                { label: 'Division', value: detail.division, wide: true },
+              ]}
+            />
+          </div>
         </div>
       )}
 
       {step === 2 && (
-        <div className="dd-stgrid dd-stgrid--2">
-          <Facts
-            title="Driver"
-            rows={[
-              { label: 'Driver name', value: 'Assigned at dispatch' },
-              { label: 'Phone', value: awarded?.phone ?? '—' },
-              { label: 'CDL', value: 'Pending upload' },
-              { label: 'HOS status', value: 'Available' },
-              { label: 'ELD provider', value: 'Samsara' },
-              { label: 'Languages', value: 'EN · ES' },
-            ]}
-          />
-          <Facts
-            title="Equipment"
-            rows={[
-              { label: 'Trailer type', value: detail.load.equipment },
-              { label: 'Contract type', value: contractType },
-              {
-                label: 'Tractor',
-                value: contractType === 'Trailer Move' ? 'Internal' : 'Carrier supplied',
-              },
-              {
-                label: 'Reefer setpoint',
-                value: detail.load.equipment.toUpperCase().includes('REEFER') ? '34°F' : 'N/A',
-              },
-              { label: 'Length', value: '53 ft' },
-              { label: 'Plate / unit', value: 'Pending assign' },
-            ]}
-          />
+        <div className="dd-wizard__body">
+          <div className="dd-wizard-split">
+            <section className="dd-wizard-card">
+              <div className="dd-wizard-card__head">
+                <div>
+                  <strong>Driver</strong>
+                  <em>Assigned at dispatch unless carrier provides details now</em>
+                </div>
+                <span className="dd-wizard-badge is-orange">Pending</span>
+              </div>
+              <div className="dd-ov-facts">
+                <div>
+                  <span>Driver name</span>
+                  <strong>Assigned at dispatch</strong>
+                </div>
+                <div>
+                  <span>Phone</span>
+                  <strong>{awarded?.phone ?? '—'}</strong>
+                </div>
+                <div>
+                  <span>CDL</span>
+                  <strong>Pending upload</strong>
+                </div>
+                <div>
+                  <span>HOS status</span>
+                  <strong>Available</strong>
+                </div>
+                <div>
+                  <span>ELD provider</span>
+                  <strong>Samsara</strong>
+                </div>
+                <div>
+                  <span>Languages</span>
+                  <strong>EN · ES</strong>
+                </div>
+              </div>
+            </section>
+            <section className="dd-wizard-card">
+              <div className="dd-wizard-card__head">
+                <div>
+                  <strong>Equipment</strong>
+                  <em>Linked to {contractType} selection</em>
+                </div>
+                <span className="dd-wizard-badge is-green">Ready</span>
+              </div>
+              <div className="dd-ov-facts">
+                <div>
+                  <span>Trailer type</span>
+                  <strong>{detail.load.equipment}</strong>
+                </div>
+                <div>
+                  <span>Contract type</span>
+                  <strong>{contractType}</strong>
+                </div>
+                <div>
+                  <span>Tractor</span>
+                  <strong>{contractType === 'Trailer Move' ? 'Internal' : 'Carrier supplied'}</strong>
+                </div>
+                <div>
+                  <span>Reefer setpoint</span>
+                  <strong>
+                    {detail.load.equipment.toUpperCase().includes('REEFER') ? '34°F' : 'N/A'}
+                  </strong>
+                </div>
+                <div>
+                  <span>Length</span>
+                  <strong>53 ft</strong>
+                </div>
+                <div>
+                  <span>Plate / unit</span>
+                  <strong>Pending assign</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section className="dd-wizard-card is-soft">
+            <div className="dd-wizard-equip">
+              <div className="dd-wizard-equip__ico">
+                <Package size={18} />
+              </div>
+              <div>
+                <strong>Resource readiness</strong>
+                <em>
+                  Driver details can be completed after confirmation. Equipment is locked to{' '}
+                  {detail.load.equipment}.
+                </em>
+              </div>
+              <span className="dd-wizard-badge is-blue">Step 3</span>
+            </div>
+          </section>
         </div>
       )}
 
       {step === 3 && (
-        <div className="dd-confirm-layout">
-          <section className="dd-stpanel dd-stpanel--hero">
-            <div className="dd-stpanel__title">Carrier information</div>
+        <div className="dd-wizard__body dd-wizard__body--confirm">
+          <section className="dd-wizard-card dd-wizard-card--hero">
+            <div className="dd-wizard-card__head">
+              <div>
+                <strong>Carrier information</strong>
+                <em>Review packet before finishing the contract</em>
+              </div>
+              <span className="dd-wizard-badge is-green">Ready</span>
+            </div>
             <div className="dd-award-hero">
               <div>
                 <strong>{awarded?.carrier ?? 'No carrier'}</strong>
@@ -712,7 +959,7 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
               </div>
               <div className="dd-award-hero__rate">
                 <span>Confirm at</span>
-                <strong>{awarded?.allIn ?? awarded?.amount ?? '—'}</strong>
+                <strong>{awarded?.allIn ?? `$${rate || '0.00'}`}</strong>
               </div>
             </div>
             <div className="dd-ov-facts" style={{ marginTop: 10 }}>
@@ -726,7 +973,7 @@ export function CreateContractView({ detail }: { detail: LoadDetail }) {
               </div>
               <div>
                 <span>Contact</span>
-                <strong>{awarded?.contact ?? '—'}</strong>
+                <strong>{awarded?.contact ?? (arrangedWith || '—')}</strong>
               </div>
               <div>
                 <span>Email</span>
