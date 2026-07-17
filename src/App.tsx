@@ -11,13 +11,14 @@ import {
   CalendarCheck2,
   Users,
   KeyRound,
-  MapPin,
+  Route,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
   type ViewMode,
 } from '@/pages/CarrierSourcingReportPage'
 import { LoadDetailsPage } from '@/pages/LoadDetailsPage'
+import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { reportLoads } from '@/data/report'
 import { cn } from '@/lib/cn'
 
@@ -36,6 +37,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [refreshKey, setRefreshKey] = useState(0)
   const [openLoadId, setOpenLoadId] = useState<string | null>(null)
+  const [laneSearchOpen, setLaneSearchOpen] = useState(false)
 
   const openLoad = useMemo(
     () => reportLoads.find((r) => r.id === openLoadId) ?? null,
@@ -127,9 +129,13 @@ export default function App() {
               </label>
 
               <div className="sr-topbar__actions">
-                <button type="button" className="sr-btn">
-                  <MapPin size={14} strokeWidth={1.75} />
-                  Quick lane search
+                <button
+                  type="button"
+                  className="sr-btn sr-btn--lane"
+                  onClick={() => setLaneSearchOpen(true)}
+                >
+                  <Route size={14} strokeWidth={1.85} />
+                  Quick Lane Search
                 </button>
 
                 <div className="sr-view-toggle" role="group" aria-label="View mode">
@@ -196,6 +202,8 @@ export default function App() {
           </>
         )}
       </div>
+
+      <QuickLaneSearchPanel open={laneSearchOpen} onClose={() => setLaneSearchOpen(false)} />
     </div>
   )
 }
