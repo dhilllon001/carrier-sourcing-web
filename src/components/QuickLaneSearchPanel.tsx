@@ -266,8 +266,8 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
         </header>
 
         <div className="qls__form">
-          <div className="qls__row qls__row--primary">
-            <label className="qls__field qls__field--grow">
+          <div className="qls__grid qls__grid--lane">
+            <label className="qls__field">
               <span className="qls__label">Origin</span>
               <div className="qls__control">
                 <MapPin size={14} className="is-origin" />
@@ -283,7 +283,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               <ArrowLeftRight size={14} />
             </button>
 
-            <label className="qls__field qls__field--grow">
+            <label className="qls__field">
               <span className="qls__label">Destination</span>
               <div className="qls__control">
                 <MapPin size={14} className="is-dest" />
@@ -294,9 +294,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                 />
               </div>
             </label>
-          </div>
 
-          <div className="qls__row qls__row--secondary">
             <label className="qls__field">
               <span className="qls__label">Trailer</span>
               <div className={cn('qls__control', !trailer && 'is-invalid')}>
@@ -315,7 +313,14 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               </div>
             </label>
 
-            <label className="qls__field qls__field--sm">
+            <button type="button" className="qls__search-btn" onClick={search}>
+              <Search size={15} />
+              Search Lane
+            </button>
+          </div>
+
+          <div className="qls__grid qls__grid--meta">
+            <label className="qls__field">
               <span className="qls__label">Radius</span>
               <div className="qls__control qls__control--suffix">
                 <input value={radius} onChange={(e) => setRadius(e.target.value)} />
@@ -361,24 +366,21 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               />
               <span>Power only</span>
             </label>
-
-            <button type="button" className="qls__search-btn" onClick={search}>
-              <Search size={15} />
-              Search Lane
-            </button>
           </div>
         </div>
 
         {query && (
-          <div className="qls__lane-bar">
-            <span className="qls__dot is-origin" />
-            <strong>{query.origin}</strong>
-            <span className="qls__lane-arrow" aria-hidden>
-              →
-            </span>
-            <span className="qls__dot is-dest" />
-            <strong>{query.destination}</strong>
-            <em>{query.trailer}</em>
+          <div className="qls__lane-wrap">
+            <div className="qls__lane-bar">
+              <span className="qls__dot is-origin" />
+              <strong>{query.origin}</strong>
+              <span className="qls__lane-arrow" aria-hidden>
+                →
+              </span>
+              <span className="qls__dot is-dest" />
+              <strong>{query.destination}</strong>
+              <em>{query.trailer}</em>
+            </div>
           </div>
         )}
 
