@@ -18,6 +18,7 @@ import {
   type ViewMode,
 } from '@/pages/CarrierSourcingReportPage'
 import { LoadDetailsPage } from '@/pages/LoadDetailsPage'
+import { AvailabilityPage } from '@/pages/AvailabilityPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { reportLoads } from '@/data/report'
 import { cn } from '@/lib/cn'
@@ -124,7 +125,11 @@ export default function App() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search probills, PO, customer, equipment…"
+                  placeholder={
+                    nav === 'availability'
+                      ? 'Search carrier, lane, equipment, notes…'
+                      : 'Search probills, PO, customer, equipment…'
+                  }
                 />
               </label>
 
@@ -186,6 +191,8 @@ export default function App() {
                 refreshKey={refreshKey}
                 onOpenLoad={setOpenLoadId}
               />
+            ) : nav === 'availability' ? (
+              <AvailabilityPage search={search} />
             ) : (
               <div className="sr-page">
                 <div className="sr-card sr-card__pad">
