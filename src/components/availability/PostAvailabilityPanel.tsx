@@ -91,166 +91,184 @@ export function PostAvailabilityPanel({ open, onClose, onPosted }: Props) {
       <button type="button" className="av-post__backdrop" aria-label="Close panel" onClick={onClose} />
       <aside className="av-post__panel">
         <header className="av-post__head">
-          <strong>Post Carrier Availability</strong>
+          <div>
+            <strong>Post Carrier Availability</strong>
+            <em>Add truck, lane, and equipment for coverage</em>
+          </div>
           <button type="button" className="av-post__close" aria-label="Close" onClick={onClose}>
             <X size={16} />
           </button>
         </header>
 
         <div className="av-post__body">
-          <label className="av-field">
-            <span>
-              Carrier <i>*</i>
-            </span>
-            <div className={cn('av-field__control', touched && !carrierOk && 'is-invalid')}>
-              <Search size={14} />
-              <input
-                value={carrierQuery}
-                onChange={(e) => setCarrierQuery(e.target.value)}
-                placeholder="Type at least 2 letters to search…"
-              />
-            </div>
-          </label>
+          <section className="av-post__section">
+            <div className="av-post__section-title">Carrier & equipment</div>
+            <div className="av-post__grid">
+              <label className="av-field av-field--full">
+                <span>
+                  Carrier <i>*</i>
+                </span>
+                <div className={cn('av-field__control', touched && !carrierOk && 'is-invalid')}>
+                  <Search size={14} />
+                  <input
+                    value={carrierQuery}
+                    onChange={(e) => setCarrierQuery(e.target.value)}
+                    placeholder="Type at least 2 letters to search…"
+                  />
+                </div>
+              </label>
 
-          <label className="av-field">
-            <span>
-              Trailer type <i>*</i>
-            </span>
-            <div className={cn('av-field__control', touched && !trailerOk && 'is-invalid')}>
-              <select value={trailer} onChange={(e) => setTrailer(e.target.value)}>
-                <option value="">Select trailer type</option>
-                {AVAILABILITY_TRAILERS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </label>
+              <label className="av-field">
+                <span>
+                  Trailer type <i>*</i>
+                </span>
+                <div className={cn('av-field__control', touched && !trailerOk && 'is-invalid')}>
+                  <select value={trailer} onChange={(e) => setTrailer(e.target.value)}>
+                    <option value="">Select trailer type</option>
+                    {AVAILABILITY_TRAILERS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
 
-          <label className="av-field">
-            <span>
-              Pickup city <i>*</i>
-            </span>
-            <div className={cn('av-field__control', touched && !pickupOk && 'is-invalid')}>
-              <select value={pickup} onChange={(e) => setPickup(e.target.value)}>
-                <option value="">Select city</option>
-                {AVAILABILITY_CITIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <label className="av-field">
+                <span>
+                  Truck count <i>*</i>
+                </span>
+                <div className="av-field__control">
+                  <input
+                    type="number"
+                    min={1}
+                    value={truckCount}
+                    onChange={(e) => setTruckCount(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </div>
+              </label>
             </div>
-          </label>
+          </section>
 
-          <div className="av-field">
-            <div className="av-field__row">
-              <span>
-                Delivery cities <i>*</i>
-              </span>
-              <button
-                type="button"
-                className="av-link-btn"
-                onClick={() => setDeliveries((prev) => [...prev, ''])}
-              >
-                <Plus size={13} />
-                Add stop
-              </button>
-            </div>
-            <div className="av-stops">
-              {deliveries.map((city, idx) => (
-                <div key={idx} className="av-stop">
-                  <GripVertical size={14} className="av-stop__grip" />
-                  <div className={cn('av-field__control', touched && !deliveryOk && 'is-invalid')}>
-                    <select
-                      value={city}
-                      onChange={(e) =>
-                        setDeliveries((prev) => prev.map((v, i) => (i === idx ? e.target.value : v)))
-                      }
-                    >
-                      <option value="">Select city</option>
-                      {AVAILABILITY_CITIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          <section className="av-post__section">
+            <div className="av-post__section-title">Lane</div>
+            <div className="av-post__grid">
+              <label className="av-field av-field--full">
+                <span>
+                  Pickup city <i>*</i>
+                </span>
+                <div className={cn('av-field__control', touched && !pickupOk && 'is-invalid')}>
+                  <select value={pickup} onChange={(e) => setPickup(e.target.value)}>
+                    <option value="">Select city</option>
+                    {AVAILABILITY_CITIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+
+              <div className="av-field av-field--full">
+                <div className="av-field__row">
+                  <span>
+                    Delivery cities <i>*</i>
+                  </span>
                   <button
                     type="button"
-                    className="av-stop__remove"
-                    aria-label="Remove stop"
-                    disabled={deliveries.length === 1}
-                    onClick={() => setDeliveries((prev) => prev.filter((_, i) => i !== idx))}
+                    className="av-link-btn"
+                    onClick={() => setDeliveries((prev) => [...prev, ''])}
                   >
-                    <X size={14} />
+                    <Plus size={13} />
+                    Add stop
                   </button>
                 </div>
-              ))}
+                <div className="av-stops">
+                  {deliveries.map((city, idx) => (
+                    <div key={idx} className="av-stop">
+                      <GripVertical size={14} className="av-stop__grip" />
+                      <div className={cn('av-field__control', touched && !deliveryOk && 'is-invalid')}>
+                        <select
+                          value={city}
+                          onChange={(e) =>
+                            setDeliveries((prev) =>
+                              prev.map((v, i) => (i === idx ? e.target.value : v))
+                            )
+                          }
+                        >
+                          <option value="">Select city</option>
+                          {AVAILABILITY_CITIES.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        className="av-stop__remove"
+                        aria-label="Remove stop"
+                        disabled={deliveries.length === 1}
+                        onClick={() => setDeliveries((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="av-dates">
-            <label className="av-field">
+          <section className="av-post__section">
+            <div className="av-post__section-title">Schedule & options</div>
+            <div className="av-dates">
+              <label className="av-field">
+                <span>
+                  Available Start Date <i>*</i>
+                </span>
+                <div className="av-field__control">
+                  <input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+              </label>
+              <label className="av-field">
+                <span>Available End Date — optional</span>
+                <div className="av-field__control">
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              className={cn('av-toggle', powerUnit && 'is-on')}
+              onClick={() => setPowerUnit((v) => !v)}
+            >
+              <span className="av-toggle__switch" aria-hidden />
               <span>
-                Available Start Date <i>*</i>
+                <strong>Power unit available</strong>
+                <em>Driver + tractor included</em>
               </span>
-              <div className="av-field__control">
-                <input
-                  type="datetime-local"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-            </label>
+            </button>
+
             <label className="av-field">
-              <span>Available End Date — optional</span>
-              <div className="av-field__control">
-                <input
-                  type="datetime-local"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </label>
-          </div>
-
-          <label className="av-field av-field--narrow">
-            <span>
-              Truck count <i>*</i>
-            </span>
-            <div className="av-field__control">
-              <input
-                type="number"
-                min={1}
-                value={truckCount}
-                onChange={(e) => setTruckCount(Math.max(1, Number(e.target.value) || 1))}
+              <span>Notes</span>
+              <textarea
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional notes…"
               />
-            </div>
-          </label>
-
-          <button
-            type="button"
-            className={cn('av-toggle', powerUnit && 'is-on')}
-            onClick={() => setPowerUnit((v) => !v)}
-          >
-            <span className="av-toggle__switch" aria-hidden />
-            <span>
-              <strong>Power unit available</strong>
-              <em>Driver + tractor included</em>
-            </span>
-          </button>
-
-          <label className="av-field">
-            <span>Notes</span>
-            <textarea
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes…"
-            />
-          </label>
+            </label>
+          </section>
         </div>
 
         <footer className="av-post__foot">
