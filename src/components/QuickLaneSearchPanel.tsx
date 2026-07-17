@@ -369,34 +369,19 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
           </div>
         </div>
 
-        {query && (
-          <div className="qls__lane-wrap">
-            <div className="qls__lane-bar">
-              <span className="qls__dot is-origin" />
-              <strong>{query.origin}</strong>
-              <span className="qls__lane-arrow" aria-hidden>
-                →
-              </span>
-              <span className="qls__dot is-dest" />
-              <strong>{query.destination}</strong>
-              <em>{query.trailer}</em>
-            </div>
-          </div>
-        )}
-
         <div className="qls__body">
           {phase === 'idle' && (
             <div className="qls__empty">
               <div className="qls__empty-ico" aria-hidden>
-                <Route size={28} />
+                <Route size={26} />
                 <span>
-                  <Search size={14} />
+                  <Search size={13} />
                 </span>
               </div>
               <strong>Search any lane for instant intelligence</strong>
               <p>
                 See real-time market rates from DAT, Truckstop &amp; Loadlink, carrier trust scores,
-                and 30-day performance analytics for any origin–destination pair.
+                and 30-day performance analytics.
               </p>
               <div className="qls__features">
                 <span>
@@ -417,8 +402,9 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
 
           {phase === 'loading' && (
             <div className="qls__loading" aria-busy="true">
-              {Array.from({ length: 6 }).map((_, i) => (
+              {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} className="qls__skeleton-row">
+                  <i />
                   <i />
                   <i />
                   <i />
@@ -434,7 +420,10 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               <div className="qls__results-head">
                 <strong>{results.length} carriers matched</strong>
                 <em>
-                  Radius {radius || '50'} mi · {available}
+                  {query?.origin} → {query?.destination}
+                  {query?.trailer ? ` · ${query.trailer}` : ''}
+                  {' · '}
+                  Radius {radius || '50'} mi
                   {powerOnly ? ' · Power only' : ''}
                 </em>
               </div>
@@ -459,7 +448,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                     {results.map((r) => (
                       <tr key={r.id}>
                         <td>
-                          <div className="qls__carrier">
+                          <div className="qls__cell-2">
                             <strong>{r.name}</strong>
                             <em>
                               {r.mc ? `MC# ${r.mc}` : '—'}
@@ -473,7 +462,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                           </span>
                         </td>
                         <td>
-                          <div className="qls__stack">
+                          <div className="qls__cell-2">
                             <strong>{r.lastUsed}</strong>
                             <em>{r.lastUsedRel}</em>
                           </div>
@@ -484,7 +473,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                         <td className="mono">{r.loads}</td>
                         <td className="mono">{r.legs}</td>
                         <td>
-                          <div className="qls__stack">
+                          <div className="qls__cell-2">
                             <strong>{r.contact ?? '—'}</strong>
                             {r.phone ? (
                               <a href={`tel:${r.phone}`} className="qls__link">
@@ -513,32 +502,23 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
           )}
         </div>
 
-        <footer className="qls__foot">
-          <div className="qls__foot-meta">
-            {phase === 'results' ? (
-              <>
-                <CheckCircle2 size={14} />
-                <span>
-                  <strong>{results.length} carriers matched</strong> on this lane · live rates from
-                  DAT, Truckstop &amp; Loadlink
-                </span>
-              </>
-            ) : (
-              <span>Enter origin, destination, and trailer to search the lane.</span>
-            )}
-          </div>
-          <div className="qls__foot-actions">
-            {phase !== 'idle' && (
-              <button type="button" className="qls__ghost-btn" onClick={reset}>
-                New Search
-              </button>
-            )}
-            <button type="button" className="qls__search-btn qls__search-btn--sm" onClick={search}>
-              <Search size={14} />
-              Search Lane
-            </button>
-          </div>
-        </footer>
+        {phase !== 'idle' && (
+          <footer className="qls__foot">
+            <div className="qls__foot-meta">
+              <CheckCircle2 size={14} />
+              <span>
+                {phase === 'results' ? (
+                  <>
+                    <strong>{results.length} carriers matched</strong> · live rates from DAT,
+                    Truckstop &amp; Loadlink
+                  </>
+                ) : (
+                  'Searching lane carriers…'
+                )}
+              </span>
+            </div>
+          </footer>
+        )}
       </aside>
     </div>
   )
