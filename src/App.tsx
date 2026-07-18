@@ -19,6 +19,8 @@ import {
 } from '@/pages/CarrierSourcingReportPage'
 import { LoadDetailsPage } from '@/pages/LoadDetailsPage'
 import { AvailabilityPage } from '@/pages/AvailabilityPage'
+import { MyCarriersPage } from '@/pages/MyCarriersPage'
+import { CarrierDetailPage } from '@/pages/CarrierDetailPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { reportLoads } from '@/data/report'
 import { cn } from '@/lib/cn'
@@ -38,6 +40,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [refreshKey, setRefreshKey] = useState(0)
   const [openLoadId, setOpenLoadId] = useState<string | null>(null)
+  const [openCarrierId, setOpenCarrierId] = useState<string | null>(null)
   const [laneSearchOpen, setLaneSearchOpen] = useState(false)
 
   const openLoad = useMemo(
@@ -45,7 +48,7 @@ export default function App() {
     [openLoadId]
   )
 
-  const inDetails = Boolean(openLoad)
+  const inDetails = Boolean(openLoad) || Boolean(openCarrierId)
 
   return (
     <div className={cn('sr-app', collapsed && 'is-collapsed', inDetails && 'is-details')}>
@@ -83,6 +86,7 @@ export default function App() {
                 onClick={() => {
                   setNav(item.id)
                   setOpenLoadId(null)
+                  setOpenCarrierId(null)
                 }}
               >
                 <Icon size={16} strokeWidth={1.75} />
@@ -111,6 +115,11 @@ export default function App() {
       <div className="sr-main">
         {inDetails && openLoad ? (
           <LoadDetailsPage load={openLoad} onBack={() => setOpenLoadId(null)} />
+        ) : inDetails && openCarrierId ? (
+          <CarrierDetailPage
+            carrierId={openCarrierId}
+            onBack={() => setOpenCarrierId(null)}
+          />
         ) : (
           <>
             <header className="sr-topbar">
@@ -128,7 +137,9 @@ export default function App() {
                   placeholder={
                     nav === 'availability'
                       ? 'Search carrier, lane, equipment, notes…'
-                      : 'Search probills, PO, customer, equipment…'
+                      : nav === 'carriers'
+                        ? 'Search carrier, MC, DOT, contact…'
+                        : 'Search probills, PO, customer, equipment…'
                   }
                 />
               </label>
@@ -143,24 +154,26 @@ export default function App() {
                   Quick Lane Search
                 </button>
 
-                <div className="sr-view-toggle" role="group" aria-label="View mode">
-                  <button
-                    type="button"
-                    className={cn(viewMode === 'table' && 'is-active')}
-                    onClick={() => setViewMode('table')}
-                  >
-                    <Table2 size={14} />
-                    Table
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(viewMode === 'cards' && 'is-active')}
-                    onClick={() => setViewMode('cards')}
-                  >
-                    <LayoutGrid size={14} />
-                    Cards
-                  </button>
-                </div>
+                {nav === 'sourcing' && (
+                  <div className="sr-view-toggle" role="group" aria-label="View mode">
+                    <button
+                      type="button"
+                      className={cn(viewMode === 'table' && 'is-active')}
+                      onClick={() => setViewMode('table')}
+                    >
+                      <Table2 size={14} />
+                      Table
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(viewMode === 'cards' && 'is-active')}
+                      onClick={() => setViewMode('cards')}
+                    >
+                      <LayoutGrid size={14} />
+                      Cards
+                    </button>
+                  </div>
+                )}
 
                 <button
                   type="button"
@@ -193,6 +206,12 @@ export default function App() {
               />
             ) : nav === 'availability' ? (
               <AvailabilityPage search={search} />
+            ) : nav === 'carriers' ? (
+              <MyCarriersPage
+                search={search}
+                onOpenCarrier={setOpenCarrierId}
+                onOpenLaneSearch={() => setLaneSearchOpen(true)}
+              />
             ) : (
               <div className="sr-page">
                 <div className="sr-card sr-card__pad">
