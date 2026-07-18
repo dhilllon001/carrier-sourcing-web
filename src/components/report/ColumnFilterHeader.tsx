@@ -107,7 +107,7 @@ export function ColumnFilterHeader({
               onKeyDown={(e) => e.key === 'Enter' && handleApply()}
             />
           ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div className="sr-col-filter-popover__range">
               <input
                 placeholder="Min"
                 value={draftMin}
@@ -120,7 +120,7 @@ export function ColumnFilterHeader({
               />
             </div>
           )}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <div className="sr-col-filter-popover__actions">
             <button type="button" className="sr-btn sr-btn--primary sr-btn--sm" onClick={handleApply}>
               Apply
             </button>

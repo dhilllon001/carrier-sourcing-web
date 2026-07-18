@@ -148,6 +148,7 @@ export function CarrierSourcingReportPage({
       {
         key: 'id',
         header: 'Probill',
+        filter: { type: 'text' },
         thClassName: 'col-probill',
         width: 118,
         minWidth: 96,
@@ -202,6 +203,7 @@ export function CarrierSourcingReportPage({
       {
         key: 'route',
         header: 'Route',
+        filter: { type: 'range', key: 'miles' },
         thClassName: 'col-route',
         width: 280,
         minWidth: 220,
@@ -235,6 +237,7 @@ export function CarrierSourcingReportPage({
       {
         key: 'broker',
         header: 'Broker',
+        filter: { type: 'text' },
         thClassName: 'col-broker',
         width: 104,
         minWidth: 80,
@@ -245,6 +248,7 @@ export function CarrierSourcingReportPage({
       {
         key: 'team',
         header: 'Team',
+        filter: { type: 'text' },
         thClassName: 'col-team',
         width: 100,
         minWidth: 76,
@@ -258,6 +262,7 @@ export function CarrierSourcingReportPage({
     <div className="sr-page">
       <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">
         <div className="sr-express-group" role="group" aria-label="Mode">
+          <div className="sr-express-group__label">Mode</div>
           <div className="sr-express-segment">
             {(
               [
@@ -282,6 +287,7 @@ export function CarrierSourcingReportPage({
         </div>
 
         <div className="sr-express-group" role="group" aria-label="Status">
+          <div className="sr-express-group__label">Status</div>
           <div className="sr-express-segment">
             {(
               [

@@ -8,7 +8,7 @@ export type SrColumn<T> = {
   key: string
   header: string
   align?: 'left' | 'right'
-  filter?: { type: 'text' | 'range' }
+  filter?: { type: 'text' | 'range'; key?: string }
   className?: string
   thClassName?: string
   width?: number
@@ -168,9 +168,9 @@ export function SrDataTable<T extends { id: string }>({
                         {col.filter && onColFilterChange ? (
                           <ColumnFilterHeader
                             label={col.header}
-                            filterKey={col.key}
+                            filterKey={col.filter.key ?? col.key}
                             type={col.filter.type}
-                            value={colFilters[col.key]}
+                            value={colFilters[col.filter.key ?? col.key]}
                             onApply={(key, val) => {
                               const next = { ...colFilters }
                               if (val === undefined) delete next[key]

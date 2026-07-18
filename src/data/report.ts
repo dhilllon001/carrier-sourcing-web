@@ -59,8 +59,12 @@ export const SELECT_FILTER_DEFS: { key: keyof ReportFilters; label: string }[] =
 ]
 
 export const COL_FILTER_DEFS = [
+  { key: 'id', label: 'Probill', type: 'text' as const },
   { key: 'customer', label: 'Customer', type: 'text' as const },
   { key: 'equipment', label: 'Equip', type: 'text' as const },
+  { key: 'broker', label: 'Broker', type: 'text' as const },
+  { key: 'team', label: 'Team', type: 'text' as const },
+  { key: 'miles', label: 'Miles', type: 'range' as const },
 ]
 
 export const LIFECYCLE = [
@@ -1016,11 +1020,23 @@ export function filterReportLoads(rows: ReportLoad[], filters: ReportFilters) {
     if (filters.subStage !== 'ALL' && row.subStage !== filters.subStage) return false
 
     const cf = filters.colFilters
+    if (cf.id && typeof cf.id === 'string') {
+      const q = cf.id.toLowerCase()
+      if (!row.id.toLowerCase().includes(q) && !row.identifier.toLowerCase().includes(q)) {
+        return false
+      }
+    }
     if (cf.customer && typeof cf.customer === 'string') {
       if (!row.customer.toLowerCase().includes(cf.customer.toLowerCase())) return false
     }
     if (cf.equipment && typeof cf.equipment === 'string') {
       if (!row.equipment.toLowerCase().includes(cf.equipment.toLowerCase())) return false
+    }
+    if (cf.broker && typeof cf.broker === 'string') {
+      if (!(row.broker ?? '').toLowerCase().includes(cf.broker.toLowerCase())) return false
+    }
+    if (cf.team && typeof cf.team === 'string') {
+      if (!row.team.toLowerCase().includes(cf.team.toLowerCase())) return false
     }
     if (cf.miles && typeof cf.miles === 'object') {
       if (cf.miles.min && row.miles < parseFloat(cf.miles.min)) return false
