@@ -490,54 +490,63 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
     <div className="qls" role="dialog" aria-modal="true" aria-label="Quick lane search">
       <button type="button" className="qls__backdrop" aria-label="Close panel" onClick={onClose} />
       <aside className="qls__panel">
-        <header className="qls__head">
-          <div className="qls__brand">
-            <div>
+        <div className="qls__top">
+          <header className="qls__head">
+            <div className="qls__brand">
               <strong>Quick lane search</strong>
-              <em>Market rates · carrier availability · lane intelligence</em>
+              <em>Rates, availability, and carriers for a lane</em>
             </div>
-          </div>
-          <div className="qls__head-actions">
-            <button type="button" className="qls__icon-btn" aria-label="Refresh" onClick={reset}>
-              <RefreshCw size={15} />
-            </button>
-            <button type="button" className="qls__icon-btn" aria-label="Close" onClick={onClose}>
-              <X size={16} />
-            </button>
-          </div>
-        </header>
-
-        <div className="qls__favs">
-          <span className="qls__favs-label">Favourites</span>
-          <div className="qls__favs-row">
-            {favourites.length === 0 && (
-              <span className="qls__favs-empty">No saved lanes yet — search and star a lane.</span>
-            )}
-            {favourites.map((fav) => (
-              <button
-                key={fav.id}
-                type="button"
-                className={cn('qls__fav-pill', activeFavId === fav.id && 'is-active')}
-                onClick={() => applyFavourite(fav)}
-                title={`${fav.origin} → ${fav.destination}`}
-              >
-                <Star size={11} fill="currentColor" />
-                <span>
-                  {shortLane(fav.origin)} → {shortLane(fav.destination)}
-                  {fav.powerOnly ? ' power only' : ''}
-                </span>
-                <em>{fav.trailer}</em>
-                {fav.tag && <i>{fav.tag}</i>}
+            <div className="qls__head-actions">
+              <button type="button" className="qls__icon-btn" aria-label="Refresh" onClick={reset}>
+                <RefreshCw size={14} />
               </button>
-            ))}
-          </div>
-          <button type="button" className="qls__manage" onClick={() => setManageOpen(true)}>
-            <Settings2 size={14} />
-            Manage
-          </button>
-        </div>
+              <button type="button" className="qls__icon-btn" aria-label="Close" onClick={onClose}>
+                <X size={15} />
+              </button>
+            </div>
+          </header>
 
-        <div className="qls__form">
+          <div className="qls__favs">
+            <span className="qls__favs-label">Favourites</span>
+            <div className="qls__favs-row">
+              {favourites.length === 0 && (
+                <span className="qls__favs-empty">No saved lanes yet</span>
+              )}
+              {favourites.map((fav) => (
+                <button
+                  key={fav.id}
+                  type="button"
+                  className={cn('qls__fav-pill', activeFavId === fav.id && 'is-active')}
+                  onClick={() => applyFavourite(fav)}
+                  title={`${fav.origin} → ${fav.destination}`}
+                >
+                  <Star size={11} fill="currentColor" />
+                  <span>
+                    {shortLane(fav.origin)} → {shortLane(fav.destination)}
+                    {fav.powerOnly ? ' · power' : ''}
+                  </span>
+                  <em>{fav.trailer}</em>
+                  {fav.tag && <i>{fav.tag}</i>}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className={cn('qls__save', activeFavId && 'is-saved')}
+              onClick={toggleFavouriteCurrent}
+              disabled={!origin.trim() || !destination.trim() || !trailer}
+              title={activeFavId ? 'Remove from favourites' : 'Save current lane'}
+            >
+              <Star size={12} fill={activeFavId ? 'currentColor' : 'none'} />
+              {activeFavId ? 'Saved' : 'Save'}
+            </button>
+            <button type="button" className="qls__manage" onClick={() => setManageOpen(true)}>
+              <Settings2 size={13} />
+              Manage
+            </button>
+          </div>
+
+          <div className="qls__form">
           <div className="qls__grid qls__grid--lane">
             <label className="qls__field">
               <span className="qls__label">Origin</span>
@@ -652,32 +661,8 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               Reset
             </button>
           </div>
-        </div>
-
-        {(phase === 'results' || phase === 'loading') && (
-          <div className="qls__lane-bar">
-            <div className="qls__lane-path">
-              <strong>{origin}</strong>
-              <span className="qls__lane-dash" aria-hidden />
-              <em className="num">{miles} mi</em>
-              <span className="qls__lane-dash" aria-hidden />
-              <strong>{destination}</strong>
-            </div>
-            <div className="qls__lane-tags">
-              {trailer && <span>{trailer}</span>}
-              {powerOnly && <span>Power only</span>}
-              <span>{radius || '50'} mi</span>
-            </div>
-            <button
-              type="button"
-              className={cn('qls__save', activeFavId && 'is-saved')}
-              onClick={toggleFavouriteCurrent}
-            >
-              <Star size={13} fill={activeFavId ? 'currentColor' : 'none'} />
-              {activeFavId ? 'Saved · edit' : 'Save lane'}
-            </button>
           </div>
-        )}
+        </div>
 
         <div className="qls__body">
           {phase === 'idle' && (
@@ -686,7 +671,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                 <Route size={22} />
               </div>
               <strong>Search a lane for carriers and market rates</strong>
-              <p>Pick a favourite above, or enter origin and destination, then search.</p>
+              <p>Pick a favourite, or enter origin and destination, then search.</p>
             </div>
           )}
 
@@ -731,7 +716,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                       </>
                     ) : (
                       <>
-                        <div className="qls-mcard__value num">{card.total}</div>
+                        <div className="qls-mcard__value">{card.total}</div>
                         <div className="qls-mcard__rpm">{card.rpm}</div>
                         <div className="qls-mcard__range">
                           <span>{card.low} low</span>
@@ -886,7 +871,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               <div className="qls-manage__head">
                 <div>
                   <strong>Manage favourite lanes</strong>
-                  <em>Save lanes you search often. Click a star on the lane bar to add the current search.</em>
+                  <em>Save lanes you search often. Use Save next to Manage to add the current search.</em>
                 </div>
                 <button
                   type="button"

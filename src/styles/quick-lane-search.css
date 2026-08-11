@@ -64,20 +64,25 @@
   }
 }
 
+.qls__top {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
 .qls__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #e8ebf0;
+  padding: 10px 16px 6px;
+  background: transparent;
+  border-bottom: 0;
 }
 
 .qls__brand {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
 }
 
@@ -95,18 +100,19 @@
 
 .qls__brand strong {
   display: block;
-  font-size: 14.5px;
-  font-weight: 750;
-  color: var(--sr-text-primary);
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .qls__brand em {
   display: block;
-  margin-top: 1px;
   font-style: normal;
   font-size: 11.5px;
-  color: #6b7685;
+  color: var(--ink-3);
+  line-height: 1.3;
 }
 
 .qls__head-actions {
@@ -116,28 +122,29 @@
 }
 
 .qls__icon-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid #e4e7eb;
-  background: #fff;
-  color: #3d4a5c;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
   display: inline-grid;
   place-items: center;
+  cursor: pointer;
 }
 
 .qls__icon-btn:hover {
-  background: #f4f6f8;
-  color: var(--sr-text-primary);
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .qls__form {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 16px 14px;
-  background: #fff;
-  border-bottom: 1px solid #e8ebf0;
+  padding: 8px 16px 12px;
+  background: transparent;
+  border-bottom: 0;
 }
 
 .qls__grid {
@@ -176,16 +183,16 @@
 .qls__favs {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  padding: 4px 16px 8px;
+  background: transparent;
+  border-bottom: 0;
 }
 
 .qls__favs-label {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
   flex-shrink: 0;
@@ -199,6 +206,7 @@
   flex: 1;
   overflow-x: auto;
   padding-bottom: 1px;
+  scrollbar-width: thin;
 }
 
 .qls__favs-empty {
@@ -210,9 +218,9 @@
 .qls__fav-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 10px;
+  gap: 5px;
+  height: 26px;
+  padding: 0 9px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface-2);
@@ -231,7 +239,7 @@
 
 .qls__fav-pill em {
   font-style: normal;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -240,7 +248,7 @@
 
 .qls__fav-pill i {
   font-style: normal;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 999px;
@@ -258,14 +266,14 @@
 .qls__manage {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 11px;
-  border-radius: 8px;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   flex-shrink: 0;
   cursor: pointer;
@@ -277,86 +285,15 @@
   color: var(--ink);
 }
 
-/* Lane summary bar */
-.qls__lane-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 16px;
-  margin-top: 12px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: #151a21;
-  color: #edeff3;
-}
-
-.qls__lane-path {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-}
-
-.qls__lane-path strong {
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.qls__lane-dash {
-  flex: 1;
-  min-width: 24px;
-  max-width: 56px;
-  height: 0;
-  border-top: 1px dashed rgba(255, 255, 255, 0.28);
-}
-
-.qls__lane-path em {
-  font-style: normal;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 11px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.qls__lane-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  flex-shrink: 0;
-}
-
-.qls__lane-tags span {
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 10.5px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  color: #c9d1db;
-}
-
 .qls__save {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid #f1d5a9;
-  background: #fdf3e4;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--amber-line);
+  background: var(--amber-soft);
   color: var(--amber);
   font-size: 12px;
   font-weight: 600;
@@ -365,47 +302,69 @@
 }
 
 .qls__save.is-saved,
-.qls__save:hover {
+.qls__save:hover:not(:disabled) {
   background: #f8e7c8;
 }
 
-/* Market rate cards */
+.qls__save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Market rate cards — compact + horizontal scroll */
 .qls__market {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.qls__market::-webkit-scrollbar {
+  height: 5px;
+}
+
+.qls__market::-webkit-scrollbar-thumb {
+  background: #c9d0da;
+  border-radius: 999px;
 }
 
 .qls-mcard {
+  flex: 0 0 228px;
+  width: 228px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: var(--sh-1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: none;
   min-width: 0;
+  scroll-snap-align: start;
 }
 
 .qls-mcard__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .qls-mcard__head strong {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink);
 }
 
 .qls-mcard__badge {
   height: auto;
-  padding: 2.5px 8px;
+  padding: 1.5px 6px;
   border-radius: 999px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   border: 1px solid transparent;
+  line-height: 1.3;
 }
 
 .qls-mcard__badge.is-broker {
@@ -427,42 +386,46 @@
 }
 
 .qls-mcard__value {
-  font-family: var(--sr-font-mono);
-  font-size: 24px;
-  font-weight: 600;
+  font-family: var(--sr-font-body);
+  font-size: 20px;
+  font-weight: 650;
   letter-spacing: -0.02em;
-  line-height: 1;
+  line-height: 1.05;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .qls-mcard__value.is-muted {
   color: var(--ink-3);
   font-weight: 600;
+  font-size: 18px;
 }
 
 .qls-mcard__rpm {
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 2px;
+  font-size: 11px;
   color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .qls-mcard__range {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  margin-top: 12px;
-  font-size: 11px;
+  margin-top: 8px;
+  font-size: 10px;
   color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }
 
 .qls-mcard__range.is-muted {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .qls-mcard__bar {
   position: relative;
-  height: 6px;
+  height: 4px;
   border-radius: 999px;
   background: var(--line-soft);
   overflow: visible;
@@ -480,19 +443,22 @@
   position: absolute;
   top: -3px;
   width: 2px;
-  height: 12px;
+  height: 10px;
   margin-left: -1px;
   background: var(--ink);
   border-radius: 1px;
 }
 
 .qls-mcard__meta {
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 7px;
   border-top: 1px solid var(--line-soft);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--ink-3);
-  line-height: 1.35;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .qls-mcard.is-empty .qls-mcard__bar {
@@ -728,16 +694,8 @@
 }
 
 @media (max-width: 1100px) {
-  .qls__market {
-    grid-template-columns: 1fr;
-  }
-
   .qls__grid--meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .qls__lane-bar {
-    flex-wrap: wrap;
   }
 }
 
