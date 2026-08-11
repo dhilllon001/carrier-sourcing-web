@@ -751,81 +751,87 @@ function DetailRail({
       <div className="dd-rail__head">
         <button type="button" className="dd-rail__title-btn" onClick={onToggle}>
           <span className="dd-rail__title">Rate & coverage</span>
-          <ChevronDown size={14} />
+          <ChevronDown size={15} />
         </button>
         <button type="button" className="dd-icon-btn" aria-label="Collapse right rail" onClick={onToggle}>
           <PanelRightClose size={14} />
         </button>
       </div>
 
-      <div className="dd-rail-rate-pair">
-        <button type="button" className="dd-rail-rate-tile">
-          <em>{bookUnset ? 'Not set' : detail.bookNowRate}</em>
-          <strong>Book now</strong>
-        </button>
-        <button type="button" className="dd-rail-rate-tile is-max">
-          <em>{maxUnset ? 'Not set' : detail.maxBuy}</em>
-          <strong>Max buy</strong>
-        </button>
+      <div className="dd-rail-stack">
+        <div className="dd-rail-rate-pair">
+          <button type="button" className="dd-rail-rate-tile">
+            <em className={bookUnset ? 'is-empty' : undefined}>
+              {bookUnset ? 'Not set' : detail.bookNowRate}
+            </em>
+            <strong>Book now</strong>
+          </button>
+          <button type="button" className="dd-rail-rate-tile is-max">
+            <em className={maxUnset ? 'is-empty' : undefined}>
+              {maxUnset ? 'Not set' : detail.maxBuy}
+            </em>
+            <strong>Max buy</strong>
+          </button>
+        </div>
+
+        <section className="dd-rail-card">
+          <div className="dd-rail-card__head">
+            <strong>Live vendor benchmarks</strong>
+            <span className="dd-live-pill">Live</span>
+          </div>
+          <div className="dd-bench-table">
+            <div className="dd-bench-table__head">
+              <span>Source</span>
+              <span>Quote</span>
+            </div>
+            <div className="dd-bench-table__row">
+              <strong>DAT</strong>
+              <span>No quote market price</span>
+            </div>
+            <div className="dd-bench-table__row">
+              <strong>Loadlink</strong>
+              <span>No quote market price</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="dd-rail-card">
+          <div className="dd-rail-kv">
+            <div>
+              <span>Type</span>
+              <strong>{detail.type}</strong>
+            </div>
+            <div>
+              <span>Broker</span>
+              {detail.load.broker ? (
+                <strong>{detail.load.broker}</strong>
+              ) : (
+                <button type="button" className="dd-assign-link" onClick={onAssignBroker}>
+                  + Assign
+                </button>
+              )}
+            </div>
+            <div>
+              <span>Team</span>
+              <strong>{detail.load.team}</strong>
+            </div>
+            <div>
+              <span>Customer rate</span>
+              <strong>
+                {detail.load.fee.toFixed(2)} {detail.currency}
+              </strong>
+            </div>
+            <div>
+              <span>Target margin</span>
+              <strong className="is-muted">—</strong>
+            </div>
+            <div>
+              <span>Cargo value</span>
+              <strong>{detail.cargoValue || 'Not provided'}</strong>
+            </div>
+          </div>
+        </section>
       </div>
-
-      <section className="dd-rail-panel">
-        <div className="dd-rail-panel__title dd-rail-panel__title--live">
-          <span>Live vendor benchmarks</span>
-          <span className="dd-live-pill">Live</span>
-        </div>
-        <div className="dd-bench-table">
-          <div className="dd-bench-table__head">
-            <span>Source</span>
-            <span>Quote</span>
-          </div>
-          <div className="dd-bench-table__row">
-            <strong>DAT</strong>
-            <span>No quote market price</span>
-          </div>
-          <div className="dd-bench-table__row">
-            <strong>Loadlink</strong>
-            <span>No quote market price</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="dd-rail-panel">
-        <div className="dd-rail-kv">
-          <div>
-            <span>Type</span>
-            <strong>{detail.type}</strong>
-          </div>
-          <div>
-            <span>Broker</span>
-            {detail.load.broker ? (
-              <strong>{detail.load.broker}</strong>
-            ) : (
-              <button type="button" className="dd-assign-link" onClick={onAssignBroker}>
-                + Assign
-              </button>
-            )}
-          </div>
-          <div>
-            <span>Team</span>
-            <strong>{detail.load.team}</strong>
-          </div>
-          <div>
-            <span>Customer rate</span>
-            <strong>
-              {detail.load.fee.toFixed(2)} {detail.currency}
-            </strong>
-          </div>
-          <div>
-            <span>Target margin</span>
-            <strong className="is-muted">—</strong>
-          </div>
-          <div>
-            <span>Cargo value</span>
-            <strong>{detail.cargoValue || 'Not provided'}</strong>
-          </div>
-        </div>
-      </section>
     </aside>
   )
 }
