@@ -1,4 +1,5 @@
 @import './styles/report-tokens.css';
+@import './styles/fleet-ops-base.css';
 @import './styles/sr-table.css';
 @import './styles/app-shell.css';
 @import './styles/charts.css';

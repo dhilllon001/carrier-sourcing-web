@@ -184,7 +184,7 @@
 .qls__control:focus-within {
   background: #fff;
   border-color: #b7cae6;
-  box-shadow: 0 0 0 2px rgba(30, 95, 170, 0.12);
+  box-shadow: 0 0 0 2px rgba(43, 79, 211, 0.12);
 }
 
 .qls__control.is-invalid {
@@ -262,15 +262,16 @@
   padding: 0 14px;
   border: none;
   border-radius: 8px;
-  background: var(--sr-action);
+  background: var(--sr-ink);
   color: #fff;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .qls__search-btn:hover {
-  background: var(--sr-action-hover);
+  background: var(--sr-ink-hover);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.22);
 }
 
 .qls__body {
@@ -540,7 +541,7 @@
 
 .qls__source.is-past {
   background: #ecfdf5;
-  color: #047857;
+  color: var(--green);
   border: 1px solid #bbf7d0;
 }
 
@@ -551,14 +552,14 @@
 }
 
 .qls__source.is-highway {
-  background: #0f1a2a;
+  background: var(--ink);
   color: #fbbf24;
-  border: 1px solid #0f1a2a;
+  border: 1px solid var(--ink);
 }
 
 .qls__source.is-new {
   background: #fff7ed;
-  color: #c2410c;
+  color: var(--amber);
   border: 1px solid #fdba74;
 }
 

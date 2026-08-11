@@ -33,7 +33,7 @@
 }
 
 .sr-donut__seg.is-active {
-  filter: drop-shadow(0 0 6px rgba(30, 95, 170, 0.45));
+  filter: drop-shadow(0 0 6px rgba(43, 79, 211, 0.45));
   stroke-width: 28;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .sr-bar-row.is-active .sr-bar-row__fill {
-  filter: drop-shadow(0 0 4px rgba(30, 95, 170, 0.4));
+  filter: drop-shadow(0 0 4px rgba(43, 79, 211, 0.4));
 }
 
 .sr-bar-row:hover .sr-bar-row__label,

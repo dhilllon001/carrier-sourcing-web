@@ -1,0 +1,110 @@
+/* Fleet Ops global base — typography, numbers, motion, shared controls */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sr-font-body);
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+button {
+  cursor: pointer;
+}
+
+.num,
+.mono,
+.mc-mono,
+.sr-table .mono,
+.dd-table .mono {
+  font-family: var(--sr-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sticky glass topbar feel where used */
+.sr-topbar,
+.dd-top {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Primary = ink (near-black). Blue reserved for selection / links / measured. */
+.sr-btn--primary,
+.mc-btn--primary,
+.dd-btn--primary,
+.av-btn--primary,
+.qls__btn--primary {
+  background: var(--sr-ink) !important;
+  border-color: var(--sr-ink) !important;
+  color: #fff !important;
+}
+
+.sr-btn--primary:hover,
+.mc-btn--primary:hover,
+.dd-btn--primary:hover,
+.av-btn--primary:hover,
+.qls__btn--primary:hover {
+  background: var(--sr-ink-hover) !important;
+  border-color: var(--sr-ink-hover) !important;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.22);
+}
+
+.sr-btn--primary:active,
+.mc-btn--primary:active,
+.dd-btn--primary:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* Links / interactive text stay accent blue */
+a,
+.is-link,
+.sr-probill-link,
+.dd-assign-link {
+  color: var(--accent);
+}
+
+/* Focus — never remove */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent-line) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

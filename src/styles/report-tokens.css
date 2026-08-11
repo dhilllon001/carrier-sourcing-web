@@ -1,88 +1,134 @@
-/* ChargerFleet / Pearl reporting design tokens — sr- prefix */
+/* Fleet Ops Design System — Dev Tool Dense (light)
+   Canonical tokens + --sr-* bridges so existing modules inherit the system. */
 
 :root {
-  /* Typography — Inter optical sizes with Inter fallback */
-  --sr-font-body: 'Inter 18pt', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --sr-font-heading: 'Inter 24pt', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --sr-font-display: 'Inter 28pt', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* ── Canonical Fleet Ops ── */
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --line: #e2e5ea;
+  --line-soft: #eef0f3;
 
-  --sr-text-display: 32px;
-  --sr-text-h1: 24px;
+  --ink: #101419;
+  --ink-2: #59636f;
+  --ink-3: #8c96a3;
+
+  --accent: #2b4fd3;
+  --accent-2: #8296ea;
+  --accent-soft: #eff2fd;
+  --accent-line: #d2daf9;
+
+  --green: #0b7a55;
+  --green-soft: #e6f5ef;
+  --green-line: #c6e7d9;
+  --amber: #a85c06;
+  --amber-soft: #fdf3e4;
+  --amber-line: #f1d5a9;
+  --red: #b42318;
+  --red-soft: #fef2f1;
+  --red-line: #f7d4d0;
+
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  --sh-1: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sh-2: 0 4px 14px rgba(16, 24, 40, 0.09), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --sh-3: 0 16px 40px rgba(16, 24, 40, 0.16), 0 4px 10px rgba(16, 24, 40, 0.08);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fast: 130ms;
+  --base: 180ms;
+  --slow: 300ms;
+
+  /* ── Typography ── */
+  --sr-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sr-font-heading: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sr-font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sr-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --sr-text-display: 24px;
+  --sr-text-h1: 22px;
   --sr-text-h2: 20px;
   --sr-text-h3: 16px;
-  --sr-text-h4: 14px;
+  --sr-text-h4: 13px;
   --sr-text-body: 13px;
-  --sr-text-small: 12px;
+  --sr-text-small: 11.5px;
   --sr-text-micro: 11px;
-  --sr-text-eyebrow: 10px;
+  --sr-text-eyebrow: 10.5px;
 
-  --sr-weight-display: 700;
+  --sr-weight-display: 600;
   --sr-weight-h1: 600;
   --sr-weight-h2: 600;
   --sr-weight-h3: 600;
   --sr-weight-h4: 600;
   --sr-weight-body: 400;
-  --sr-weight-label: 700;
+  --sr-weight-label: 600;
 
-  /* Light theme — report surfaces */
-  --sr-bg-app: #e0e4ea;
-  --sr-surface-1: #ffffff;
-  --sr-surface-2: #f4f5f7;
-  --sr-surface-3: #d4d9e1;
+  /* ── Bridges (legacy --sr-* → Fleet Ops) ── */
+  --sr-bg-app: var(--bg);
+  --sr-surface-1: var(--surface);
+  --sr-surface-2: var(--surface-2);
+  --sr-surface-3: #eef0f3;
 
-  --sr-text-primary: #0f1a2a;
-  --sr-text-secondary: #3d4a5c;
-  --sr-text-meta: #6b7685;
+  --sr-text-primary: var(--ink);
+  --sr-text-secondary: var(--ink-2);
+  --sr-text-meta: var(--ink-3);
   --sr-text-disabled: #a4adba;
 
-  --sr-border-1: #dde1e8;
-  --sr-border-2: #cdd3dc;
+  --sr-border-1: var(--line);
+  --sr-border-2: #cfd5de;
   --sr-border-3: #b8bfc9;
 
-  --sr-action: #1e5faa;
-  --sr-action-hover: #184e8d;
-  --sr-focus: #5795e3;
+  /* Accent = interactive / measured only */
+  --sr-action: var(--accent);
+  --sr-action-hover: #2443b8;
+  --sr-focus: var(--accent-2);
 
-  --sr-positive: #1f7a43;
-  --sr-negative: #a32b22;
+  /* Primary action buttons = near-black ink (not blue) */
+  --sr-ink: var(--ink);
+  --sr-ink-hover: #242a33;
 
-  --sr-table-zebra: #f7f8fa;
-  --sr-table-hover: #eef0f4;
-  --sr-table-selected: #ebf3fc;
-  --sr-table-hover-accent: #e8f1fb;
+  --sr-positive: var(--green);
+  --sr-negative: var(--red);
 
-  /* Mode palette — consistent chips / badges / filters */
-  --sr-mode-spot-fg: #7c3aed;
-  --sr-mode-spot-bg: #f3e8ff;
-  --sr-mode-spot-border: #e9d5ff;
+  --sr-table-zebra: var(--surface-2);
+  --sr-table-hover: #f8fafd;
+  --sr-table-selected: var(--accent-soft);
+  --sr-table-hover-accent: #f8fafd;
 
-  --sr-mode-expedited-fg: #c2410c;
-  --sr-mode-expedited-bg: #fff7ed;
-  --sr-mode-expedited-border: #fed7aa;
+  /* Mode chips — quiet neutrals + one accent family (no second hues) */
+  --sr-mode-spot-fg: var(--ink);
+  --sr-mode-spot-bg: var(--surface-2);
+  --sr-mode-spot-border: var(--line);
 
-  --sr-mode-managed-fg: #4338ca;
-  --sr-mode-managed-bg: #eef2ff;
-  --sr-mode-managed-border: #c7d2fe;
+  --sr-mode-expedited-fg: var(--amber);
+  --sr-mode-expedited-bg: var(--amber-soft);
+  --sr-mode-expedited-border: var(--amber-line);
 
-  --sr-mode-mexico-fg: #047857;
-  --sr-mode-mexico-bg: #ecfdf5;
-  --sr-mode-mexico-border: #a7f3d0;
+  --sr-mode-managed-fg: var(--accent);
+  --sr-mode-managed-bg: var(--accent-soft);
+  --sr-mode-managed-border: var(--accent-line);
 
-  --sr-mode-power-fg: #1d4ed8;
-  --sr-mode-power-bg: #eff6ff;
-  --sr-mode-power-border: #bfdbfe;
+  --sr-mode-mexico-fg: var(--green);
+  --sr-mode-mexico-bg: var(--green-soft);
+  --sr-mode-mexico-border: var(--green-line);
 
-  /* Dark sidebar */
-  --sr-nav-bg: #1a1d24;
-  --sr-nav-text: #e8edf3;
+  --sr-mode-power-fg: var(--ink-2);
+  --sr-mode-power-bg: var(--surface-2);
+  --sr-mode-power-border: var(--line);
+
+  /* Sidebar */
+  --sr-nav-bg: #151a21;
+  --sr-nav-text: #edeff3;
   --sr-nav-text-2: #b4bfcd;
-  --sr-nav-meta: #7c8898;
+  --sr-nav-meta: #8c96a3;
   --sr-nav-divider: rgba(255, 255, 255, 0.06);
   --sr-nav-hover: rgba(255, 255, 255, 0.06);
-  --sr-nav-active: rgba(87, 149, 227, 0.14);
-  --sr-nav-active-bar: #5795e3;
+  --sr-nav-active: rgba(43, 79, 211, 0.18);
+  --sr-nav-active-bar: var(--accent);
 
-  /* Spacing — 4px base */
+  /* Spacing — 4px grid */
   --sr-space-1: 4px;
   --sr-space-2: 8px;
   --sr-space-3: 12px;
@@ -93,9 +139,9 @@
   --sr-space-12: 48px;
 
   /* Radii */
-  --sr-radius-sm: 3px;
-  --sr-radius-md: 6px;
-  --sr-radius-lg: 10px;
+  --sr-radius-sm: var(--r-sm);
+  --sr-radius-md: var(--r-md);
+  --sr-radius-lg: var(--r-lg);
   --sr-radius-pill: 999px;
 
   /* Row heights */
@@ -104,16 +150,16 @@
   --sr-row-comfortable: 40px;
 
   /* Motion */
-  --sr-ease: ease-out;
-  --sr-duration: 140ms;
-  --sr-duration-fast: 120ms;
-  --sr-duration-slow: 160ms;
+  --sr-ease: var(--ease);
+  --sr-duration: var(--base);
+  --sr-duration-fast: var(--fast);
+  --sr-duration-slow: var(--slow);
 
-  /* Chart palette (muted enterprise) */
-  --sr-chart-1: #1e5faa;
-  --sr-chart-2: #3d7ec4;
-  --sr-chart-3: #6b7685;
-  --sr-chart-4: #1f7a43;
-  --sr-chart-5: #a32b22;
-  --sr-chart-6: #8b93a1;
+  /* Charts */
+  --sr-chart-1: var(--accent);
+  --sr-chart-2: var(--accent-2);
+  --sr-chart-3: #b8c4f2;
+  --sr-chart-4: #5a3fc0;
+  --sr-chart-5: var(--green);
+  --sr-chart-6: var(--ink-3);
 }

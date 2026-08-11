@@ -147,7 +147,7 @@
 }
 
 .av-chip.is-available {
-  color: #047857;
+  color: var(--green);
   border-color: #bbf7d0;
   background: #ecfdf5;
 }
@@ -159,7 +159,7 @@
 }
 
 .av-chip.is-active {
-  box-shadow: 0 0 0 2px rgba(30, 95, 170, 0.12);
+  box-shadow: 0 0 0 2px rgba(43, 79, 211, 0.12);
 }
 
 .av-search {
@@ -217,14 +217,14 @@
   z-index: 1;
   height: 36px;
   padding: 0 12px;
-  background: #1f2937;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.05em;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
-  border-bottom: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .av-table tbody tr:nth-child(even) {
@@ -318,7 +318,7 @@
 }
 
 .av-status.is-posted { color: var(--sr-action); }
-.av-status.is-available { color: #047857; }
+.av-status.is-available { color: var(--green); }
 .av-status.is-expired { color: #6b7685; }
 
 .av-onboard {
@@ -335,7 +335,7 @@
 
 .av-onboard.is-ok {
   background: #ecfdf5;
-  color: #047857;
+  color: var(--green);
   border: 1px solid #bbf7d0;
 }
 
@@ -436,14 +436,15 @@
 }
 
 .av-btn--primary {
-  background: var(--sr-action);
-  border-color: var(--sr-action);
+  background: var(--sr-ink);
+  border-color: var(--sr-ink);
   color: #fff;
 }
 
 .av-btn--primary:hover {
-  background: var(--sr-action-hover);
-  border-color: var(--sr-action-hover);
+  background: var(--sr-ink-hover);
+  border-color: var(--sr-ink-hover);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.22);
 }
 
 /* Post availability drawer */
@@ -608,7 +609,7 @@
 .av-field__control:focus-within {
   background: #fff;
   border-color: #b7cae6;
-  box-shadow: 0 0 0 2px rgba(30, 95, 170, 0.12);
+  box-shadow: 0 0 0 2px rgba(43, 79, 211, 0.12);
 }
 
 .av-field__control.is-invalid {
@@ -645,7 +646,7 @@
   outline: none;
   background: #fff;
   border-color: #b7cae6;
-  box-shadow: 0 0 0 2px rgba(30, 95, 170, 0.12);
+  box-shadow: 0 0 0 2px rgba(43, 79, 211, 0.12);
 }
 
 .av-link-btn {
