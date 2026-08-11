@@ -42,7 +42,7 @@ type FavouriteLane = {
 }
 
 type MarketCard = {
-  id: string
+  id: 'dat' | 'truckstop' | 'loadlink'
   source: string
   badge: string
   badgeTone: 'broker' | 'market' | 'thin'
@@ -285,6 +285,68 @@ function shortLane(city: string) {
   const part = city.split(',')[0]?.trim() ?? city
   if (part.length <= 10) return part.toUpperCase()
   return part.slice(0, 3).toUpperCase()
+}
+
+function RateSourceMark({ id }: { id: MarketCard['id'] }) {
+  if (id === 'dat') {
+    return (
+      <span className="qls-brand qls-brand--dat" aria-hidden>
+        <svg viewBox="0 0 32 16" width="32" height="16">
+          <rect width="32" height="16" rx="3" fill="#0062BE" />
+          <text
+            x="16"
+            y="11.5"
+            textAnchor="middle"
+            fill="#fff"
+            fontSize="8.5"
+            fontWeight="700"
+            fontFamily="Inter, system-ui, sans-serif"
+            letterSpacing="0.4"
+          >
+            DAT
+          </text>
+        </svg>
+      </span>
+    )
+  }
+  if (id === 'truckstop') {
+    return (
+      <span className="qls-brand qls-brand--truckstop" aria-hidden>
+        <svg viewBox="0 0 18 18" width="18" height="18">
+          <rect width="18" height="18" rx="4" fill="#F36C00" />
+          <text
+            x="9"
+            y="12.2"
+            textAnchor="middle"
+            fill="#fff"
+            fontSize="8"
+            fontWeight="700"
+            fontFamily="Inter, system-ui, sans-serif"
+          >
+            TS
+          </text>
+        </svg>
+      </span>
+    )
+  }
+  return (
+    <span className="qls-brand qls-brand--loadlink" aria-hidden>
+      <svg viewBox="0 0 18 18" width="18" height="18">
+        <rect width="18" height="18" rx="4" fill="#C8102E" />
+        <text
+          x="9"
+          y="12.2"
+          textAnchor="middle"
+          fill="#fff"
+          fontSize="8"
+          fontWeight="700"
+          fontFamily="Inter, system-ui, sans-serif"
+        >
+          LL
+        </text>
+      </svg>
+    </span>
+  )
 }
 
 function buildMarketCards(miles: number, powerOnly: boolean): MarketCard[] {
@@ -699,7 +761,10 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                     className={cn('qls-mcard', card.empty && 'is-empty')}
                   >
                     <div className="qls-mcard__head">
-                      <strong>{card.source}</strong>
+                      <div className="qls-mcard__brand">
+                        <RateSourceMark id={card.id} />
+                        <strong>{card.source}</strong>
+                      </div>
                       <span className={cn('qls-mcard__badge', `is-${card.badgeTone}`)}>
                         {card.badge}
                       </span>
