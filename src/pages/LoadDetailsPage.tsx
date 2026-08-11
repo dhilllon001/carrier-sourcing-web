@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  AlertTriangle,
   ArrowLeft,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Download,
   ExternalLink,
   FileText,
+  Info,
   Layers,
-  Pause,
   Pencil,
   Plus,
   RefreshCw,
@@ -39,7 +41,7 @@ import {
 } from '@/data/loadDetail'
 import type { ReportLoad } from '@/data/report'
 
-type TabId = 'summary' | 'instructions' | 'documents'
+type TabId = 'summary' | 'instructions' | 'documents' | 'activity'
 
 type LoadDetailsPageProps = {
   load: ReportLoad
@@ -177,14 +179,27 @@ function SummaryTab({
   tags,
   onTags,
   onPostToSourcing,
+  onPatchDetail,
 }: {
   detail: LoadDetail
   tags: string[]
   onTags: (t: string[]) => void
   onPostToSourcing: () => void
+  onPatchDetail: (patch: Partial<LoadDetail>) => void
 }) {
   const [activeProbill, setActiveProbill] = useState(detail.commodities[0]?.probill)
   const [commodities, setCommodities] = useState<CommodityLine[]>(detail.commodities)
+  const [maxBuyDraft, setMaxBuyDraft] = useState(
+    detail.maxBuy === '—' || detail.maxBuy === '$0.00' ? '' : detail.maxBuy.replace(/[^0-9.]/g, '')
+  )
+  const [hookAppt, setHookAppt] = useState(
+    !detail.stops.some((s) => (s.role === 'Hook' || s.kind === 'Pickup') && s.appointmentRequired)
+  )
+  const [dropAppt, setDropAppt] = useState(
+    !detail.stops.some((s) => (s.role === 'Drop' || s.kind === 'Delivery') && s.appointmentRequired)
+  )
+  const [brokerAssigned, setBrokerAssigned] = useState(Boolean(detail.load.broker))
+  const [whyOpen, setWhyOpen] = useState(false)
   const [posted, setPosted] = useState(
     detail.load.subStage === 'Find & Post' || detail.load.status === 'Posted'
   )
@@ -194,259 +209,275 @@ function SummaryTab({
     setActiveProbill(detail.commodities[0]?.probill)
   }, [detail.commodities])
 
-  const activeLines = commodities.filter((c) => c.probill === activeProbill)
+  const customerRate = `${detail.load.fee.toFixed(2)} ${detail.currency}`
+  const maxBuySet = Boolean(maxBuyDraft) && Number(maxBuyDraft) > 0
+  const equipmentOk = Boolean(detail.load.equipment)
+  const rateOk = detail.load.fee > 0
 
-  const addCommodity = () => {
-    const n = commodities.length + 1
-    const line: CommodityLine = {
-      probill: activeProbill || `P${detail.load.id}`,
-      bol: `${detail.poNumber}-${String(n).padStart(3, '0')}`,
-      qty: '1 SKID',
-      weight: '500 LBS',
-      description: 'New commodity line',
-      pieces: '1',
-      classCode: '70',
-      hazmat: false,
-      dims: '48×40×40 in',
-      stackable: true,
+  const checklist = [
+    {
+      id: 'equip',
+      title: 'Equipment confirmed',
+      detail: detail.load.equipment,
+      state: equipmentOk ? ('done' as const) : ('required' as const),
+      action: null as string | null,
+    },
+    {
+      id: 'rate',
+      title: 'Customer rate on file',
+      detail: customerRate,
+      state: rateOk ? ('done' as const) : ('required' as const),
+      action: null as string | null,
+    },
+    {
+      id: 'maxbuy',
+      title: maxBuySet ? 'Max buy set' : 'Max buy not set',
+      detail: maxBuySet ? `$${Number(maxBuyDraft).toFixed(2)} ${detail.currency}` : 'Internal ceiling required',
+      state: maxBuySet ? ('done' as const) : ('required' as const),
+      action: maxBuySet ? null : 'Set max buy',
+    },
+    {
+      id: 'hook',
+      title: hookAppt ? 'Hook appointment set' : 'Hook appointment missing',
+      detail: hookAppt ? 'Confirmed on file' : 'Required before posting',
+      state: hookAppt ? ('done' as const) : ('required' as const),
+      action: hookAppt ? null : 'Add appointment',
+    },
+    {
+      id: 'drop',
+      title: dropAppt ? 'Drop appointment set' : 'Drop appointment missing',
+      detail: dropAppt ? 'Confirmed on file' : 'Required before posting',
+      state: dropAppt ? ('done' as const) : ('required' as const),
+      action: dropAppt ? null : 'Add appointment',
+    },
+    {
+      id: 'broker',
+      title: brokerAssigned ? 'Owning broker assigned' : 'No owning broker',
+      detail: brokerAssigned ? detail.load.broker || 'Assigned' : 'Assign before posting',
+      state: brokerAssigned ? ('done' as const) : ('required' as const),
+      action: brokerAssigned ? null : 'Assign',
+    },
+    {
+      id: 'bol',
+      title: 'No BOL / commodity data',
+      detail: 'Optional enrichment for carriers',
+      state: 'advisory' as const,
+      action: null as string | null,
+    },
+    {
+      id: 'bench',
+      title: 'No market benchmark',
+      detail: 'DAT / Loadlink quote not available',
+      state: 'advisory' as const,
+      action: null as string | null,
+    },
+  ]
+
+  const requiredItems = checklist.filter((c) => c.id !== 'bol' && c.id !== 'bench')
+  const requiredDone = requiredItems.filter((c) => c.state === 'done').length
+  const requiredTotal = requiredItems.length
+  const blocking = checklist.filter((c) => c.state === 'required')
+  const advisories = checklist.filter((c) => c.state === 'advisory')
+  const canPost = blocking.length === 0
+
+  const runAction = (id: string) => {
+    if (id === 'maxbuy') {
+      const el = document.getElementById('dd-max-buy-input') as HTMLInputElement | null
+      el?.focus()
+      return
     }
-    setCommodities((prev) => [...prev, line])
+    if (id === 'hook') setHookAppt(true)
+    if (id === 'drop') setDropAppt(true)
+    if (id === 'broker') {
+      setBrokerAssigned(true)
+      onPatchDetail({
+        load: { ...detail.load, broker: detail.load.broker || detail.salesRep },
+      })
+    }
   }
 
-  const addProbill = () => {
-    const next = `P${Number(detail.load.id) + commodities.length + 1}`
-    const line: CommodityLine = {
-      probill: next,
-      bol: `${detail.poNumber}-NEW`,
-      qty: '1 SKID',
-      weight: '500 LBS',
-      description: 'Added commodity · awaiting confirmation',
-      pieces: '1',
-      classCode: '70',
-      hazmat: false,
-      dims: '48×40×40 in',
-      stackable: true,
+  const applyMaxBuy = (raw: string) => {
+    setMaxBuyDraft(raw)
+    const n = Number(raw)
+    if (!raw || Number.isNaN(n) || n <= 0) {
+      onPatchDetail({ maxBuy: '$0.00', bookNowRate: '—', rejectAbove: '—' })
+      return
     }
-    setCommodities((prev) => [...prev, line])
-    setActiveProbill(next)
+    const book = (n * 0.925).toFixed(2)
+    const reject = (n * 1.08).toFixed(2)
+    onPatchDetail({
+      maxBuy: `$${n.toFixed(2)}`,
+      bookNowRate: `$${book}`,
+      rejectAbove: `$${reject}`,
+    })
   }
 
   const goFindPost = () => {
+    if (!canPost) {
+      setWhyOpen(true)
+      return
+    }
     setPosted(true)
     onPostToSourcing()
   }
 
+  const activeLines = commodities.filter((c) => c.probill === activeProbill)
   const probills = [...new Set(commodities.map((c) => c.probill))]
+
+  const addCommodity = () => {
+    const n = commodities.length + 1
+    setCommodities((prev) => [
+      ...prev,
+      {
+        probill: activeProbill || `P${detail.load.id}`,
+        bol: `${detail.poNumber}-${String(n).padStart(3, '0')}`,
+        qty: '1 SKID',
+        weight: '500 LBS',
+        description: 'New commodity line',
+        pieces: '1',
+        classCode: '70',
+        hazmat: false,
+        dims: '48×40×40 in',
+        stackable: true,
+      },
+    ])
+  }
 
   return (
     <div className="dd-summary dd-overview">
-      <section className="dd-thresh-bar">
-        <div className="dd-thresh-bar__main">
-          <div className="dd-thresh-bar__content">
-            <div className="dd-thresh-bar__head">
-              <div className="dd-thresh-bar__title">
-                <strong>Bidding thresholds</strong>
-                <span className="dd-thresh-bar__currency">{detail.currency}</span>
-              </div>
-              <div className="dd-thresh-bar__meta">
-                <span>DAT mid {detail.marketMid}/mi</span>
-                <span className="dd-thresh-bar__dot" aria-hidden />
-                <span>Range {detail.marketRange}</span>
-                <span className="dd-thresh-bar__dot" aria-hidden />
-                <span>Reviewed {detail.startedAt}</span>
-              </div>
-            </div>
-
-            <div className="dd-thresh-bar__metrics">
-              <div className="dd-thresh-tile is-book">
-                <span>Book now</span>
-                <strong>{detail.bookNowRate}</strong>
-                <em>per mile target</em>
-              </div>
-              <div className="dd-thresh-tile is-max">
-                <span>Max buy</span>
-                <strong>{detail.maxBuy}</strong>
-                <em>counter ceiling</em>
-              </div>
-              <div className="dd-thresh-tile is-reject">
-                <span>Reject above</span>
-                <strong>{detail.rejectAbove}</strong>
-                <em>auto-pass line</em>
-              </div>
-              <div className="dd-thresh-tile is-allin">
-                <span>Target all-in</span>
-                <strong>{detail.targetAllIn}</strong>
-                <em>{detail.load.miles.toLocaleString()} mi · {detail.load.equipment}</em>
-              </div>
-            </div>
-
-            <div className="dd-thresh-bar__scale">
-              <div className="dd-thresh-bar__track" aria-hidden>
-                <span className="dd-thresh-bar__fill" />
-                <i className="is-book" style={{ left: '38%' }} />
-                <i className="is-max" style={{ left: '58%' }} />
-                <i className="is-reject" style={{ left: '78%' }} />
-              </div>
-              <div className="dd-thresh-bar__legend">
-                <span>
-                  <i className="is-book" /> Book {detail.bookNowRate}
-                </span>
-                <span>
-                  <i className="is-max" /> Max {detail.maxBuy}
-                </span>
-                <span>
-                  <i className="is-reject" /> Reject {detail.rejectAbove}
-                </span>
-                <span className="dd-thresh-bar__note">{detail.thresholdNote}</span>
-              </div>
+      <section className={cn('dd-ready', canPost ? 'is-ready' : 'is-blocked')}>
+        <div className="dd-ready__banner">
+          <div className="dd-ready__icon">
+            {canPost ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+          </div>
+          <div className="dd-ready__copy">
+            <strong>{canPost ? 'Ready to post to sourcing' : 'Not ready to post to sourcing'}</strong>
+            <span>
+              {canPost
+                ? 'All required items are complete — carriers can see this load.'
+                : `${blocking.length} item${blocking.length === 1 ? '' : 's'} must be completed before carriers can see this load`}
+              {advisories.length > 0 ? ` · ${advisories.length} advisor${advisories.length === 1 ? 'y' : 'ies'}` : ''}
+            </span>
+          </div>
+          <div className="dd-ready__progress">
+            <span>
+              {requiredDone} / {requiredTotal} required
+            </span>
+            <div className="dd-ready__bar">
+              <i style={{ width: `${Math.round((requiredDone / Math.max(requiredTotal, 1)) * 100)}%` }} />
             </div>
           </div>
+        </div>
 
-          <div className="dd-thresh-bar__cta">
+        <div className="dd-ready__grid">
+          {checklist.map((item) => (
+            <div key={item.id} className={cn('dd-ready-item', `is-${item.state}`)}>
+              <div className="dd-ready-item__icon">
+                {item.state === 'done' && <CheckCircle2 size={16} />}
+                {item.state === 'required' && <AlertTriangle size={16} />}
+                {item.state === 'advisory' && <Info size={16} />}
+              </div>
+              <div className="dd-ready-item__body">
+                <div className="dd-ready-item__top">
+                  <strong>{item.title}</strong>
+                  {item.state === 'required' && <span className="dd-ready-tag is-required">Required</span>}
+                  {item.state === 'advisory' && <span className="dd-ready-tag is-advisory">Advisory</span>}
+                </div>
+                <span>{item.detail}</span>
+              </div>
+              {item.action && (
+                <button type="button" className="dd-ready-item__btn" onClick={() => runAction(item.id)}>
+                  {item.action}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="dd-ready__foot">
+          <div className="dd-ready__post-wrap">
             <button
               type="button"
-              className={cn('dd-thresh-bar__btn', posted && 'is-posted')}
+              className={cn('dd-btn dd-btn--primary dd-ready__post', !canPost && 'is-disabled')}
               onClick={goFindPost}
+              aria-disabled={!canPost}
             >
-              {posted ? (
-                <>
-                  <Pause size={14} fill="currentColor" />
-                  Posted to Sourcing
-                </>
-              ) : (
-                <>
-                  <Check size={14} />
-                  Post to Sourcing
-                </>
-              )}
+              {posted ? 'Posted to sourcing' : 'Post to sourcing'}
+              {!canPost && <em>{blocking.length}</em>}
             </button>
-            <span className="dd-thresh-bar__cta-hint">
-              {posted ? 'Continue in Find & Post' : 'Opens Find & Post workflow'}
-            </span>
+            {!canPost && (
+              <button type="button" className="dd-ready__why" onClick={() => setWhyOpen((v) => !v)}>
+                Why is posting blocked?
+              </button>
+            )}
+            {whyOpen && !canPost && (
+              <div className="dd-ready__popover" role="dialog" aria-label="Blocking items">
+                <div className="dd-ready__popover-head">
+                  <strong>Resolve to unlock posting</strong>
+                  <button type="button" className="dd-icon-btn" onClick={() => setWhyOpen(false)} aria-label="Close">
+                    ×
+                  </button>
+                </div>
+                {blocking.map((b) => (
+                  <div key={b.id} className="dd-ready__popover-row">
+                    <div>
+                      <strong>{b.title}</strong>
+                      <span>{b.detail}</span>
+                    </div>
+                    {b.action && (
+                      <button type="button" className="dd-ready-item__btn" onClick={() => runAction(b.id)}>
+                        {b.action}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="dd-ready__tags">
+            <span className="dd-meta-inline">Tags</span>
+            <TagPopover tags={tags} onChange={onTags} />
           </div>
         </div>
       </section>
 
-      <div className="dd-ov-panels">
-        <section className="dd-ov-panel">
-          <div className="dd-ov-panel__title">
-            <span>Order information</span>
-            <button type="button" className="dd-icon-btn" aria-label="Edit order">
-              <Pencil size={13} />
-            </button>
+      <section className="dd-bid-thresh">
+        <div className="dd-bid-thresh__head">
+          <strong>Bidding thresholds</strong>
+          <span className="dd-chip-soft">{detail.currency}</span>
+          <span className="dd-chip-soft is-warn">Required to post</span>
+        </div>
+        <div className="dd-bid-thresh__grid">
+          <div className="dd-bid-card">
+            <span>Book now</span>
+            <strong className={detail.bookNowRate === '—' ? 'is-empty' : ''}>
+              {detail.bookNowRate === '—' ? 'Not set' : detail.bookNowRate}
+            </strong>
+            <em>Auto-accept at or below this rate</em>
+            {detail.bookNowRate !== '—' && <i className="dd-bid-card__badge">AUTO −7.5%</i>}
           </div>
-          <div className="dd-ov-facts">
-            <div>
-              <span>Order #</span>
-              <strong className="is-link">{detail.orderNumber}</strong>
-            </div>
-            <div>
-              <span>PO #</span>
-              <strong>{detail.poNumber}</strong>
-            </div>
-            <div>
-              <span>Division</span>
-              <strong title={detail.division}>{detail.division}</strong>
-            </div>
-            <div>
-              <span>Category</span>
-              <strong>{detail.orderCategory}</strong>
-            </div>
-            <div>
-              <span>Properties</span>
-              <strong>{detail.properties}</strong>
-            </div>
-            <div>
-              <span>Execution</span>
-              <strong className="is-link">{detail.execution}</strong>
-            </div>
-            <div>
-              <span>Cargo value</span>
-              <strong>{detail.cargoValue || '—'}</strong>
-            </div>
+          <div className="dd-bid-card is-focus">
+            <span>Max buy</span>
+            <label className="dd-bid-card__input">
+              <span>$</span>
+              <input
+                id="dd-max-buy-input"
+                value={maxBuyDraft}
+                placeholder="0.00"
+                onChange={(e) => applyMaxBuy(e.target.value.replace(/[^0-9.]/g, ''))}
+              />
+            </label>
+            <em>Internal ceiling — drives the other two</em>
           </div>
-        </section>
-
-        <section className="dd-ov-panel">
-          <div className="dd-ov-panel__title">
-            <span>Customer & service</span>
+          <div className="dd-bid-card">
+            <span>Reject above</span>
+            <strong className={detail.rejectAbove === '—' ? 'is-empty' : ''}>
+              {detail.rejectAbove === '—' ? 'Not set' : detail.rejectAbove}
+            </strong>
+            <em>Auto-reject bids above this rate</em>
           </div>
-          <div className="dd-ov-facts">
-            <div>
-              <span>Customer</span>
-              <strong className="is-link">{detail.load.customer}</strong>
-            </div>
-            <div>
-              <span>Sales rep</span>
-              <strong>{detail.salesRep}</strong>
-            </div>
-            <div>
-              <span>CSR</span>
-              <strong>{detail.csr}</strong>
-            </div>
-            <div>
-              <span>Account mgr</span>
-              <strong>{detail.accountManager}</strong>
-            </div>
-            <div>
-              <span>Mode</span>
-              <strong>
-                <ModeBadge mode={detail.load.mode} />
-              </strong>
-            </div>
-            <div>
-              <span>Type</span>
-              <strong>{detail.type}</strong>
-            </div>
-            <div className="dd-ov-facts__wide">
-              <span>Tags</span>
-              <strong>
-                <TagPopover tags={tags} onChange={onTags} />
-              </strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="dd-ov-panel">
-          <div className="dd-ov-panel__title">
-            <span>References</span>
-          </div>
-          <div className="dd-ov-facts">
-            <div>
-              <span>PRO #</span>
-              <strong className="mono">{detail.references.pro}</strong>
-            </div>
-            <div>
-              <span>Shipper</span>
-              <strong className="mono">{detail.references.shipper || '—'}</strong>
-            </div>
-            <div>
-              <span>Consignee</span>
-              <strong className="mono">{detail.references.consignee || '—'}</strong>
-            </div>
-            <div>
-              <span>Customer ref</span>
-              <strong className="mono">{detail.references.customer || '—'}</strong>
-            </div>
-            <div>
-              <span>Tender</span>
-              <strong className="mono">{detail.references.tender || '—'}</strong>
-            </div>
-            <div>
-              <span>BOL</span>
-              <strong className="mono">{detail.references.bol || '—'}</strong>
-            </div>
-            <div>
-              <span>Appointment</span>
-              <strong>{detail.references.appointment || '—'}</strong>
-            </div>
-            <div>
-              <span>Equipment</span>
-              <strong>{detail.references.trailer || '—'}</strong>
-            </div>
-          </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
       <section className="dd-ov-freight">
         <div className="dd-ov-freight__head">
@@ -470,13 +501,8 @@ function SummaryTab({
               <Plus size={13} />
               Line
             </button>
-            <button type="button" className="dd-pill-btn" onClick={addProbill}>
-              <Plus size={13} />
-              Probill
-            </button>
           </div>
         </div>
-
         <div className="dd-ov-freight__table">
           <div className="dd-ov-freight__thead">
             <span>Description</span>
@@ -502,9 +528,7 @@ function SummaryTab({
               </span>
             </div>
           ))}
-          {activeLines.length === 0 && (
-            <div className="dd-ov-freight__empty">No commodity lines</div>
-          )}
+          {activeLines.length === 0 && <div className="dd-ov-freight__empty">No commodity lines</div>}
         </div>
       </section>
     </div>
@@ -704,10 +728,12 @@ function DetailRail({
   detail,
   collapsed,
   onToggle,
+  onAssignBroker,
 }: {
   detail: LoadDetail
   collapsed: boolean
   onToggle: () => void
+  onAssignBroker: () => void
 }) {
   if (collapsed) {
     return (
@@ -717,105 +743,113 @@ function DetailRail({
     )
   }
 
+  const bookUnset = !detail.bookNowRate || detail.bookNowRate === '—'
+  const maxUnset = !detail.maxBuy || detail.maxBuy === '—' || detail.maxBuy === '$0.00'
+
   return (
     <aside className="dd-rail dd-rail--ov">
       <div className="dd-rail__head">
-        <div>
-          <span className="dd-rail__title">Rate · Coverage</span>
-          <p className="dd-rail__hint">{detail.currency} · {detail.load.miles.toLocaleString()} mi</p>
-        </div>
+        <button type="button" className="dd-rail__title-btn" onClick={onToggle}>
+          <span className="dd-rail__title">Rate & coverage</span>
+          <ChevronDown size={14} />
+        </button>
         <button type="button" className="dd-icon-btn" aria-label="Collapse right rail" onClick={onToggle}>
           <PanelRightClose size={14} />
         </button>
       </div>
 
+      <div className="dd-rail-rate-pair">
+        <button type="button" className="dd-rail-rate-tile">
+          <em>{bookUnset ? 'Not set' : detail.bookNowRate}</em>
+          <strong>Book now</strong>
+        </button>
+        <button type="button" className="dd-rail-rate-tile is-max">
+          <em>{maxUnset ? 'Not set' : detail.maxBuy}</em>
+          <strong>Max buy</strong>
+        </button>
+      </div>
+
       <section className="dd-rail-panel">
-        <div className="dd-rail-panel__title">Rate context</div>
-        <div className="dd-rail-metrics">
-          <div className="is-book">
-            <span>Book now</span>
-            <strong>{detail.bookNowRate}</strong>
+        <div className="dd-rail-panel__title dd-rail-panel__title--live">
+          <span>Live vendor benchmarks</span>
+          <span className="dd-live-pill">Live</span>
+        </div>
+        <div className="dd-bench-table">
+          <div className="dd-bench-table__head">
+            <span>Source</span>
+            <span>Quote</span>
           </div>
-          <div className="is-max">
-            <span>Max buy</span>
-            <strong>{detail.maxBuy}</strong>
+          <div className="dd-bench-table__row">
+            <strong>DAT</strong>
+            <span>No quote market price</span>
           </div>
-          <div className="is-reject">
-            <span>Reject above</span>
-            <strong>{detail.rejectAbove}</strong>
-          </div>
-          <div>
-            <span>Market</span>
-            <strong>{detail.market === '—' ? detail.bookNowRate : detail.market}</strong>
+          <div className="dd-bench-table__row">
+            <strong>Loadlink</strong>
+            <span>No quote market price</span>
           </div>
         </div>
       </section>
 
       <section className="dd-rail-panel">
-        <div className="dd-rail-panel__title">Coverage & ownership</div>
-        <div className="dd-rail-facts">
+        <div className="dd-rail-kv">
           <div>
             <span>Type</span>
             <strong>{detail.type}</strong>
           </div>
           <div>
             <span>Broker</span>
-            <strong>{detail.load.broker || '—'}</strong>
+            {detail.load.broker ? (
+              <strong>{detail.load.broker}</strong>
+            ) : (
+              <button type="button" className="dd-assign-link" onClick={onAssignBroker}>
+                + Assign
+              </button>
+            )}
           </div>
           <div>
             <span>Team</span>
             <strong>{detail.load.team}</strong>
           </div>
           <div>
-            <span>Cargo value</span>
-            <strong>{detail.cargoValue || '—'}</strong>
-          </div>
-          <div>
-            <span>Mode</span>
+            <span>Customer rate</span>
             <strong>
-              <ModeBadge mode={detail.load.mode} />
+              {detail.load.fee.toFixed(2)} {detail.currency}
             </strong>
           </div>
           <div>
-            <span>Equipment</span>
-            <strong>{detail.load.equipment}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="dd-rail-panel">
-        <div className="dd-rail-panel__title">Area coverage</div>
-        <div className="dd-rail-lane">
-          <div>
-            <span>Origin</span>
-            <strong>{detail.load.origin}</strong>
-          </div>
-          <span className="dd-rail-miles">{detail.load.miles.toLocaleString()} mi</span>
-          <div className="is-end">
-            <span>Destination</span>
-            <strong>{detail.load.destination}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="dd-rail-panel">
-        <div className="dd-rail-panel__title">Sub-stage state</div>
-        <div className="dd-rail-facts">
-          <div>
-            <span>Action</span>
-            <strong>{detail.action}</strong>
+            <span>Target margin</span>
+            <strong className="is-muted">—</strong>
           </div>
           <div>
-            <span>Status</span>
-            <strong>{detail.subStatus}</strong>
-          </div>
-          <div className="dd-rail-facts__wide">
-            <span>Started</span>
-            <strong>{detail.startedAt}</strong>
+            <span>Cargo value</span>
+            <strong>{detail.cargoValue || 'Not provided'}</strong>
           </div>
         </div>
       </section>
     </aside>
+  )
+}
+
+function ActivityTab({ detail }: { detail: LoadDetail }) {
+  const events = [
+    { when: detail.startedAt, who: detail.csr, text: 'Opened Overview for load review' },
+    { when: 'Just now', who: 'System', text: 'Readiness checklist evaluated against posting rules' },
+    { when: 'Today', who: detail.salesRep, text: 'Customer rate confirmed on order' },
+  ]
+  return (
+    <div className="dd-activity">
+      {events.map((e) => (
+        <article key={`${e.when}-${e.text}`} className="dd-activity__item">
+          <div className="dd-activity__dot" />
+          <div>
+            <strong>{e.text}</strong>
+            <span>
+              {e.who} · {e.when}
+            </span>
+          </div>
+        </article>
+      ))}
+    </div>
   )
 }
 
@@ -826,7 +860,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [stage, setStage] = useState<DetailStage>(load.stage as DetailStage)
   const [subStage, setSubStage] = useState<string>(load.subStage)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [tags, setTags] = useState<string[]>(base.tags)
   const [postOpen, setPostOpen] = useState(false)
   const [offerOpen, setOfferOpen] = useState(false)
@@ -903,7 +937,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                 detail.billing === 'INVOICED' && 'dd-billing--invoiced'
               )}
             >
-              {detail.billing}
+              {detail.billing === 'PENDING' ? 'Pending' : detail.billing}
             </span>
           </strong>
         </div>
@@ -933,6 +967,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           <strong>{detail.orderCategory}</strong>
         </div>
         <div className="dd-meta__item">
+          <span>Type</span>
+          <strong>{detail.type}</strong>
+        </div>
+        <div className="dd-meta__item">
           <span>Sales rep</span>
           <strong>{detail.salesRep}</strong>
         </div>
@@ -941,49 +979,72 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           <strong>{detail.csr}</strong>
         </div>
         <div className="dd-meta__item">
-          <span>Account manager</span>
+          <span>Account mgr</span>
           <strong>{detail.accountManager}</strong>
         </div>
         <div className="dd-meta__item">
           <span>Division</span>
-          <strong>{detail.division}</strong>
+          <strong title={detail.division}>{detail.division}</strong>
+        </div>
+        <div className="dd-meta__item dd-meta__item--tags">
+          <span>Tags</span>
+          <strong>
+            <TagPopover tags={tags} onChange={setTags} />
+          </strong>
+        </div>
+        <div className="dd-meta__item dd-meta__item--edit">
+          <button type="button" className="dd-icon-btn" aria-label="Edit load details">
+            <Pencil size={14} />
+          </button>
         </div>
       </div>
 
-      <div className="dd-route">
-        {detail.stops.map((stop, i) => (
-          <div key={`${stop.facility}-${i}`} className="dd-route__pair">
-            <article
-              className={cn(
-                'dd-stop',
-                stop.kind === 'Delivery' ? 'dd-stop--delivery' : 'dd-stop--pickup'
+      <div className="dd-route dd-route--ov">
+        {detail.stops.map((stop, i) => {
+          const role = stop.role ?? (stop.kind === 'Delivery' ? 'Drop' : 'Hook')
+          const crossBorder =
+            /mexico|nuevo|monterrey|guadalajara|mx\b/i.test(`${stop.city} ${stop.address}`) ||
+            /mexico|nuevo|monterrey|guadalajara|mx\b/i.test(
+              `${detail.stops[i + 1]?.city ?? ''} ${detail.stops[i + 1]?.address ?? ''}`
+            )
+          return (
+            <div key={`${stop.facility}-${i}`} className="dd-route__pair">
+              <article
+                className={cn(
+                  'dd-stop-card',
+                  stop.kind === 'Delivery' ? 'is-drop' : 'is-hook'
+                )}
+              >
+                <div className="dd-stop-card__top">
+                  <span className="dd-stop-card__num">{stop.index ?? i + 1}</span>
+                  <div className="dd-stop-card__main">
+                    <div className="dd-stop-card__role">{role}</div>
+                    <strong>{stop.facility}</strong>
+                    <span>{stop.address}</span>
+                  </div>
+                  <div className="dd-stop-card__when">
+                    <em>{stop.when}</em>
+                    <span className={cn('dd-stop__status', `is-${stop.statusTone}`)}>{stop.status}</span>
+                  </div>
+                </div>
+                {stop.appointmentRequired && (
+                  <div className="dd-stop-card__appt">
+                    <span>Appointment required</span>
+                    <button type="button" className="dd-stop-card__add">
+                      Add
+                    </button>
+                  </div>
+                )}
+              </article>
+              {i < detail.stops.length - 1 && (
+                <div className="dd-route__bridge" aria-hidden>
+                  {crossBorder && <span className="dd-route__note">Cross-border · pedimento</span>}
+                  <span className="dd-route__miles">{load.miles.toLocaleString()} mi</span>
+                </div>
               )}
-            >
-              <div className="dd-stop__line1">
-                <span className="dd-stop__kind">
-                  {stop.kind}
-                  {stop.index ? ` ${stop.index}` : ''}
-                </span>
-                <span className="dd-stop__when">{stop.when}</span>
-                <span className={cn('dd-stop__status', `is-${stop.statusTone}`)}>
-                  {stop.status}
-                </span>
-              </div>
-              <div className="dd-stop__line2">
-                <span className="dd-stop__facility">{stop.facility}</span>
-                <span className="dd-stop__sep" aria-hidden>
-                  ·
-                </span>
-                <span className="dd-stop__addr">{stop.address}</span>
-              </div>
-            </article>
-            {i < detail.stops.length - 1 && (
-              <div className="dd-route__bridge" aria-hidden>
-                <span className="dd-route__miles">{load.miles.toLocaleString()} mi</span>
-              </div>
-            )}
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </div>
 
       <div
@@ -1013,7 +1074,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                 [
                   ['summary', 'Summary'],
                   ['instructions', 'Instructions'],
-                  ['documents', 'Documents'],
+                  ['documents', `Documents ${detail.documents.length}`],
+                  ['activity', 'Activity'],
                 ] as const
               ).map(([id, label]) => (
                 <button
@@ -1064,6 +1126,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                     detail={detail}
                     tags={tags}
                     onTags={setTags}
+                    onPatchDetail={(patch) => setDetail((d) => ({ ...d, ...patch }))}
                     onPostToSourcing={() => {
                       setStage('Sourcing')
                       setSubStage('Find & Post')
@@ -1078,6 +1141,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                   />
                 )}
                 {tab === 'documents' && <DocumentsTab detail={detail} />}
+                {tab === 'activity' && <ActivityTab detail={detail} />}
               </>
             )}
           </div>
@@ -1097,6 +1161,12 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           }}
           collapsed={railCollapsed}
           onToggle={() => setRailCollapsed((v) => !v)}
+          onAssignBroker={() =>
+            setDetail((d) => ({
+              ...d,
+              load: { ...d.load, broker: d.load.broker || d.salesRep },
+            }))
+          }
         />
       </div>
 

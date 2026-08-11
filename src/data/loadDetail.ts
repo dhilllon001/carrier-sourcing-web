@@ -22,12 +22,14 @@ export type DetailStageBlock = {
 export type RouteStop = {
   kind: 'Pickup' | 'Delivery'
   index?: number
+  role?: 'Hook' | 'Drop'
   facility: string
   city: string
   address: string
   when: string
   status: string
   statusTone: 'live' | 'pending' | 'neutral'
+  appointmentRequired?: boolean
 }
 
 export type CommodityLine = {
@@ -416,45 +418,56 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
           {
             kind: 'Pickup',
             index: 1,
+            role: 'Hook',
             facility: `${load.customer.split(' ')[0].toUpperCase()} DC`,
             city: load.origin,
             address: `1200 Industrial Pkwy, ${load.origin}`,
             when: load.pickupDate,
             status: 'Live Appointment',
             statusTone: 'live',
+            appointmentRequired: true,
           },
           {
             kind: 'Pickup',
             index: 2,
+            role: 'Hook',
             facility: 'CROSS-DOCK HUB',
             city: load.origin,
             address: `88 Transfer Rd, ${load.origin}`,
             when: load.pickupDate,
             status: 'Live Appointment',
             statusTone: 'live',
+            appointmentRequired: false,
           },
           {
             kind: 'Delivery',
+            role: 'Drop',
             facility: load.customer.toUpperCase(),
             city: load.destination,
             address: `400 Receiving Dock, ${load.destination}`,
             when: load.deliveryDate,
             status: 'Pending Customer Approval',
             statusTone: 'pending',
+            appointmentRequired: true,
           },
         ]
       : [
           {
             kind: 'Pickup',
+            index: 1,
+            role: 'Hook',
             facility: `${load.origin.split(',')[0].toUpperCase()} YARD`,
             city: load.origin,
             address: `100 Main St, ${load.origin}`,
             when: load.pickupDate,
             status: 'Live Window',
             statusTone: 'live',
+            appointmentRequired: true,
           },
           {
             kind: 'Delivery',
+            index: 2,
+            role: 'Drop',
             facility: `${load.destination.split(',')[0].toUpperCase()} DOCK`,
             city: load.destination,
             address: `250 Harbor Ave, ${load.destination}`,
@@ -464,6 +477,7 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
                 ? 'Live Appointment'
                 : 'Pending Customer Approval',
             statusTone: load.status === 'Covered' ? 'live' : 'pending',
+            appointmentRequired: true,
           },
         ]
 
@@ -511,7 +525,10 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
         ]
 
   return {
-    load,
+    load: {
+      ...load,
+      broker: load.status === 'NeedCarrier' ? '' : load.broker,
+    },
     orderNumber,
     poNumber,
     poStatus: load.status === 'Covered' ? 'CONFIRMED' : 'PENDING',
@@ -529,14 +546,12 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
     csr: people[1],
     accountManager: people[2],
     cargoValue: load.fee > 2000 ? `$${(load.fee * 18).toLocaleString()}` : '',
-    type: load.modeDetail.replace(/\s+/g, ''),
-    bookNowRate: load.rate ?? '—',
-    maxBuy: load.rate
-      ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 1.08 || 0).toFixed(2)}`
-      : '—',
-    rejectAbove: load.rate
-      ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 1.2 || 0).toFixed(2)}`
-      : '—',
+    type: load.modeDetail.toLowerCase().includes('broker')
+      ? 'Pure brokerage'
+      : load.modeDetail,
+    bookNowRate: '—',
+    maxBuy: '$0.00',
+    rejectAbove: '—',
     targetAllIn: `$${load.fee.toLocaleString()}`,
     marketMid: load.rate
       ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 0.97 || 0).toFixed(2)}`
@@ -546,13 +561,8 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
           parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 1.14 || 0
         ).toFixed(2)}`
       : '—',
-    thresholdNote:
-      load.miles >= 500
-        ? 'Long-haul lane · favor book-now coverage'
-        : 'Short haul · tighten max buy on counter',
-    market: load.rate
-      ? `$${(parseFloat(load.rate.replace(/[^0-9.]/g, '')) * 0.97 || 0).toFixed(2)}`
-      : '—',
+    thresholdNote: 'Required to post',
+    market: '—',
     action:
       load.subStage === 'Find & Post'
         ? 'Find & post'
