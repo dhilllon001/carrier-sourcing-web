@@ -4,7 +4,6 @@ import {
   ExternalLink,
   FileText,
   Shield,
-  Sparkles,
   X,
 } from 'lucide-react'
 import { cmtReviewQueue, type CmtReviewItem } from '@/data/cmtReview'
@@ -55,15 +54,14 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
     <div className="cmt-page">
       <div className="cmt-toolbar">
         <span>
-          <strong>{filtered.length}</strong> pending override{filtered.length === 1 ? '' : 's'}
+          <strong>{filtered.length}</strong> pending
         </span>
-        <em>Insurance · terms · carrier risk</em>
       </div>
 
       <div className="cmt-board">
         {filtered.length === 0 && (
           <div className="cmt-empty">
-            <Shield size={26} strokeWidth={1.5} />
+            <Shield size={24} strokeWidth={1.5} />
             <strong>Queue clear</strong>
             <p>No pending CMT overrides match this search.</p>
           </div>
@@ -103,7 +101,7 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
             </header>
 
             <div className="cmt-drawer__body">
-              <div className="cmt-route cmt-route--lg">
+              <div className="cmt-route cmt-route--block">
                 <div>
                   <strong>{active.origin}</strong>
                   <em>{active.pickupAt}</em>
@@ -127,13 +125,10 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
                 </em>
               </div>
 
-              <div className="cmt-alerts cmt-alerts--stack">
-                <div className="cmt-alerts__label">
-                  <Sparkles size={12} />
-                  AI alerts
-                </div>
+              <div className="cmt-drawer__flags">
+                <span className="cmt-eyebrow">Flags</span>
                 {active.flags.map((f) => (
-                  <div key={f.id} className="cmt-alert">
+                  <div key={f.id} className="cmt-flag-row">
                     <strong>{f.code}</strong>
                     <span>{f.detail}</span>
                   </div>
@@ -160,7 +155,7 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
                 onClick={() => decide(active.id, 'Approved')}
               >
                 <Check size={14} />
-                Approve override
+                Approve
                 <ExternalLink size={13} />
               </button>
             </footer>
@@ -182,35 +177,18 @@ function CmtCard({
 }) {
   return (
     <article className="cmt-card">
-      <div className="cmt-alerts">
-        <div className="cmt-alerts__label">
-          <Sparkles size={12} />
-          AI alerts
-          <i>{item.flags.length}</i>
-        </div>
-        <div className="cmt-alerts__row">
-          {item.flags.map((f) => (
-            <div key={f.id} className="cmt-alert" title={f.detail}>
-              <strong>{f.code}</strong>
-              <span>{f.detail}</span>
-            </div>
-          ))}
-        </div>
+      <div className="cmt-card__col cmt-card__col--carrier">
+        <strong>{item.carrier}</strong>
+        <em>
+          MC# {item.mc}
+          {item.dot ? ` · DOT ${item.dot}` : ''}
+        </em>
+        <span>
+          {item.loadId} · {item.equipment}
+        </span>
       </div>
 
-      <div className="cmt-card__body">
-        <div className="cmt-card__carrier">
-          <strong>{item.carrier}</strong>
-          <em>
-            MC# {item.mc}
-            {item.dot ? ` · DOT ${item.dot}` : ''}
-            {' · '}
-            {item.loadId}
-            {' · '}
-            {item.equipment}
-          </em>
-        </div>
-
+      <div className="cmt-card__col cmt-card__col--route">
         <div className="cmt-route">
           <div>
             <strong>{item.origin}</strong>
@@ -226,23 +204,29 @@ function CmtCard({
             <em>{item.deliveryAt}</em>
           </div>
         </div>
+      </div>
 
-        <div className="cmt-card__side">
-          <div className="cmt-card__rate">
-            <span>Proposed</span>
-            <strong>{item.proposedRate}</strong>
-            <em>{item.submittedAt}</em>
-          </div>
-          <div className="cmt-card__actions">
-            <button type="button" className="cmt-btn cmt-btn--gold" onClick={onReview}>
-              Review
-              <ExternalLink size={13} />
-            </button>
-            <a className="cmt-link" href="#log" onClick={(e) => e.preventDefault()}>
-              View log
-            </a>
-          </div>
-        </div>
+      <div className="cmt-card__col cmt-card__col--flags">
+        {item.flags.map((f) => (
+          <span key={f.id} className="cmt-chip" title={f.detail}>
+            {f.code}
+          </span>
+        ))}
+      </div>
+
+      <div className="cmt-card__col cmt-card__col--rate">
+        <strong>{item.proposedRate}</strong>
+        <em>{item.submittedAt}</em>
+      </div>
+
+      <div className="cmt-card__col cmt-card__col--action">
+        <button type="button" className="cmt-btn cmt-btn--gold" onClick={onReview}>
+          Review
+          <ExternalLink size={13} />
+        </button>
+        <a className="cmt-link" href="#log" onClick={(e) => e.preventDefault()}>
+          View log
+        </a>
       </div>
     </article>
   )
