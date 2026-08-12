@@ -22,7 +22,9 @@ import { AvailabilityPage } from '@/pages/AvailabilityPage'
 import { MyCarriersPage } from '@/pages/MyCarriersPage'
 import { CarrierDetailPage } from '@/pages/CarrierDetailPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
+import { CmtReviewPage } from '@/pages/CmtReviewPage'
 import { reportLoads } from '@/data/report'
+import { cmtReviewQueue } from '@/data/cmtReview'
 import { cn } from '@/lib/cn'
 
 const NAV = [
@@ -42,6 +44,7 @@ export default function App() {
   const [openLoadId, setOpenLoadId] = useState<string | null>(null)
   const [openCarrierId, setOpenCarrierId] = useState<string | null>(null)
   const [laneSearchOpen, setLaneSearchOpen] = useState(false)
+  const cmtPendingCount = cmtReviewQueue.filter((r) => r.status === 'Pending').length
 
   const openLoad = useMemo(
     () => reportLoads.find((r) => r.id === openLoadId) ?? null,
@@ -125,7 +128,9 @@ export default function App() {
             <header className="sr-topbar">
               <div className="sr-topbar__left">
                 <h1 className="sr-topbar__title">
-                  {NAV.find((n) => n.id === nav)?.label ?? 'Sourcing'}
+                  {nav === 'cmt'
+                    ? 'CMT Review'
+                    : (NAV.find((n) => n.id === nav)?.label ?? 'Sourcing')}
                 </h1>
               </div>
 
@@ -139,7 +144,9 @@ export default function App() {
                       ? 'Search carrier, lane, equipment, notes…'
                       : nav === 'carriers'
                         ? 'Search carrier, MC, DOT, contact…'
-                        : 'Search probills, PO, customer, equipment…'
+                        : nav === 'cmt'
+                          ? 'Search carrier, lane, equipment, notes…'
+                          : 'Search probills, PO, customer, equipment…'
                   }
                 />
               </label>
@@ -177,12 +184,15 @@ export default function App() {
 
                 <button
                   type="button"
-                  className="sr-btn"
+                  className={cn('sr-btn sr-btn--cmt', nav === 'cmt' && 'is-active')}
                   onClick={() => setNav('cmt')}
                   title="CMT"
                 >
                   <Shield size={14} strokeWidth={1.75} />
                   CMT
+                  {cmtPendingCount > 0 && (
+                    <span className="sr-btn__badge">{cmtPendingCount}</span>
+                  )}
                 </button>
 
                 <button
@@ -212,6 +222,8 @@ export default function App() {
                 onOpenCarrier={setOpenCarrierId}
                 onOpenLaneSearch={() => setLaneSearchOpen(true)}
               />
+            ) : nav === 'cmt' ? (
+              <CmtReviewPage search={search} refreshKey={refreshKey} />
             ) : (
               <div className="sr-page">
                 <div className="sr-card sr-card__pad">
