@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Gauge,
   Layers,
@@ -22,7 +23,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import type { BidOffer, LoadDetail } from '@/data/loadDetail'
+import type { BidOffer, CarrierRow, LoadDetail } from '@/data/loadDetail'
 
 export type AutoMode = 'sourcing' | 'tender' | 'award'
 
@@ -157,12 +158,79 @@ function scoreOffers(bids: BidOffer[], hardLimit: number): ScoredOffer[] {
 
 type TaskState = 'queued' | 'running' | 'done' | 'failed'
 
+type LogRow = {
+  name: string
+  detail: string
+  meta?: string
+}
+
 type RunTask = {
   id: string
   label: string
   result: string
   failResult?: string
   state: TaskState
+  logTitle?: string
+  logs?: LogRow[]
+}
+
+const EXTRA_CARRIERS = [
+  { name: 'Summit Freight Partners', mc: '441902', email: 'desk@summitfreight.example', phone: '+1 (216) 555-0188' },
+  { name: 'Lake Erie Hauling', mc: '552013', email: 'ops@lakeerie.example', phone: '+1 (419) 555-0144' },
+  { name: 'Heartland Van Lines', mc: '663124', email: 'rates@heartlandvan.example', phone: '+1 (317) 555-0190' },
+  { name: 'Crossroads Express LLC', mc: '774235', email: 'dispatch@crossroadsx.example', phone: '+1 (502) 555-0162' },
+  { name: 'Prairie Wind Transport', mc: '885346', email: 'team@prairiewind.example', phone: '+1 (701) 555-0117' },
+  { name: 'Blue Ridge Carriers', mc: '996457', email: 'load@blueridge.example', phone: '+1 (828) 555-0139' },
+  { name: 'Ironbound Logistics', mc: '107568', email: 'ops@ironbound.example', phone: '+1 (973) 555-0155' },
+  { name: 'Sunbelt Power Haul', mc: '218679', email: 'desk@sunbeltpower.example', phone: '+1 (480) 555-0171' },
+  { name: 'Northstar Dryvan Co', mc: '329780', email: 'quotes@northstardry.example', phone: '+1 (612) 555-0123' },
+  { name: 'Coastal Bridge Freight', mc: '430891', email: 'ops@coastalbridge.example', phone: '+1 (757) 555-0180' },
+  { name: 'Highway Path Carriers', mc: '541902', email: 'dispatch@highwaypath.example', phone: '+1 (615) 555-0148' },
+  { name: 'Valley Forge Trucking', mc: '652013', email: 'rates@valleyforge.example', phone: '+1 (610) 555-0166' },
+  { name: 'Great Lakes Linehaul', mc: '763124', email: 'desk@greatlakeslh.example', phone: '+1 (313) 555-0192' },
+  { name: 'Red Rock Expedite', mc: '874235', email: 'ops@redrockexp.example', phone: '+1 (505) 555-0134' },
+  { name: 'Keystone Relay Inc', mc: '985346', email: 'team@keystonerelay.example', phone: '+1 (717) 555-0159' },
+  { name: 'Atlas Corridor LLC', mc: '196457', email: 'load@atlascorridor.example', phone: '+1 (214) 555-0177' },
+  { name: 'Silverline Transport', mc: '207568', email: 'dispatch@silverline.example', phone: '+1 (704) 555-0111' },
+  { name: 'Pine Belt Carriers', mc: '318679', email: 'ops@pinebelt.example', phone: '+1 (601) 555-0129' },
+  { name: 'Metro Link Freight', mc: '429780', email: 'desk@metrolinkfr.example', phone: '+1 (201) 555-0140' },
+  { name: 'Horizon Bulk Haul', mc: '530891', email: 'rates@horizonbulk.example', phone: '+1 (918) 555-0168' },
+  { name: 'Cascade Lane Logistics', mc: '641902', email: 'ops@cascadelane.example', phone: '+1 (503) 555-0183' },
+  { name: 'Delta Span Carriers', mc: '752013', email: 'dispatch@deltaspan.example', phone: '+1 (901) 555-0152' },
+  { name: 'Frontier Mile Inc', mc: '863124', email: 'team@frontiermile.example', phone: '+1 (406) 555-0174' },
+  { name: 'Beacon Roadways', mc: '974235', email: 'load@beaconroad.example', phone: '+1 (860) 555-0196' },
+  { name: 'Oak Ridge Transit', mc: '185346', email: 'ops@oakridgetrans.example', phone: '+1 (865) 555-0131' },
+  { name: 'Twin Ports Express', mc: '296457', email: 'desk@twinports.example', phone: '+1 (218) 555-0147' },
+  { name: 'Sandstone Freight Co', mc: '307568', email: 'rates@sandstonefr.example', phone: '+1 (405) 555-0160' },
+  { name: 'Riverbend Haulers', mc: '418679', email: 'ops@riverbendhaul.example', phone: '+1 (563) 555-0189' },
+]
+
+function poolContacts(carriers: CarrierRow[]) {
+  const fromLoad = carriers.map((c) => ({
+    name: c.name,
+    mc: c.mc ?? '—',
+    email: c.email ?? '—',
+    phone: c.phone ?? '—',
+  }))
+  return [...fromLoad, ...EXTRA_CARRIERS]
+}
+
+function takeLogs(
+  pool: ReturnType<typeof poolContacts>,
+  count: number,
+  kind: 'email' | 'whatsapp' | 'highway'
+): LogRow[] {
+  return pool.slice(0, count).map((c, i) => {
+    if (kind === 'email')
+      return { name: c.name, detail: c.email, meta: `MC ${c.mc} · delivered` }
+    if (kind === 'whatsapp')
+      return { name: c.name, detail: c.phone, meta: `MC ${c.mc} · read receipt mock` }
+    return {
+      name: c.name,
+      detail: `Highway ID · HGW-${8000 + i}`,
+      meta: `MC ${c.mc} · verified · outreach queued`,
+    }
+  })
 }
 
 /* ── Yes / No confirmation popup ── */
@@ -281,12 +349,14 @@ export function AutoSourcingPanel({
   onClose,
   onApplyRates,
   onGoFindPost,
+  onSourcingComplete,
 }: {
   detail: LoadDetail
   mode: AutoMode
   onClose: () => void
   onApplyRates: (patch: Partial<Pick<LoadDetail, 'maxBuy' | 'bookNowRate' | 'rejectAbove'>>) => void
   onGoFindPost: () => void
+  onSourcingComplete?: () => void
 }) {
   const maxMissing = !detail.maxBuy || detail.maxBuy === '—' || detail.maxBuy === '$0.00'
   const bookMissing = !detail.bookNowRate || detail.bookNowRate === '—'
@@ -304,6 +374,7 @@ export function AutoSourcingPanel({
   const [bookNow, setBookNow] = useState(bookMissing ? '' : detail.bookNowRate.replace(/[^0-9.]/g, ''))
   const [bookTouched, setBookTouched] = useState(!bookMissing)
   const [tasks, setTasks] = useState<RunTask[]>([])
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const popupShown = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -355,12 +426,27 @@ export function AutoSourcingPanel({
   const missingNow = checks.filter((c) => !c.ok).length
 
   const buildTasks = (): RunTask[] => {
+    const pool = poolContacts(detail.carriers)
     const list: RunTask[] = [
       {
         id: 'rates',
         label: 'Apply rates to order',
         result: `Max buy $${maxNum.toFixed(2)} (hard limit) · Book now $${Number(bookVal).toFixed(2)}`,
         state: 'queued',
+        logTitle: 'Rate changes applied',
+        logs: [
+          { name: 'Max buy (hard limit)', detail: `$${maxNum.toFixed(2)} ${detail.currency}`, meta: 'Enforced on all offers' },
+          {
+            name: 'Book now',
+            detail: `$${Number(bookVal).toFixed(2)} ${detail.currency}`,
+            meta: 'Auto-accept threshold',
+          },
+          {
+            name: 'Reject above',
+            detail: `$${(maxNum * 1.08).toFixed(2)} ${detail.currency}`,
+            meta: 'Derived from max buy + 8%',
+          },
+        ],
       },
     ]
     if (channels.has('email'))
@@ -369,6 +455,8 @@ export function AutoSourcingPanel({
         label: 'Blast email — internal base',
         result: `Sent to ${INTERNAL_EMAIL} carriers`,
         state: 'queued',
+        logTitle: `Carriers emailed (${INTERNAL_EMAIL})`,
+        logs: takeLogs(pool, INTERNAL_EMAIL, 'email'),
       })
     if (channels.has('whatsapp'))
       list.push({
@@ -376,6 +464,8 @@ export function AutoSourcingPanel({
         label: 'Blast WhatsApp — internal base',
         result: `Sent to ${INTERNAL_WA} carriers`,
         state: 'queued',
+        logTitle: `WhatsApp contacts reached (${INTERNAL_WA})`,
+        logs: takeLogs(pool, INTERNAL_WA, 'whatsapp'),
       })
     if (channels.has('highway'))
       list.push({
@@ -383,6 +473,8 @@ export function AutoSourcingPanel({
         label: 'Outreach Highway-sourced carriers',
         result: `${HIGHWAY_CARRIERS} verified carriers contacted`,
         state: 'queued',
+        logTitle: `Highway outreach log (${HIGHWAY_CARRIERS})`,
+        logs: takeLogs(pool, HIGHWAY_CARRIERS, 'highway'),
       })
     if (channels.has('dat'))
       list.push({
@@ -390,6 +482,22 @@ export function AutoSourcingPanel({
         label: 'Post to DAT',
         result: 'Posted · repost every 20 min',
         state: 'queued',
+        logTitle: 'DAT posting log',
+        logs: [
+          { name: 'Board', detail: 'DAT Load Board', meta: 'Posting ID · DAT-MOCK-88421' },
+          {
+            name: 'Lane',
+            detail: `${detail.load.origin} → ${detail.load.destination}`,
+            meta: `${detail.load.miles.toLocaleString()} mi · ${detail.load.equipment}`,
+          },
+          {
+            name: 'Rate posted',
+            detail: `$${Number(bookVal).toFixed(2)} book now`,
+            meta: `Hard limit $${maxNum.toFixed(2)}`,
+          },
+          { name: 'Repost schedule', detail: 'Every 20 minutes', meta: 'Auto-refresh enabled' },
+          { name: 'Posted by', detail: 'Sukhdeep Dhillon', meta: 'Mock session · just now' },
+        ],
       })
     if (channels.has('loadlink'))
       list.push({
@@ -398,8 +506,37 @@ export function AutoSourcingPanel({
         result: 'Posted to Loadlink',
         failResult: 'Failed · Loadlink session expired',
         state: 'queued',
+        logTitle: 'Loadlink posting log',
+        logs: [
+          { name: 'Board', detail: 'Loadlink', meta: 'Posting ID · LL-MOCK-22014' },
+          {
+            name: 'Lane',
+            detail: `${detail.load.origin} → ${detail.load.destination}`,
+            meta: `${detail.load.miles.toLocaleString()} mi · ${detail.load.equipment}`,
+          },
+          {
+            name: 'Rate posted',
+            detail: `$${Number(bookVal).toFixed(2)} book now`,
+            meta: `Hard limit $${maxNum.toFixed(2)}`,
+          },
+          { name: 'Session', detail: 'Mock broker session', meta: 'Expires in 4h (after retry)' },
+        ],
       })
     return list
+  }
+
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const finishSourcing = () => {
+    setPopup(null)
+    onSourcingComplete?.()
   }
 
   const summaryLines = () => {
@@ -709,39 +846,72 @@ export function AutoSourcingPanel({
                   </p>
 
                   <div className="dd-auto-run">
-                    {tasks.map((t) => (
-                      <div
-                        key={t.id}
-                        className={cn(
-                          'dd-auto-run__item',
-                          t.state === 'done' && 'is-done',
-                          t.state === 'failed' && 'is-failed',
-                          t.state === 'running' && 'is-running'
-                        )}
-                      >
-                        <i>
-                          {t.state === 'done' && <CheckCircle2 size={15} />}
-                          {t.state === 'failed' && <AlertTriangle size={15} />}
-                          {t.state === 'running' && <Loader2 size={15} className="dd-auto-spin" />}
-                          {t.state === 'queued' && <span className="dd-auto-run__dot" />}
-                        </i>
-                        <div>
-                          <strong>{t.label}</strong>
-                          <span>
-                            {t.state === 'queued' && 'Queued'}
-                            {t.state === 'running' && 'Running…'}
-                            {t.state === 'done' && t.result}
-                            {t.state === 'failed' && (t.failResult ?? 'Failed')}
-                          </span>
+                    {tasks.map((t) => {
+                      const canExpand =
+                        (t.state === 'done' || t.state === 'failed') && Boolean(t.logs?.length)
+                      const isOpen = expanded.has(t.id)
+                      return (
+                        <div
+                          key={t.id}
+                          className={cn(
+                            'dd-auto-run__item',
+                            t.state === 'done' && 'is-done',
+                            t.state === 'failed' && 'is-failed',
+                            t.state === 'running' && 'is-running',
+                            isOpen && 'is-open'
+                          )}
+                        >
+                          <div className="dd-auto-run__row">
+                            <i>
+                              {t.state === 'done' && <CheckCircle2 size={15} />}
+                              {t.state === 'failed' && <AlertTriangle size={15} />}
+                              {t.state === 'running' && <Loader2 size={15} className="dd-auto-spin" />}
+                              {t.state === 'queued' && <span className="dd-auto-run__dot" />}
+                            </i>
+                            <div>
+                              <strong>{t.label}</strong>
+                              <span>
+                                {t.state === 'queued' && 'Queued'}
+                                {t.state === 'running' && 'Running…'}
+                                {t.state === 'done' && t.result}
+                                {t.state === 'failed' && (t.failResult ?? 'Failed')}
+                              </span>
+                            </div>
+                            {t.state === 'failed' && (
+                              <button type="button" className="dd-auto-retry" onClick={() => retryTask(t.id)}>
+                                <RotateCcw size={12} />
+                                Retry
+                              </button>
+                            )}
+                            {canExpand && (
+                              <button
+                                type="button"
+                                className="dd-auto-expand"
+                                aria-expanded={isOpen}
+                                onClick={() => toggleExpand(t.id)}
+                              >
+                                {isOpen ? 'Hide log' : 'View log'}
+                                <ChevronDown size={13} className={cn(isOpen && 'is-rot')} />
+                              </button>
+                            )}
+                          </div>
+                          {canExpand && isOpen && (
+                            <div className="dd-auto-log">
+                              <div className="dd-auto-log__head">{t.logTitle}</div>
+                              <ul>
+                                {t.logs!.map((row, i) => (
+                                  <li key={`${t.id}-${i}`}>
+                                    <strong>{row.name}</strong>
+                                    <span>{row.detail}</span>
+                                    {row.meta && <em>{row.meta}</em>}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
-                        {t.state === 'failed' && (
-                          <button type="button" className="dd-auto-retry" onClick={() => retryTask(t.id)}>
-                            <RotateCcw size={12} />
-                            Retry
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </>
               )}
@@ -942,9 +1112,14 @@ export function AutoSourcingPanel({
                   <button type="button" className="dd-btn" disabled={running} onClick={onGoFindPost}>
                     Open Find &amp; Post
                   </button>
-                  <button type="button" className="dd-btn dd-btn--primary" disabled={running} onClick={onClose}>
+                  <button
+                    type="button"
+                    className="dd-btn dd-btn--primary"
+                    disabled={running}
+                    onClick={finishSourcing}
+                  >
                     <Check size={14} />
-                    Done
+                    Done · mark sourcing complete
                   </button>
                 </>
               )}
@@ -1050,10 +1225,10 @@ export function AutoSourcingPanel({
           title={popup.title}
           lines={popup.lines}
           tone={popup.tone}
-          primaryLabel={mode === 'sourcing' ? 'Open Find & Post' : 'Done'}
+          primaryLabel={mode === 'sourcing' ? 'Continue to Auto Tender' : 'Done'}
           onPrimary={() => {
             setPopup(null)
-            if (mode === 'sourcing') onGoFindPost()
+            if (mode === 'sourcing') finishSourcing()
             else onClose()
           }}
           onClose={() => setPopup(null)}

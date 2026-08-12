@@ -979,8 +979,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [tags, setTags] = useState<string[]>(base.tags)
   const [postOpen, setPostOpen] = useState(false)
   const [offerOpen, setOfferOpen] = useState(false)
-  const autoStages = ['Sourcing', 'Tender', 'Award']
-  const [autoAsk, setAutoAsk] = useState(autoStages.includes(load.stage))
+  const [autoAsk, setAutoAsk] = useState(false)
   const [autoOpen, setAutoOpen] = useState(false)
 
   useEffect(() => {
@@ -988,18 +987,54 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setStage(load.stage as DetailStage)
     setSubStage(load.subStage)
     setTags(base.tags)
-    setAutoAsk(autoStages.includes(load.stage))
     setAutoOpen(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    const sourcingDone = base.stages
+      .find((s) => s.stage === 'Sourcing')
+      ?.items.every((it) => it.done)
+    const hasOffers = base.bids.length > 0
+    const atTender = load.stage === 'Tender'
+    const atAward = load.stage === 'Award'
+    const atSourcing = load.stage === 'Sourcing'
+
+    /* Ask Auto Sourcing on sourcing loads; Auto Tender when sourcing is done + offers; Auto Award on award */
+    if (atAward) setAutoAsk(true)
+    else if (atTender || (Boolean(sourcingDone) && hasOffers)) setAutoAsk(true)
+    else if (atSourcing) setAutoAsk(true)
+    else setAutoAsk(false)
   }, [base, load])
 
   const autoMissing =
     (detail.maxBuy === '—' || detail.maxBuy === '$0.00' ? 1 : 0) +
     (detail.bookNowRate === '—' ? 1 : 0)
 
-  /* sourcing not done → Auto Sourcing; done → Auto Tender / Auto Award on later stages */
+  const sourcingComplete = detail.stages
+    .find((s) => s.stage === 'Sourcing')
+    ?.items.every((it) => it.done)
+
+  /* sourcing not done → Auto Sourcing; done (or Tender) → Auto Tender; Award → Auto Award */
   const autoMode: AutoMode | null =
-    stage === 'Sourcing' ? 'sourcing' : stage === 'Tender' ? 'tender' : stage === 'Award' ? 'award' : null
+    stage === 'Award'
+      ? 'award'
+      : stage === 'Tender' || (stage === 'Sourcing' && Boolean(sourcingComplete) && detail.bids.length > 0)
+        ? 'tender'
+        : stage === 'Sourcing'
+          ? 'sourcing'
+          : null
+
+  const completeSourcingAndAskTender = () => {
+    setDetail((d) => {
+      const stages = d.stages.map((s) =>
+        s.stage === 'Sourcing' ? { ...s, items: s.items.map((it) => ({ ...it, done: true })) } : s
+      )
+      const completedSubs = stages.reduce((n, s) => n + s.items.filter((i) => i.done).length, 0)
+      return { ...d, stages, completedSubs }
+    })
+    setAutoOpen(false)
+    setStage('Tender')
+    setSubStage('Offers & Bids')
+    setAutoAsk(true)
+  }
 
   /* lifecycle reflects the position the user is viewing: everything before it shows a check */
   const lifeDetail = useMemo(() => {
@@ -1366,6 +1401,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             setStage('Sourcing')
             setSubStage('Find & Post')
           }}
+          onSourcingComplete={completeSourcingAndAskTender}
         />
       )}
     </div>

@@ -9254,3 +9254,134 @@
   color: #16a34a;
   font-weight: 700;
 }
+
+/* ── Expandable Auto Sourcing action logs ── */
+.dd-auto-run__item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+
+.dd-auto-run__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+}
+
+.dd-auto-run__row > i {
+  display: inline-flex;
+  flex: none;
+  color: var(--ink-3);
+}
+
+.dd-auto-run__row > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.dd-auto-run__row strong {
+  display: block;
+  font: 600 12.5px/1.2 var(--sr-font-body);
+  color: var(--ink);
+}
+
+.dd-auto-run__row span {
+  display: block;
+  margin-top: 2px;
+  font: 500 11.5px/1.2 var(--sr-font-body);
+  color: var(--ink-3);
+}
+
+.dd-auto-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--sr-border-2);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink-2);
+  font: 600 11px/1 var(--sr-font-body);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dd-auto-expand:hover {
+  background: #f7f8fa;
+  color: var(--ink);
+}
+
+.dd-auto-expand svg.is-rot {
+  transform: rotate(180deg);
+}
+
+.dd-auto-log {
+  margin: 0 12px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--sr-border-2);
+  border-radius: 10px;
+  background: #f8f9fb;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dd-auto-log__head {
+  margin-bottom: 8px;
+  font: 700 10.5px/1 var(--sr-font-heading);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.dd-auto-log ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dd-auto-log li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--sr-border-2);
+}
+
+.dd-auto-log li strong {
+  font: 600 11.5px/1.25 var(--sr-font-body);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-auto-log li span {
+  font: 500 11px/1.25 var(--sr-font-body);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-auto-log li em {
+  font: 500 10.5px/1.2 var(--sr-font-body);
+  font-style: normal;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .dd-auto-log li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
