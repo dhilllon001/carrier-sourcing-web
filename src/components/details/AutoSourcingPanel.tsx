@@ -158,11 +158,28 @@ function scoreOffers(bids: BidOffer[], hardLimit: number): ScoredOffer[] {
 
 type TaskState = 'queued' | 'running' | 'done' | 'failed'
 
-type LogRow = {
+type CarrierLog = {
+  kind: 'carrier'
+  name: string
+  mc: string
+  dot: string
+  source: 'Past' | 'DAT' | 'Highway' | 'GenLogs' | 'Internal' | 'NEW'
+  lastUsed: string
+  blastRate: string
+  loads: number
+  contactName: string
+  phone: string
+  email: string
+}
+
+type MetaLog = {
+  kind: 'meta'
   name: string
   detail: string
   meta?: string
 }
+
+type LogRow = CarrierLog | MetaLog
 
 type RunTask = {
   id: string
@@ -174,63 +191,355 @@ type RunTask = {
   logs?: LogRow[]
 }
 
-const EXTRA_CARRIERS = [
-  { name: 'Summit Freight Partners', mc: '441902', email: 'desk@summitfreight.example', phone: '+1 (216) 555-0188' },
-  { name: 'Lake Erie Hauling', mc: '552013', email: 'ops@lakeerie.example', phone: '+1 (419) 555-0144' },
-  { name: 'Heartland Van Lines', mc: '663124', email: 'rates@heartlandvan.example', phone: '+1 (317) 555-0190' },
-  { name: 'Crossroads Express LLC', mc: '774235', email: 'dispatch@crossroadsx.example', phone: '+1 (502) 555-0162' },
-  { name: 'Prairie Wind Transport', mc: '885346', email: 'team@prairiewind.example', phone: '+1 (701) 555-0117' },
-  { name: 'Blue Ridge Carriers', mc: '996457', email: 'load@blueridge.example', phone: '+1 (828) 555-0139' },
-  { name: 'Ironbound Logistics', mc: '107568', email: 'ops@ironbound.example', phone: '+1 (973) 555-0155' },
-  { name: 'Sunbelt Power Haul', mc: '218679', email: 'desk@sunbeltpower.example', phone: '+1 (480) 555-0171' },
-  { name: 'Northstar Dryvan Co', mc: '329780', email: 'quotes@northstardry.example', phone: '+1 (612) 555-0123' },
-  { name: 'Coastal Bridge Freight', mc: '430891', email: 'ops@coastalbridge.example', phone: '+1 (757) 555-0180' },
-  { name: 'Highway Path Carriers', mc: '541902', email: 'dispatch@highwaypath.example', phone: '+1 (615) 555-0148' },
-  { name: 'Valley Forge Trucking', mc: '652013', email: 'rates@valleyforge.example', phone: '+1 (610) 555-0166' },
-  { name: 'Great Lakes Linehaul', mc: '763124', email: 'desk@greatlakeslh.example', phone: '+1 (313) 555-0192' },
-  { name: 'Red Rock Expedite', mc: '874235', email: 'ops@redrockexp.example', phone: '+1 (505) 555-0134' },
-  { name: 'Keystone Relay Inc', mc: '985346', email: 'team@keystonerelay.example', phone: '+1 (717) 555-0159' },
-  { name: 'Atlas Corridor LLC', mc: '196457', email: 'load@atlascorridor.example', phone: '+1 (214) 555-0177' },
-  { name: 'Silverline Transport', mc: '207568', email: 'dispatch@silverline.example', phone: '+1 (704) 555-0111' },
-  { name: 'Pine Belt Carriers', mc: '318679', email: 'ops@pinebelt.example', phone: '+1 (601) 555-0129' },
-  { name: 'Metro Link Freight', mc: '429780', email: 'desk@metrolinkfr.example', phone: '+1 (201) 555-0140' },
-  { name: 'Horizon Bulk Haul', mc: '530891', email: 'rates@horizonbulk.example', phone: '+1 (918) 555-0168' },
-  { name: 'Cascade Lane Logistics', mc: '641902', email: 'ops@cascadelane.example', phone: '+1 (503) 555-0183' },
-  { name: 'Delta Span Carriers', mc: '752013', email: 'dispatch@deltaspan.example', phone: '+1 (901) 555-0152' },
-  { name: 'Frontier Mile Inc', mc: '863124', email: 'team@frontiermile.example', phone: '+1 (406) 555-0174' },
-  { name: 'Beacon Roadways', mc: '974235', email: 'load@beaconroad.example', phone: '+1 (860) 555-0196' },
-  { name: 'Oak Ridge Transit', mc: '185346', email: 'ops@oakridgetrans.example', phone: '+1 (865) 555-0131' },
-  { name: 'Twin Ports Express', mc: '296457', email: 'desk@twinports.example', phone: '+1 (218) 555-0147' },
-  { name: 'Sandstone Freight Co', mc: '307568', email: 'rates@sandstonefr.example', phone: '+1 (405) 555-0160' },
-  { name: 'Riverbend Haulers', mc: '418679', email: 'ops@riverbendhaul.example', phone: '+1 (563) 555-0189' },
+const EXTRA_CARRIERS: Omit<CarrierLog, 'kind' | 'blastRate'>[] = [
+  {
+    name: 'Summit Freight Partners',
+    mc: '441902',
+    dot: '2918401',
+    source: 'DAT',
+    lastUsed: '3d ago',
+    loads: 18,
+    contactName: 'Chris Lang',
+    email: 'desk@summitfreight.example',
+    phone: '+1 (216) 555-0188',
+  },
+  {
+    name: 'Lake Erie Hauling',
+    mc: '552013',
+    dot: '3029512',
+    source: 'Past',
+    lastUsed: '1w ago',
+    loads: 44,
+    contactName: 'Dana Mills',
+    email: 'ops@lakeerie.example',
+    phone: '+1 (419) 555-0144',
+  },
+  {
+    name: 'Heartland Van Lines',
+    mc: '663124',
+    dot: '3140623',
+    source: 'Highway',
+    lastUsed: '2d ago',
+    loads: 9,
+    contactName: 'Evan Cho',
+    email: 'rates@heartlandvan.example',
+    phone: '+1 (317) 555-0190',
+  },
+  {
+    name: 'Crossroads Express LLC',
+    mc: '774235',
+    dot: '3251734',
+    source: 'GenLogs',
+    lastUsed: '5d ago',
+    loads: 27,
+    contactName: 'Priya Shah',
+    email: 'dispatch@crossroadsx.example',
+    phone: '+1 (502) 555-0162',
+  },
+  {
+    name: 'Prairie Wind Transport',
+    mc: '885346',
+    dot: '3362845',
+    source: 'DAT',
+    lastUsed: 'Never',
+    loads: 0,
+    contactName: 'Noah Blake',
+    email: 'team@prairiewind.example',
+    phone: '+1 (701) 555-0117',
+  },
+  {
+    name: 'Blue Ridge Carriers',
+    mc: '996457',
+    dot: '3473956',
+    source: 'Past',
+    lastUsed: '12d ago',
+    loads: 61,
+    contactName: 'Sam Ortiz',
+    email: 'load@blueridge.example',
+    phone: '+1 (828) 555-0139',
+  },
+  {
+    name: 'Ironbound Logistics',
+    mc: '107568',
+    dot: '3584067',
+    source: 'Highway',
+    lastUsed: '6h ago',
+    loads: 7,
+    contactName: 'Kim Hale',
+    email: 'ops@ironbound.example',
+    phone: '+1 (973) 555-0155',
+  },
+  {
+    name: 'Sunbelt Power Haul',
+    mc: '218679',
+    dot: '3695178',
+    source: 'Internal',
+    lastUsed: 'Yesterday',
+    loads: 33,
+    contactName: 'Jordan Lee',
+    email: 'desk@sunbeltpower.example',
+    phone: '+1 (480) 555-0171',
+  },
+  {
+    name: 'Northstar Dryvan Co',
+    mc: '329780',
+    dot: '3706289',
+    source: 'DAT',
+    lastUsed: '4d ago',
+    loads: 15,
+    contactName: 'Alex Quinn',
+    email: 'quotes@northstardry.example',
+    phone: '+1 (612) 555-0123',
+  },
+  {
+    name: 'Coastal Bridge Freight',
+    mc: '430891',
+    dot: '3817390',
+    source: 'GenLogs',
+    lastUsed: '8d ago',
+    loads: 22,
+    contactName: 'Riley Fox',
+    email: 'ops@coastalbridge.example',
+    phone: '+1 (757) 555-0180',
+  },
+  {
+    name: 'Highway Path Carriers',
+    mc: '541902',
+    dot: '3928401',
+    source: 'Highway',
+    lastUsed: '2w ago',
+    loads: 11,
+    contactName: 'Morgan Diaz',
+    email: 'dispatch@highwaypath.example',
+    phone: '+1 (615) 555-0148',
+  },
+  {
+    name: 'Valley Forge Trucking',
+    mc: '652013',
+    dot: '4039512',
+    source: 'Past',
+    lastUsed: '9d ago',
+    loads: 48,
+    contactName: 'Taylor Brooks',
+    email: 'rates@valleyforge.example',
+    phone: '+1 (610) 555-0166',
+  },
+  {
+    name: 'Great Lakes Linehaul',
+    mc: '763124',
+    dot: '4150623',
+    source: 'DAT',
+    lastUsed: '1d ago',
+    loads: 19,
+    contactName: 'Casey Ng',
+    email: 'desk@greatlakeslh.example',
+    phone: '+1 (313) 555-0192',
+  },
+  {
+    name: 'Red Rock Expedite',
+    mc: '874235',
+    dot: '4261734',
+    source: 'NEW',
+    lastUsed: 'Never',
+    loads: 0,
+    contactName: 'Jamie Ruiz',
+    email: 'ops@redrockexp.example',
+    phone: '+1 (505) 555-0134',
+  },
+  {
+    name: 'Keystone Relay Inc',
+    mc: '985346',
+    dot: '4372845',
+    source: 'Internal',
+    lastUsed: '3h ago',
+    loads: 72,
+    contactName: 'Pat Singh',
+    email: 'team@keystonerelay.example',
+    phone: '+1 (717) 555-0159',
+  },
+  {
+    name: 'Atlas Corridor LLC',
+    mc: '196457',
+    dot: '4483956',
+    source: 'Highway',
+    lastUsed: '11d ago',
+    loads: 5,
+    contactName: 'Drew Patel',
+    email: 'load@atlascorridor.example',
+    phone: '+1 (214) 555-0177',
+  },
+  {
+    name: 'Silverline Transport',
+    mc: '207568',
+    dot: '4594067',
+    source: 'Past',
+    lastUsed: '6d ago',
+    loads: 36,
+    contactName: 'Blair Chen',
+    email: 'dispatch@silverline.example',
+    phone: '+1 (704) 555-0111',
+  },
+  {
+    name: 'Pine Belt Carriers',
+    mc: '318679',
+    dot: '4605178',
+    source: 'GenLogs',
+    lastUsed: '14d ago',
+    loads: 13,
+    contactName: 'Shawn Kelly',
+    email: 'ops@pinebelt.example',
+    phone: '+1 (601) 555-0129',
+  },
+  {
+    name: 'Metro Link Freight',
+    mc: '429780',
+    dot: '4716289',
+    source: 'DAT',
+    lastUsed: 'Yesterday',
+    loads: 24,
+    contactName: 'Avery Cole',
+    email: 'desk@metrolinkfr.example',
+    phone: '+1 (201) 555-0140',
+  },
+  {
+    name: 'Horizon Bulk Haul',
+    mc: '530891',
+    dot: '4827390',
+    source: 'Past',
+    lastUsed: '7d ago',
+    loads: 40,
+    contactName: 'Reese Grant',
+    email: 'rates@horizonbulk.example',
+    phone: '+1 (918) 555-0168',
+  },
+  {
+    name: 'Cascade Lane Logistics',
+    mc: '641902',
+    dot: '4938401',
+    source: 'Highway',
+    lastUsed: '4h ago',
+    loads: 8,
+    contactName: 'Quinn Adams',
+    email: 'ops@cascadelane.example',
+    phone: '+1 (503) 555-0183',
+  },
+  {
+    name: 'Delta Span Carriers',
+    mc: '752013',
+    dot: '5049512',
+    source: 'Internal',
+    lastUsed: '2d ago',
+    loads: 55,
+    contactName: 'Harper West',
+    email: 'dispatch@deltaspan.example',
+    phone: '+1 (901) 555-0152',
+  },
+  {
+    name: 'Frontier Mile Inc',
+    mc: '863124',
+    dot: '5160623',
+    source: 'GenLogs',
+    lastUsed: '10d ago',
+    loads: 16,
+    contactName: 'Logan Park',
+    email: 'team@frontiermile.example',
+    phone: '+1 (406) 555-0174',
+  },
+  {
+    name: 'Beacon Roadways',
+    mc: '974235',
+    dot: '5271734',
+    source: 'DAT',
+    lastUsed: 'Never',
+    loads: 2,
+    contactName: 'Cameron Holt',
+    email: 'load@beaconroad.example',
+    phone: '+1 (860) 555-0196',
+  },
+  {
+    name: 'Oak Ridge Transit',
+    mc: '185346',
+    dot: '5382845',
+    source: 'Past',
+    lastUsed: '5d ago',
+    loads: 29,
+    contactName: 'Skyler Moon',
+    email: 'ops@oakridgetrans.example',
+    phone: '+1 (865) 555-0131',
+  },
+  {
+    name: 'Twin Ports Express',
+    mc: '296457',
+    dot: '5493956',
+    source: 'Highway',
+    lastUsed: '1d ago',
+    loads: 12,
+    contactName: 'Emery Shaw',
+    email: 'desk@twinports.example',
+    phone: '+1 (218) 555-0147',
+  },
+  {
+    name: 'Sandstone Freight Co',
+    mc: '307568',
+    dot: '5504067',
+    source: 'DAT',
+    lastUsed: '13d ago',
+    loads: 6,
+    contactName: 'Finley Ross',
+    email: 'rates@sandstonefr.example',
+    phone: '+1 (405) 555-0160',
+  },
+  {
+    name: 'Riverbend Haulers',
+    mc: '418679',
+    dot: '5615178',
+    source: 'GenLogs',
+    lastUsed: '8h ago',
+    loads: 21,
+    contactName: 'Hayden Cruz',
+    email: 'ops@riverbendhaul.example',
+    phone: '+1 (563) 555-0189',
+  },
 ]
 
-function poolContacts(carriers: CarrierRow[]) {
-  const fromLoad = carriers.map((c) => ({
-    name: c.name,
-    mc: c.mc ?? '—',
-    email: c.email ?? '—',
-    phone: c.phone ?? '—',
-  }))
-  return [...fromLoad, ...EXTRA_CARRIERS]
+const CONTACT_FIRST = ['Alex', 'Jordan', 'Sam', 'Priya', 'Chris', 'Dana', 'Morgan', 'Taylor']
+const CONTACT_LAST = ['Nguyen', 'Patel', 'Brooks', 'Singh', 'Lopez', 'Kim', 'Walsh', 'Reed']
+
+function sourceFromCarrier(c: CarrierRow): CarrierLog['source'] {
+  if (c.source === 'PAST') return 'Past'
+  if (c.source === 'DAT') return 'DAT'
+  if (c.source === 'NEW') return 'NEW'
+  return 'Internal'
 }
 
-function takeLogs(
-  pool: ReturnType<typeof poolContacts>,
-  count: number,
-  kind: 'email' | 'whatsapp' | 'highway'
-): LogRow[] {
-  return pool.slice(0, count).map((c, i) => {
-    if (kind === 'email')
-      return { name: c.name, detail: c.email, meta: `MC ${c.mc} · delivered` }
-    if (kind === 'whatsapp')
-      return { name: c.name, detail: c.phone, meta: `MC ${c.mc} · read receipt mock` }
-    return {
-      name: c.name,
-      detail: `Highway ID · HGW-${8000 + i}`,
-      meta: `MC ${c.mc} · verified · outreach queued`,
-    }
-  })
+function poolCarriers(carriers: CarrierRow[], blastRate: string): CarrierLog[] {
+  const fromLoad: CarrierLog[] = carriers.map((c, i) => ({
+    kind: 'carrier',
+    name: c.name,
+    mc: c.mc ?? '—',
+    dot: c.dot ?? String(2800000 + (i + 1) * 117),
+    source: sourceFromCarrier(c),
+    lastUsed: c.lastUsedRel || c.lastUsed || '—',
+    blastRate,
+    loads: c.loads,
+    contactName: `${CONTACT_FIRST[i % CONTACT_FIRST.length]} ${CONTACT_LAST[i % CONTACT_LAST.length]}`,
+    phone: c.phone ?? '—',
+    email: c.email ?? '—',
+  }))
+  const extras: CarrierLog[] = EXTRA_CARRIERS.map((c) => ({
+    kind: 'carrier',
+    ...c,
+    blastRate,
+  }))
+  return [...fromLoad, ...extras]
+}
+
+function takeCarrierLogs(pool: CarrierLog[], count: number): CarrierLog[] {
+  return pool.slice(0, count)
+}
+
+function meta(name: string, detail: string, note?: string): MetaLog {
+  return { kind: 'meta', name, detail, meta: note }
 }
 
 /* ── Yes / No confirmation popup ── */
@@ -426,7 +735,11 @@ export function AutoSourcingPanel({
   const missingNow = checks.filter((c) => !c.ok).length
 
   const buildTasks = (): RunTask[] => {
-    const pool = poolContacts(detail.carriers)
+    const blastRate = `$${Number(bookVal).toFixed(2)}`
+    const pool = poolCarriers(detail.carriers, blastRate)
+    const highwayPool = pool.map((c, i) =>
+      i % 2 === 0 ? { ...c, source: 'Highway' as const } : { ...c, source: 'GenLogs' as const }
+    )
     const list: RunTask[] = [
       {
         id: 'rates',
@@ -435,17 +748,9 @@ export function AutoSourcingPanel({
         state: 'queued',
         logTitle: 'Rate changes applied',
         logs: [
-          { name: 'Max buy (hard limit)', detail: `$${maxNum.toFixed(2)} ${detail.currency}`, meta: 'Enforced on all offers' },
-          {
-            name: 'Book now',
-            detail: `$${Number(bookVal).toFixed(2)} ${detail.currency}`,
-            meta: 'Auto-accept threshold',
-          },
-          {
-            name: 'Reject above',
-            detail: `$${(maxNum * 1.08).toFixed(2)} ${detail.currency}`,
-            meta: 'Derived from max buy + 8%',
-          },
+          meta('Max buy (hard limit)', `$${maxNum.toFixed(2)} ${detail.currency}`, 'Enforced on all offers'),
+          meta('Book now', `$${Number(bookVal).toFixed(2)} ${detail.currency}`, 'Auto-accept threshold'),
+          meta('Reject above', `$${(maxNum * 1.08).toFixed(2)} ${detail.currency}`, 'Derived from max buy + 8%'),
         ],
       },
     ]
@@ -456,7 +761,7 @@ export function AutoSourcingPanel({
         result: `Sent to ${INTERNAL_EMAIL} carriers`,
         state: 'queued',
         logTitle: `Carriers emailed (${INTERNAL_EMAIL})`,
-        logs: takeLogs(pool, INTERNAL_EMAIL, 'email'),
+        logs: takeCarrierLogs(pool, INTERNAL_EMAIL),
       })
     if (channels.has('whatsapp'))
       list.push({
@@ -465,7 +770,7 @@ export function AutoSourcingPanel({
         result: `Sent to ${INTERNAL_WA} carriers`,
         state: 'queued',
         logTitle: `WhatsApp contacts reached (${INTERNAL_WA})`,
-        logs: takeLogs(pool, INTERNAL_WA, 'whatsapp'),
+        logs: takeCarrierLogs(pool, INTERNAL_WA),
       })
     if (channels.has('highway'))
       list.push({
@@ -473,8 +778,8 @@ export function AutoSourcingPanel({
         label: 'Outreach Highway-sourced carriers',
         result: `${HIGHWAY_CARRIERS} verified carriers contacted`,
         state: 'queued',
-        logTitle: `Highway outreach log (${HIGHWAY_CARRIERS})`,
-        logs: takeLogs(pool, HIGHWAY_CARRIERS, 'highway'),
+        logTitle: `Highway / GenLogs outreach (${HIGHWAY_CARRIERS})`,
+        logs: takeCarrierLogs(highwayPool, HIGHWAY_CARRIERS),
       })
     if (channels.has('dat'))
       list.push({
@@ -484,19 +789,15 @@ export function AutoSourcingPanel({
         state: 'queued',
         logTitle: 'DAT posting log',
         logs: [
-          { name: 'Board', detail: 'DAT Load Board', meta: 'Posting ID · DAT-MOCK-88421' },
-          {
-            name: 'Lane',
-            detail: `${detail.load.origin} → ${detail.load.destination}`,
-            meta: `${detail.load.miles.toLocaleString()} mi · ${detail.load.equipment}`,
-          },
-          {
-            name: 'Rate posted',
-            detail: `$${Number(bookVal).toFixed(2)} book now`,
-            meta: `Hard limit $${maxNum.toFixed(2)}`,
-          },
-          { name: 'Repost schedule', detail: 'Every 20 minutes', meta: 'Auto-refresh enabled' },
-          { name: 'Posted by', detail: 'Sukhdeep Dhillon', meta: 'Mock session · just now' },
+          meta('Board', 'DAT Load Board', 'Posting ID · DAT-MOCK-88421'),
+          meta(
+            'Lane',
+            `${detail.load.origin} → ${detail.load.destination}`,
+            `${detail.load.miles.toLocaleString()} mi · ${detail.load.equipment}`
+          ),
+          meta('Rate posted', `${blastRate} book now`, `Hard limit $${maxNum.toFixed(2)}`),
+          meta('Repost schedule', 'Every 20 minutes', 'Auto-refresh enabled'),
+          meta('Posted by', 'Sukhdeep Dhillon', 'Mock session · just now'),
         ],
       })
     if (channels.has('loadlink'))
@@ -508,18 +809,14 @@ export function AutoSourcingPanel({
         state: 'queued',
         logTitle: 'Loadlink posting log',
         logs: [
-          { name: 'Board', detail: 'Loadlink', meta: 'Posting ID · LL-MOCK-22014' },
-          {
-            name: 'Lane',
-            detail: `${detail.load.origin} → ${detail.load.destination}`,
-            meta: `${detail.load.miles.toLocaleString()} mi · ${detail.load.equipment}`,
-          },
-          {
-            name: 'Rate posted',
-            detail: `$${Number(bookVal).toFixed(2)} book now`,
-            meta: `Hard limit $${maxNum.toFixed(2)}`,
-          },
-          { name: 'Session', detail: 'Mock broker session', meta: 'Expires in 4h (after retry)' },
+          meta('Board', 'Loadlink', 'Posting ID · LL-MOCK-22014'),
+          meta(
+            'Lane',
+            `${detail.load.origin} → ${detail.load.destination}`,
+            `${detail.load.miles.toLocaleString()} mi · ${detail.load.equipment}`
+          ),
+          meta('Rate posted', `${blastRate} book now`, `Hard limit $${maxNum.toFixed(2)}`),
+          meta('Session', 'Mock broker session', 'Expires in 4h (after retry)'),
         ],
       })
     return list
@@ -850,6 +1147,10 @@ export function AutoSourcingPanel({
                       const canExpand =
                         (t.state === 'done' || t.state === 'failed') && Boolean(t.logs?.length)
                       const isOpen = expanded.has(t.id)
+                      const carrierLogs = (t.logs ?? []).filter(
+                        (r): r is CarrierLog => r.kind === 'carrier'
+                      )
+                      const metaLogs = (t.logs ?? []).filter((r): r is MetaLog => r.kind === 'meta')
                       return (
                         <div
                           key={t.id}
@@ -861,7 +1162,23 @@ export function AutoSourcingPanel({
                             isOpen && 'is-open'
                           )}
                         >
-                          <div className="dd-auto-run__row">
+                          <div
+                            className={cn('dd-auto-run__row', canExpand && 'is-clickable')}
+                            onClick={canExpand ? () => toggleExpand(t.id) : undefined}
+                            onKeyDown={
+                              canExpand
+                                ? (e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault()
+                                      toggleExpand(t.id)
+                                    }
+                                  }
+                                : undefined
+                            }
+                            role={canExpand ? 'button' : undefined}
+                            tabIndex={canExpand ? 0 : undefined}
+                            aria-expanded={canExpand ? isOpen : undefined}
+                          >
                             <i>
                               {t.state === 'done' && <CheckCircle2 size={15} />}
                               {t.state === 'failed' && <AlertTriangle size={15} />}
@@ -878,35 +1195,79 @@ export function AutoSourcingPanel({
                               </span>
                             </div>
                             {t.state === 'failed' && (
-                              <button type="button" className="dd-auto-retry" onClick={() => retryTask(t.id)}>
+                              <button
+                                type="button"
+                                className="dd-auto-retry"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  retryTask(t.id)
+                                }}
+                              >
                                 <RotateCcw size={12} />
                                 Retry
                               </button>
                             )}
                             {canExpand && (
-                              <button
-                                type="button"
-                                className="dd-auto-expand"
-                                aria-expanded={isOpen}
-                                onClick={() => toggleExpand(t.id)}
-                              >
-                                {isOpen ? 'Hide log' : 'View log'}
-                                <ChevronDown size={13} className={cn(isOpen && 'is-rot')} />
-                              </button>
+                              <span className="dd-auto-chev" aria-hidden>
+                                <ChevronDown size={16} className={cn(isOpen && 'is-rot')} />
+                              </span>
                             )}
                           </div>
                           {canExpand && isOpen && (
                             <div className="dd-auto-log">
                               <div className="dd-auto-log__head">{t.logTitle}</div>
-                              <ul>
-                                {t.logs!.map((row, i) => (
-                                  <li key={`${t.id}-${i}`}>
-                                    <strong>{row.name}</strong>
-                                    <span>{row.detail}</span>
-                                    {row.meta && <em>{row.meta}</em>}
-                                  </li>
-                                ))}
-                              </ul>
+                              {carrierLogs.length > 0 ? (
+                                <div className="dd-auto-log-table-wrap">
+                                  <table className="dd-auto-log-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Carrier</th>
+                                        <th>MC #</th>
+                                        <th>DOT</th>
+                                        <th>Source</th>
+                                        <th>Last used</th>
+                                        <th>Blast rate</th>
+                                        <th>Loads</th>
+                                        <th>Contact</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {carrierLogs.map((row, i) => (
+                                        <tr key={`${t.id}-${i}`}>
+                                          <td>
+                                            <strong>{row.name}</strong>
+                                          </td>
+                                          <td>{row.mc}</td>
+                                          <td>{row.dot}</td>
+                                          <td>
+                                            <em className={cn('dd-auto-src', `is-${row.source.toLowerCase()}`)}>
+                                              {row.source}
+                                            </em>
+                                          </td>
+                                          <td>{row.lastUsed}</td>
+                                          <td>{row.blastRate}</td>
+                                          <td>{row.loads}</td>
+                                          <td className="dd-auto-log-contact">
+                                            <strong>{row.contactName}</strong>
+                                            <span>{row.phone}</span>
+                                            <span>{row.email}</span>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <ul>
+                                  {metaLogs.map((row, i) => (
+                                    <li key={`${t.id}-${i}`}>
+                                      <strong>{row.name}</strong>
+                                      <span>{row.detail}</span>
+                                      {row.meta && <em>{row.meta}</em>}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           )}
                         </div>
