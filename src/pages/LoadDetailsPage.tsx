@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Search,
   PanelRightClose,
+  Zap,
 } from 'lucide-react'
 import { TagPopover } from '@/components/report/TagPopover'
 import {
@@ -31,6 +32,7 @@ import {
   FinalizeAwardView,
   FinalizeTenderView,
 } from '@/components/details/LaterStageViews'
+import { AutoSourcingConfirm, AutoSourcingPanel } from '@/components/details/AutoSourcingPanel'
 import { cn } from '@/lib/cn'
 import {
   SEED_ACTIVITY,
@@ -214,6 +216,15 @@ function SummaryTab({
     setCommodities(detail.commodities)
     setActiveProbill(detail.commodities[0]?.probill)
   }, [detail.commodities])
+
+  /* keep local draft in sync when rates are set elsewhere (e.g. Auto Sourcing) */
+  useEffect(() => {
+    setMaxBuyDraft(
+      detail.maxBuy === '—' || detail.maxBuy === '$0.00'
+        ? ''
+        : detail.maxBuy.replace(/[^0-9.]/g, '')
+    )
+  }, [detail.maxBuy])
 
   const customerRate = `${detail.load.fee.toFixed(2)} ${detail.currency}`
   const maxBuySet = Boolean(maxBuyDraft) && Number(maxBuyDraft) > 0
@@ -957,13 +968,21 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [tags, setTags] = useState<string[]>(base.tags)
   const [postOpen, setPostOpen] = useState(false)
   const [offerOpen, setOfferOpen] = useState(false)
+  const [autoAsk, setAutoAsk] = useState(load.stage === 'Sourcing')
+  const [autoOpen, setAutoOpen] = useState(false)
 
   useEffect(() => {
     setDetail(base)
     setStage(load.stage as DetailStage)
     setSubStage(load.subStage)
     setTags(base.tags)
+    setAutoAsk(load.stage === 'Sourcing')
+    setAutoOpen(false)
   }, [base, load])
+
+  const autoMissing =
+    (detail.maxBuy === '—' || detail.maxBuy === '$0.00' ? 1 : 0) +
+    (detail.bookNowRate === '—' ? 1 : 0)
 
   const stageWorkspace =
     isFindPost(subStage) ||
@@ -1007,6 +1026,18 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           </div>
 
           <div className="dd-top__right">
+            <button
+              type="button"
+              className="dd-auto-btn"
+              onClick={() => {
+                setAutoAsk(false)
+                setAutoOpen(true)
+              }}
+            >
+              <Zap size={14} />
+              Auto Sourcing
+              {autoMissing > 0 && <i className="dd-auto-btn__badge">{autoMissing}</i>}
+            </button>
             <button type="button" className="dd-icon-btn dd-icon-btn--light" aria-label="Refresh">
               <RefreshCw size={15} />
             </button>
@@ -1273,6 +1304,30 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         <PostMarketplaceModal detail={detail} onClose={() => setPostOpen(false)} />
       )}
       {offerOpen && <ManualOfferModal onClose={() => setOfferOpen(false)} />}
+
+      {autoAsk && (
+        <AutoSourcingConfirm
+          probill={load.id}
+          missingCount={autoMissing}
+          onYes={() => {
+            setAutoAsk(false)
+            setAutoOpen(true)
+          }}
+          onNo={() => setAutoAsk(false)}
+        />
+      )}
+      {autoOpen && (
+        <AutoSourcingPanel
+          detail={detail}
+          onClose={() => setAutoOpen(false)}
+          onApplyRates={(patch) => setDetail((d) => ({ ...d, ...patch }))}
+          onGoFindPost={() => {
+            setAutoOpen(false)
+            setStage('Sourcing')
+            setSubStage('Find & Post')
+          }}
+        />
+      )}
     </div>
   )
 }
