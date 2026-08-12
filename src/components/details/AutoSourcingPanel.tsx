@@ -167,46 +167,66 @@ type RunTask = {
 
 /* ── Yes / No confirmation popup ── */
 export function AutoSourcingConfirm({
+  mode,
   probill,
   missingCount,
+  offerCount,
   onYes,
   onNo,
 }: {
+  mode: AutoMode
   probill: string
   missingCount: number
+  offerCount: number
   onYes: () => void
   onNo: () => void
 }) {
+  const label = AUTO_MODE_LABEL[mode]
+  const Icon = mode === 'sourcing' ? Zap : mode === 'tender' ? Gauge : Award
   return (
     <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="dd-auto-confirm-title">
       <button type="button" className="dd-modal-backdrop" aria-label="Close" onClick={onNo} />
       <div className="dd-modal dd-auto-confirm">
         <div className="dd-auto-confirm__icon">
-          <Zap size={22} />
+          <Icon size={22} />
         </div>
-        <h3 id="dd-auto-confirm-title">Run Auto Sourcing?</h3>
-        <p>
-          Auto Sourcing will check missing data points on <strong>{probill}</strong>
-          {missingCount > 0 ? (
-            <>
-              {' '}
-              (<strong>{missingCount}</strong> found), let you fix them in one place, then run your
-              automation rule — carrier blasts and board postings — from a single screen.
-            </>
-          ) : (
-            <> — all required data is present. Pick an automation rule and run everything from one screen.</>
-          )}
-        </p>
+        <h3 id="dd-auto-confirm-title">Run {label}?</h3>
+        {mode === 'sourcing' ? (
+          <p>
+            Auto Sourcing will check missing data points on <strong>{probill}</strong>
+            {missingCount > 0 ? (
+              <>
+                {' '}
+                (<strong>{missingCount}</strong> found), let you fix them in one place, then run your
+                automation rule — carrier blasts and board postings — from a single screen.
+              </>
+            ) : (
+              <> — all required data is present. Pick an automation rule and run everything from one screen.</>
+            )}
+          </p>
+        ) : mode === 'tender' ? (
+          <p>
+            Sourcing is done on <strong>{probill}</strong>. Auto Tender will analyze all{' '}
+            <strong>{offerCount}</strong> offers — rate vs your max buy hard limit, carrier rating,
+            Highway data, onboarding and monitoring — and suggest which offer to accept.
+          </p>
+        ) : (
+          <p>
+            <strong>{probill}</strong> is at the award stage. Auto Award will run final checks across{' '}
+            <strong>{offerCount}</strong> offers — hard limit, carrier rating, Highway identity,
+            onboarding and monitoring — and suggest the carrier to award.
+          </p>
+        )}
         <div className="dd-auto-confirm__actions">
           <button type="button" className="dd-btn" onClick={onNo}>
             No, not now
           </button>
           <button type="button" className="dd-btn dd-btn--primary" onClick={onYes}>
             <Sparkles size={14} />
-            Yes, run Auto Sourcing
+            Yes, run {label}
           </button>
         </div>
-        <span className="dd-auto-confirm__note">Mock workflow · no live sends or postings</span>
+        <span className="dd-auto-confirm__note">Mock workflow · no live sends, tenders or awards</span>
       </div>
     </div>
   )
@@ -478,6 +498,12 @@ export function AutoSourcingPanel({
 
   return (
     <>
+      <button
+        type="button"
+        className="dd-auto-panel-shade"
+        aria-label="Close panel"
+        onClick={onClose}
+      />
       <aside className="dd-auto-panel" role="dialog" aria-label={modeLabel}>
         <header className="dd-auto-panel__head">
           <div className="dd-auto-panel__title">

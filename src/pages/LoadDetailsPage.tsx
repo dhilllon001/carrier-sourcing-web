@@ -123,9 +123,13 @@ function DetailLifecycle({
         {detail.stages.map((block) => {
           const isOpen = open[block.stage] !== false
           const doneCount = block.items.filter((i) => i.done).length
+          const stageDone = doneCount === block.items.length && block.items.length > 0
           const active = block.stage === stage
           return (
-            <section key={block.stage} className={cn('dd-life-stage', active && 'is-active')}>
+            <section
+              key={block.stage}
+              className={cn('dd-life-stage', active && 'is-active', stageDone && 'is-complete')}
+            >
               <div className="dd-life-stage__head">
                 <button
                   type="button"
@@ -135,7 +139,9 @@ function DetailLifecycle({
                     setOpen((p) => ({ ...p, [block.stage]: true }))
                   }}
                 >
-                  <span className="dd-life-stage__num">{block.number}</span>
+                  <span className={cn('dd-life-stage__num', stageDone && 'is-done')}>
+                    {stageDone ? <Check size={11} strokeWidth={3} /> : block.number}
+                  </span>
                   <span className="dd-life-stage__name">{block.stage}</span>
                   <span className="dd-life-stage__count">
                     {doneCount}/{block.items.length}
@@ -973,7 +979,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [tags, setTags] = useState<string[]>(base.tags)
   const [postOpen, setPostOpen] = useState(false)
   const [offerOpen, setOfferOpen] = useState(false)
-  const [autoAsk, setAutoAsk] = useState(load.stage === 'Sourcing')
+  const autoStages = ['Sourcing', 'Tender', 'Award']
+  const [autoAsk, setAutoAsk] = useState(autoStages.includes(load.stage))
   const [autoOpen, setAutoOpen] = useState(false)
 
   useEffect(() => {
@@ -981,8 +988,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setStage(load.stage as DetailStage)
     setSubStage(load.subStage)
     setTags(base.tags)
-    setAutoAsk(load.stage === 'Sourcing')
+    setAutoAsk(autoStages.includes(load.stage))
     setAutoOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, load])
 
   const autoMissing =
@@ -992,6 +1000,22 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   /* sourcing not done → Auto Sourcing; done → Auto Tender / Auto Award on later stages */
   const autoMode: AutoMode | null =
     stage === 'Sourcing' ? 'sourcing' : stage === 'Tender' ? 'tender' : stage === 'Award' ? 'award' : null
+
+  /* lifecycle reflects the position the user is viewing: everything before it shows a check */
+  const lifeDetail = useMemo(() => {
+    const curIdx = detail.stages.findIndex((s) => s.stage === stage)
+    const stages = detail.stages.map((s, i) => {
+      if (i > curIdx) return s
+      if (i < curIdx) return { ...s, items: s.items.map((it) => ({ ...it, done: true })) }
+      const subIdx = s.items.findIndex((it) => it.label === subStage)
+      return {
+        ...s,
+        items: s.items.map((it, j) => ({ ...it, done: it.done || (subIdx > 0 && j < subIdx) })),
+      }
+    })
+    const completedSubs = stages.reduce((n, s) => n + s.items.filter((i) => i.done).length, 0)
+    return { ...detail, stages, completedSubs }
+  }, [detail, stage, subStage])
 
   const stageWorkspace =
     isFindPost(subStage) ||
@@ -1198,7 +1222,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         )}
       >
         <DetailLifecycle
-          detail={detail}
+          detail={lifeDetail}
           stage={stage}
           subStage={subStage}
           collapsed={lifeCollapsed}
@@ -1318,10 +1342,12 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       )}
       {offerOpen && <ManualOfferModal onClose={() => setOfferOpen(false)} />}
 
-      {autoAsk && (
+      {autoAsk && autoMode && (
         <AutoSourcingConfirm
+          mode={autoMode}
           probill={load.id}
           missingCount={autoMissing}
+          offerCount={detail.bids.length}
           onYes={() => {
             setAutoAsk(false)
             setAutoOpen(true)

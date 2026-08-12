@@ -9212,3 +9212,45 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Auto panel backdrop shade + lifecycle completion checks ── */
+.dd-auto-panel-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  border: none;
+  padding: 0;
+  background: rgba(12, 18, 28, 0.52);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+  animation: dd-auto-shade-in 0.2s ease;
+}
+
+@keyframes dd-auto-shade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dd-life-stage__num.is-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+}
+
+.dd-life-stage.is-complete .dd-life-stage__name {
+  color: #15803d;
+}
+
+.dd-life-stage.is-complete .dd-life-stage__count {
+  color: #16a34a;
+  font-weight: 700;
+}
