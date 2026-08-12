@@ -278,6 +278,7 @@ function SummaryTab({
   const requiredTotal = requiredItems.length
   const blocking = checklist.filter((c) => c.state === 'required')
   const advisories = checklist.filter((c) => c.state === 'advisory')
+  const alerts = checklist.filter((c) => c.state === 'required' || c.state === 'advisory')
   const canPost = blocking.length === 0
 
   const runAction = (id: string) => {
@@ -346,22 +347,23 @@ function SummaryTab({
   return (
     <div className="dd-summary dd-overview">
       <section className={cn('dd-ready', canPost ? 'is-ready' : 'is-blocked')}>
-        <div className="dd-ready__banner">
-          <div className="dd-ready__icon">
-            {canPost ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-          </div>
-          <div className="dd-ready__copy">
-            <strong>{canPost ? 'Ready to post to sourcing' : 'Not ready to post to sourcing'}</strong>
-            <span>
-              {canPost
-                ? 'All required items are complete — carriers can see this load.'
-                : `${blocking.length} item${blocking.length === 1 ? '' : 's'} must be completed before carriers can see this load`}
-              {advisories.length > 0 ? ` · ${advisories.length} advisor${advisories.length === 1 ? 'y' : 'ies'}` : ''}
-            </span>
+        <div className="dd-ready__top">
+          <div className="dd-ready__status">
+            <div className="dd-ready__icon">
+              {canPost ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+            </div>
+            <div className="dd-ready__copy">
+              <strong>{canPost ? 'Ready to post to sourcing' : 'Not ready to post to sourcing'}</strong>
+              <span>
+                {canPost
+                  ? 'Required checks clear — post when you are ready.'
+                  : `${blocking.length} blocking alert${blocking.length === 1 ? '' : 's'} before carriers can see this load`}
+              </span>
+            </div>
           </div>
           <div className="dd-ready__progress">
             <span>
-              {requiredDone} / {requiredTotal} required
+              {requiredDone}/{requiredTotal}
             </span>
             <div className="dd-ready__bar">
               <i style={{ width: `${Math.round((requiredDone / Math.max(requiredTotal, 1)) * 100)}%` }} />
@@ -369,74 +371,97 @@ function SummaryTab({
           </div>
         </div>
 
-        <div className="dd-ready__grid">
-          {checklist.map((item) => (
-            <div key={item.id} className={cn('dd-ready-item', `is-${item.state}`)}>
-              <div className="dd-ready-item__icon">
-                {item.state === 'done' && <CheckCircle2 size={16} />}
-                {item.state === 'required' && <AlertTriangle size={16} />}
-                {item.state === 'advisory' && <Info size={16} />}
-              </div>
-              <div className="dd-ready-item__body">
-                <div className="dd-ready-item__top">
-                  <strong>{item.title}</strong>
-                  {item.state === 'required' && <span className="dd-ready-tag is-required">Required</span>}
-                  {item.state === 'advisory' && <span className="dd-ready-tag is-advisory">Advisory</span>}
-                </div>
-                <span>{item.detail}</span>
-              </div>
-              {item.action && (
-                <button type="button" className="dd-ready-item__btn" onClick={() => runAction(item.id)}>
-                  {item.action}
+        <div className="dd-ready__split">
+          <div className="dd-ready__go">
+            <span className="dd-ready__go-label">Sourcing</span>
+            <strong>{posted ? 'Live on sourcing' : canPost ? 'Ready to go' : 'Blocked'}</strong>
+            <em>
+              {canPost
+                ? 'Post this load to the carrier marketplace.'
+                : 'Resolve alerts on the right to unlock posting.'}
+            </em>
+            <div className="dd-ready__go-actions">
+              <button
+                type="button"
+                className={cn('dd-btn dd-btn--primary dd-ready__post', !canPost && 'is-disabled')}
+                onClick={goFindPost}
+                aria-disabled={!canPost}
+              >
+                {posted ? 'Posted to sourcing' : 'Post to sourcing'}
+                {!canPost && <em>{blocking.length}</em>}
+              </button>
+              {!canPost && (
+                <button type="button" className="dd-ready__why" onClick={() => setWhyOpen((v) => !v)}>
+                  Why blocked?
                 </button>
               )}
-            </div>
-          ))}
-        </div>
-
-        <div className="dd-ready__foot">
-          <div className="dd-ready__post-wrap">
-            <button
-              type="button"
-              className={cn('dd-btn dd-btn--primary dd-ready__post', !canPost && 'is-disabled')}
-              onClick={goFindPost}
-              aria-disabled={!canPost}
-            >
-              {posted ? 'Posted to sourcing' : 'Post to sourcing'}
-              {!canPost && <em>{blocking.length}</em>}
-            </button>
-            {!canPost && (
-              <button type="button" className="dd-ready__why" onClick={() => setWhyOpen((v) => !v)}>
-                Why is posting blocked?
-              </button>
-            )}
-            {whyOpen && !canPost && (
-              <div className="dd-ready__popover" role="dialog" aria-label="Blocking items">
-                <div className="dd-ready__popover-head">
-                  <strong>Resolve to unlock posting</strong>
-                  <button type="button" className="dd-icon-btn" onClick={() => setWhyOpen(false)} aria-label="Close">
-                    ×
-                  </button>
-                </div>
-                {blocking.map((b) => (
-                  <div key={b.id} className="dd-ready__popover-row">
-                    <div>
-                      <strong>{b.title}</strong>
-                      <span>{b.detail}</span>
-                    </div>
-                    {b.action && (
-                      <button type="button" className="dd-ready-item__btn" onClick={() => runAction(b.id)}>
-                        {b.action}
-                      </button>
-                    )}
+              {whyOpen && !canPost && (
+                <div className="dd-ready__popover" role="dialog" aria-label="Blocking items">
+                  <div className="dd-ready__popover-head">
+                    <strong>Resolve to unlock posting</strong>
+                    <button type="button" className="dd-icon-btn" onClick={() => setWhyOpen(false)} aria-label="Close">
+                      ×
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                  {blocking.map((b) => (
+                    <div key={b.id} className="dd-ready__popover-row">
+                      <div>
+                        <strong>{b.title}</strong>
+                        <span>{b.detail}</span>
+                      </div>
+                      {b.action && (
+                        <button type="button" className="dd-ready-item__btn" onClick={() => runAction(b.id)}>
+                          {b.action}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="dd-ready__tags">
+              <span className="dd-meta-inline">Tags</span>
+              <TagPopover tags={tags} onChange={onTags} />
+            </div>
           </div>
-          <div className="dd-ready__tags">
-            <span className="dd-meta-inline">Tags</span>
-            <TagPopover tags={tags} onChange={onTags} />
+
+          <div className="dd-ready__alerts">
+            <div className="dd-ready__alerts-head">
+              <strong>Alerts</strong>
+              <span>
+                {blocking.length} blocking
+                {advisories.length > 0 ? ` · ${advisories.length} advisory` : ''}
+              </span>
+            </div>
+            <div className="dd-ready__alerts-list">
+              {alerts.length === 0 && (
+                <div className="dd-ready__alerts-empty">
+                  <CheckCircle2 size={16} />
+                  <span>No open alerts</span>
+                </div>
+              )}
+              {alerts.map((item) => (
+                <div key={item.id} className={cn('dd-alert-card', `is-${item.state}`)}>
+                  <div className="dd-alert-card__icon">
+                    {item.state === 'required' ? <AlertTriangle size={14} /> : <Info size={14} />}
+                  </div>
+                  <div className="dd-alert-card__body">
+                    <div className="dd-alert-card__top">
+                      <strong>{item.title}</strong>
+                      <span className={cn('dd-ready-tag', `is-${item.state}`)}>
+                        {item.state === 'required' ? 'Required' : 'Advisory'}
+                      </span>
+                    </div>
+                    <em>{item.detail}</em>
+                  </div>
+                  {item.action && (
+                    <button type="button" className="dd-ready-item__btn" onClick={() => runAction(item.id)}>
+                      {item.action}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
