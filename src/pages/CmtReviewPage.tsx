@@ -4,6 +4,7 @@ import {
   ExternalLink,
   FileText,
   Shield,
+  Sparkles,
   X,
 } from 'lucide-react'
 import { cmtReviewQueue, type CmtReviewItem } from '@/data/cmtReview'
@@ -52,38 +53,24 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
 
   return (
     <div className="cmt-page">
-      <div className="cmt-hero">
-        <div className="cmt-hero__mark" aria-hidden>
-          <Shield size={22} strokeWidth={1.7} />
-        </div>
-        <div className="cmt-hero__copy">
-          <span className="cmt-hero__eyebrow">Reviewer · CMT override</span>
-          <h2 className="cmt-hero__title">CMT Review Queue</h2>
-          <p className="cmt-hero__sub">
-            Pending insurance / terms checks awaiting Approve or Reject.
-          </p>
-        </div>
-        <div className="cmt-hero__stat">
-          <strong>{filtered.length}</strong>
-          <em>in queue</em>
-        </div>
+      <div className="cmt-toolbar">
+        <span>
+          <strong>{filtered.length}</strong> pending override{filtered.length === 1 ? '' : 's'}
+        </span>
+        <em>Insurance · terms · carrier risk</em>
       </div>
 
       <div className="cmt-board">
         {filtered.length === 0 && (
           <div className="cmt-empty">
-            <Shield size={28} strokeWidth={1.5} />
+            <Shield size={26} strokeWidth={1.5} />
             <strong>Queue clear</strong>
             <p>No pending CMT overrides match this search.</p>
           </div>
         )}
 
         {filtered.map((item) => (
-          <CmtCard
-            key={item.id}
-            item={item}
-            onReview={() => setActiveId(item.id)}
-          />
+          <CmtCard key={item.id} item={item} onReview={() => setActiveId(item.id)} />
         ))}
       </div>
 
@@ -98,7 +85,7 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
           <aside className="cmt-drawer__panel">
             <header className="cmt-drawer__head">
               <div>
-                <span className="cmt-hero__eyebrow">CMT override</span>
+                <span className="cmt-eyebrow">CMT override</span>
                 <strong>{active.carrier}</strong>
                 <em>
                   MC# {active.mc}
@@ -135,12 +122,18 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
               <div className="cmt-drawer__rate">
                 <span>Proposed rate</span>
                 <strong>{active.proposedRate}</strong>
-                <em>{active.currency} · {active.equipment}</em>
+                <em>
+                  {active.currency} · {active.equipment}
+                </em>
               </div>
 
-              <div className="cmt-flags">
+              <div className="cmt-alerts cmt-alerts--stack">
+                <div className="cmt-alerts__label">
+                  <Sparkles size={12} />
+                  AI alerts
+                </div>
                 {active.flags.map((f) => (
-                  <div key={f.id} className="cmt-flag">
+                  <div key={f.id} className="cmt-alert">
                     <strong>{f.code}</strong>
                     <span>{f.detail}</span>
                   </div>
@@ -189,7 +182,23 @@ function CmtCard({
 }) {
   return (
     <article className="cmt-card">
-      <div className="cmt-card__main">
+      <div className="cmt-alerts">
+        <div className="cmt-alerts__label">
+          <Sparkles size={12} />
+          AI alerts
+          <i>{item.flags.length}</i>
+        </div>
+        <div className="cmt-alerts__row">
+          {item.flags.map((f) => (
+            <div key={f.id} className="cmt-alert" title={f.detail}>
+              <strong>{f.code}</strong>
+              <span>{f.detail}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="cmt-card__body">
         <div className="cmt-card__carrier">
           <strong>{item.carrier}</strong>
           <em>
@@ -218,31 +227,21 @@ function CmtCard({
           </div>
         </div>
 
-        <div className="cmt-flags">
-          {item.flags.map((f) => (
-            <div key={f.id} className="cmt-flag">
-              <strong>{f.code}</strong>
-              <span>{f.detail}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="cmt-card__side">
-        <div className="cmt-card__rate">
-          <span>Proposed rate</span>
-          <strong>{item.proposedRate}</strong>
-          <em>Submitted {item.submittedAt}</em>
-        </div>
-
-        <div className="cmt-card__actions">
-          <button type="button" className="cmt-btn cmt-btn--gold" onClick={onReview}>
-            Review
-            <ExternalLink size={13} />
-          </button>
-          <a className="cmt-link" href="#log" onClick={(e) => e.preventDefault()}>
-            View log
-          </a>
+        <div className="cmt-card__side">
+          <div className="cmt-card__rate">
+            <span>Proposed</span>
+            <strong>{item.proposedRate}</strong>
+            <em>{item.submittedAt}</em>
+          </div>
+          <div className="cmt-card__actions">
+            <button type="button" className="cmt-btn cmt-btn--gold" onClick={onReview}>
+              Review
+              <ExternalLink size={13} />
+            </button>
+            <a className="cmt-link" href="#log" onClick={(e) => e.preventDefault()}>
+              View log
+            </a>
+          </div>
         </div>
       </div>
     </article>

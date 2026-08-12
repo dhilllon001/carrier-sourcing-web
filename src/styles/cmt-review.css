@@ -1,95 +1,48 @@
-/* CMT Review — card queue (no table) */
+/* CMT Review — clean card queue (header owns the title) */
 
 .cmt-page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   height: 100%;
   min-height: 0;
-  padding: 14px 16px 18px;
+  padding: 12px 16px 18px;
   overflow: auto;
   background: var(--bg);
 }
 
-.cmt-hero {
+.cmt-toolbar {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-1);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
 }
 
-.cmt-hero__mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  background: linear-gradient(160deg, #f8e7c8 0%, #f1d5a9 100%);
-  color: var(--amber);
-  border: 1px solid var(--amber-line);
+.cmt-toolbar span {
+  font-size: 12.5px;
+  color: var(--ink-2);
 }
 
-.cmt-hero__copy {
-  min-width: 0;
-  flex: 1;
+.cmt-toolbar strong {
+  color: var(--ink);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 
-.cmt-hero__eyebrow {
+.cmt-toolbar em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.cmt-eyebrow {
   display: block;
   font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
-}
-
-.cmt-hero__title {
-  margin: 2px 0 0;
-  font-size: 20px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  line-height: 1.2;
-}
-
-.cmt-hero__sub {
-  margin: 4px 0 0;
-  font-size: 12.5px;
-  color: var(--ink-2);
-  line-height: 1.4;
-}
-
-.cmt-hero__stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  flex-shrink: 0;
-}
-
-.cmt-hero__stat strong {
-  font-size: 22px;
-  font-weight: 650;
-  font-family: var(--sr-font-body);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-  line-height: 1;
-}
-
-.cmt-hero__stat em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--ink-3);
-  font-weight: 500;
 }
 
 .cmt-board {
@@ -127,9 +80,6 @@
 
 /* Card */
 .cmt-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 168px;
-  gap: 0;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -145,22 +95,139 @@
   box-shadow: var(--sh-2);
 }
 
-.cmt-card__main {
+/* Row 1 — AI alerts */
+.cmt-alerts {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fff8f7;
+  border-bottom: 1px solid var(--red-line);
+  min-width: 0;
+}
+
+.cmt-alerts__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  align-self: center;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--red-line);
+  color: var(--red);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cmt-alerts__label i {
+  font-style: normal;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmt-alerts__row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 1px;
+}
+
+.cmt-alert {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 18px;
+  justify-content: center;
+  gap: 2px;
+  min-width: 200px;
+  max-width: 280px;
+  flex: 1 1 220px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--red-line);
+}
+
+.cmt-alert strong {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--red);
+}
+
+.cmt-alert span {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: #8f2f28;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cmt-alerts--stack {
+  flex-direction: column;
+  align-items: stretch;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  gap: 8px;
+}
+
+.cmt-alerts--stack .cmt-alert {
+  max-width: none;
   min-width: 0;
-  border-right: 1px solid var(--line-soft);
+  flex: none;
+}
+
+.cmt-alerts--stack .cmt-alert span {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* Row 2 — carrier / route / actions */
+.cmt-card__body {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(220px, 1.4fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.cmt-card__carrier {
+  min-width: 0;
 }
 
 .cmt-card__carrier strong {
   display: block;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 650;
   color: var(--ink);
   letter-spacing: -0.01em;
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cmt-card__carrier em {
@@ -170,21 +237,28 @@
   font-size: 11.5px;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cmt-card__side {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
   gap: 14px;
-  padding: 16px 14px;
-  background: var(--surface-2);
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.cmt-card__rate {
+  text-align: right;
+  min-width: 72px;
 }
 
 .cmt-card__rate span,
 .cmt-drawer__rate span {
   display: block;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -194,8 +268,8 @@
 .cmt-card__rate strong,
 .cmt-drawer__rate strong {
   display: block;
-  margin-top: 4px;
-  font-size: 22px;
+  margin-top: 2px;
+  font-size: 20px;
   font-weight: 650;
   font-family: var(--sr-font-body);
   font-variant-numeric: tabular-nums;
@@ -207,7 +281,7 @@
 .cmt-card__rate em,
 .cmt-drawer__rate em {
   display: block;
-  margin-top: 5px;
+  margin-top: 4px;
   font-style: normal;
   font-size: 11px;
   color: var(--ink-3);
@@ -217,15 +291,17 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 6px;
+  min-width: 108px;
 }
 
 /* Route */
 .cmt-route {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
   align-items: start;
+  min-width: 0;
 }
 
 .cmt-route strong {
@@ -234,6 +310,9 @@
   font-weight: 600;
   color: var(--ink);
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cmt-route em {
@@ -252,8 +331,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding-top: 4px;
-  min-width: 88px;
+  padding-top: 3px;
+  min-width: 84px;
 }
 
 .cmt-route__mid span {
@@ -283,37 +362,6 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 10px;
-}
-
-/* Risk flags */
-.cmt-flags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.cmt-flag {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-width: 320px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--red-soft);
-  border: 1px solid var(--red-line);
-}
-
-.cmt-flag strong {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: var(--red);
-}
-
-.cmt-flag span {
-  font-size: 11.5px;
-  line-height: 1.35;
-  color: #8f2f28;
 }
 
 /* Buttons */
@@ -497,24 +545,21 @@
   box-shadow: var(--sh-3);
 }
 
-@media (max-width: 900px) {
-  .cmt-card {
+@media (max-width: 980px) {
+  .cmt-card__body {
     grid-template-columns: 1fr;
-  }
-
-  .cmt-card__main {
-    border-right: 0;
-    border-bottom: 1px solid var(--line-soft);
+    gap: 12px;
   }
 
   .cmt-card__side {
-    flex-direction: row;
-    align-items: center;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .cmt-card__actions {
     flex-direction: row;
     align-items: center;
+    min-width: 0;
   }
 
   .cmt-route {
@@ -529,5 +574,10 @@
   .cmt-route__mid {
     min-width: 0;
     width: 100%;
+  }
+
+  .cmt-alerts {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
