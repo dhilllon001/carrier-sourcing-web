@@ -177,7 +177,8 @@ function CmtCard({
 }) {
   return (
     <article className="cmt-card">
-      <div className="cmt-card__col cmt-card__col--carrier">
+      <div className="cmt-panel cmt-panel--carrier">
+        <span className="cmt-panel__label">Carrier</span>
         <strong>{item.carrier}</strong>
         <em>
           MC# {item.mc}
@@ -188,7 +189,8 @@ function CmtCard({
         </span>
       </div>
 
-      <div className="cmt-card__col cmt-card__col--route">
+      <div className="cmt-panel cmt-panel--route">
+        <span className="cmt-panel__label">Lane</span>
         <div className="cmt-route">
           <div>
             <strong>{item.origin}</strong>
@@ -206,27 +208,35 @@ function CmtCard({
         </div>
       </div>
 
-      <div className="cmt-card__col cmt-card__col--flags">
-        {item.flags.map((f) => (
-          <span key={f.id} className="cmt-chip" title={f.detail}>
-            {f.code}
-          </span>
-        ))}
+      <div className="cmt-panel cmt-panel--flags">
+        <span className="cmt-panel__label">Flags</span>
+        <div className="cmt-panel__chips">
+          {item.flags.map((f) => (
+            <span key={f.id} className="cmt-chip" title={f.detail}>
+              {f.code}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="cmt-card__col cmt-card__col--rate">
+      <div className="cmt-panel cmt-panel--price">
+        <span className="cmt-panel__label">Price</span>
         <strong>{item.proposedRate}</strong>
         <em>{item.submittedAt}</em>
       </div>
 
-      <div className="cmt-card__col cmt-card__col--action">
-        <button type="button" className="cmt-btn cmt-btn--gold" onClick={onReview}>
-          Review
-          <ExternalLink size={13} />
-        </button>
-        <a className="cmt-link" href="#log" onClick={(e) => e.preventDefault()}>
-          View log
-        </a>
+      <div className="cmt-panel cmt-panel--actions">
+        <span className="cmt-panel__label">Actions</span>
+        <div className="cmt-actions">
+          <button type="button" className="cmt-btn cmt-btn--gold" onClick={onReview}>
+            Review
+            <ExternalLink size={13} />
+          </button>
+          <a className="cmt-btn cmt-btn--log" href="#log" onClick={(e) => e.preventDefault()}>
+            <FileText size={13} />
+            Log
+          </a>
+        </div>
       </div>
     </article>
   )

@@ -1,4 +1,4 @@
-/* CMT Review — simple side-by-side cards */
+/* CMT Review — bordered side-by-side panels */
 
 .cmt-page {
   display: flex;
@@ -40,7 +40,7 @@
 .cmt-board {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .cmt-empty {
@@ -70,21 +70,20 @@
   max-width: 320px;
 }
 
-/* Side-by-side card row */
+/* Card shell */
 .cmt-card {
   display: grid;
   grid-template-columns:
-    minmax(180px, 1.25fr)
-    minmax(240px, 1.6fr)
-    minmax(120px, 0.9fr)
-    88px
-    112px;
-  gap: 16px;
-  align-items: center;
-  padding: 14px 16px;
+    minmax(170px, 1.15fr)
+    minmax(220px, 1.45fr)
+    minmax(110px, 0.85fr)
+    108px
+    128px;
+  align-items: stretch;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
+  overflow: hidden;
   box-shadow: var(--sh-1);
   transition:
     border-color var(--fast) var(--ease),
@@ -96,11 +95,34 @@
   box-shadow: var(--sh-2);
 }
 
-.cmt-card__col {
+/* Shared panel */
+.cmt-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
+  padding: 14px 16px;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
 }
 
-.cmt-card__col--carrier strong {
+.cmt-panel:first-child {
+  border-left: 0;
+}
+
+.cmt-panel__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Carrier */
+.cmt-panel--carrier strong {
   display: block;
   font-size: 13.5px;
   font-weight: 650;
@@ -112,10 +134,9 @@
   text-overflow: ellipsis;
 }
 
-.cmt-card__col--carrier em,
-.cmt-card__col--carrier span {
+.cmt-panel--carrier em,
+.cmt-panel--carrier > span {
   display: block;
-  margin-top: 2px;
   font-style: normal;
   font-size: 11.5px;
   color: var(--ink-3);
@@ -125,11 +146,11 @@
   text-overflow: ellipsis;
 }
 
-.cmt-card__col--flags {
+/* Flags */
+.cmt-panel__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  align-items: center;
 }
 
 .cmt-chip {
@@ -147,13 +168,15 @@
   white-space: nowrap;
 }
 
-.cmt-card__col--rate {
-  text-align: right;
+/* Price — distinct soft panel */
+.cmt-panel--price {
+  background: var(--surface-2);
+  text-align: left;
 }
 
-.cmt-card__col--rate strong {
+.cmt-panel--price strong {
   display: block;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 650;
   font-family: var(--sr-font-body);
   font-variant-numeric: tabular-nums;
@@ -162,18 +185,21 @@
   line-height: 1.1;
 }
 
-.cmt-card__col--rate em {
+.cmt-panel--price em {
   display: block;
-  margin-top: 3px;
   font-style: normal;
   font-size: 11px;
   color: var(--ink-3);
 }
 
-.cmt-card__col--action {
+/* Actions — distinct panel */
+.cmt-panel--actions {
+  background: #f7f8fa;
+}
+
+.cmt-actions {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 6px;
 }
 
@@ -254,12 +280,13 @@
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid transparent;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: var(--sr-font-body);
+  text-decoration: none;
   transition:
     background var(--fast) var(--ease),
     border-color var(--fast) var(--ease),
@@ -280,6 +307,18 @@
 
 .cmt-btn--gold:active {
   transform: translateY(1px);
+}
+
+.cmt-btn--log {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink-2);
+}
+
+.cmt-btn--log:hover {
+  border-color: var(--accent-line);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .cmt-btn--ghost {
@@ -484,38 +523,77 @@
   box-shadow: var(--sh-3);
 }
 
+/* Tablet */
 @media (max-width: 1100px) {
   .cmt-card {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
   }
 
-  .cmt-card__col--route {
+  .cmt-panel--carrier {
+    border-left: 0;
+  }
+
+  .cmt-panel--route {
+    border-left: 1px solid var(--line);
+  }
+
+  .cmt-panel--flags {
     grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
-  .cmt-card__col--flags {
-    grid-column: 1 / -1;
+  .cmt-panel--price {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
-  .cmt-card__col--rate {
-    text-align: left;
+  .cmt-panel--actions {
+    border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line);
   }
 
-  .cmt-card__col--action {
+  .cmt-actions {
     flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
+  }
+
+  .cmt-actions .cmt-btn {
+    flex: 1;
   }
 }
 
+/* Phone — stacked clean sections */
 @media (max-width: 640px) {
+  .cmt-page {
+    padding: 10px 10px 16px;
+  }
+
   .cmt-card {
     grid-template-columns: 1fr;
+    border-radius: 10px;
+  }
+
+  .cmt-panel {
+    border-left: 0 !important;
+    border-top: 1px solid var(--line);
+    padding: 12px 14px;
+  }
+
+  .cmt-panel:first-child {
+    border-top: 0;
+  }
+
+  .cmt-panel--price {
+    background: #f6f7f9;
+  }
+
+  .cmt-panel--actions {
+    background: #f3f4f6;
   }
 
   .cmt-route {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .cmt-route .is-end {
@@ -527,7 +605,15 @@
     min-width: 0;
   }
 
-  .cmt-card__col--action {
-    justify-content: stretch;
+  .cmt-actions {
+    flex-direction: row;
+  }
+
+  .cmt-actions .cmt-btn {
+    flex: 1;
+  }
+
+  .cmt-panel--carrier strong {
+    white-space: normal;
   }
 }
