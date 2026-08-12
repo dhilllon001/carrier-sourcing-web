@@ -4,6 +4,7 @@ import {
   Award,
   BadgeCheck,
   Check,
+  CheckCheck,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -542,6 +543,218 @@ function meta(name: string, detail: string, note?: string): MetaLog {
   return { kind: 'meta', name, detail, meta: note }
 }
 
+/* ── Per-channel color identity for run rows ── */
+const TASK_THEME: Record<string, { cls: string; icon: typeof Mail }> = {
+  rates: { cls: 'rates', icon: Gauge },
+  blast_email: { cls: 'email', icon: Mail },
+  blast_whatsapp: { cls: 'whatsapp', icon: MessageCircle },
+  highway: { cls: 'highway', icon: ShieldCheck },
+  post_dat: { cls: 'dat', icon: RadioTower },
+  post_loadlink: { cls: 'loadlink', icon: RadioTower },
+}
+
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+}
+
+function mockTime(i: number) {
+  const minute = (8 + i * 3) % 60
+  return `12:${String(minute).padStart(2, '0')} PM`
+}
+
+/* ── Email blast — inbox-style log ── */
+function EmailLogView({ rows, subject, preview }: { rows: CarrierLog[]; subject: string; preview: string }) {
+  return (
+    <div className="dd-mailog">
+      <div className="dd-mailog__subject">
+        <i>
+          <Mail size={14} />
+        </i>
+        <div>
+          <strong>{subject}</strong>
+          <span>{preview}</span>
+        </div>
+        <em>Sent · just now</em>
+      </div>
+      <div className="dd-mailog__list">
+        {rows.map((r, i) => (
+          <div key={`${r.name}-${i}`} className="dd-mailog__row">
+            <span className={cn('dd-mailog__avatar', `is-c${i % 6}`)}>{initialsOf(r.name)}</span>
+            <div className="dd-mailog__who">
+              <strong>{r.name}</strong>
+              <span>
+                {r.email} · MC {r.mc} · DOT {r.dot}
+              </span>
+            </div>
+            <div className="dd-mailog__meta">
+              <strong>{r.contactName}</strong>
+              <span>{mockTime(i)}</span>
+            </div>
+            <em className={cn('dd-mailog__chip', i % 4 === 0 && 'is-opened')}>
+              {i % 4 === 0 ? 'Opened' : 'Delivered'}
+            </em>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── WhatsApp blast — chat-style log ── */
+function WhatsAppLogView({ rows, message }: { rows: CarrierLog[]; message: string }) {
+  const replies = [
+    { who: rows[2]?.name ?? 'Ontario Express', text: 'Interested — what’s the all-in on this one?', time: '12:11 PM' },
+    { who: rows[5]?.name ?? 'Twin Ports Express', text: 'Truck empty in Columbus Fri AM. Sending an offer now.', time: '12:14 PM' },
+  ]
+  const tickState = (i: number) => (i % 3 === 0 ? 'read' : i % 3 === 1 ? 'delivered' : 'sent')
+  return (
+    <div className="dd-walog">
+      <div className="dd-walog__chat">
+        <span className="dd-walog__day">Today</span>
+        <div className="dd-walog__bubble is-out">
+          <p>{message}</p>
+          <span>
+            12:08 PM <CheckCheck size={13} className="is-read" />
+          </span>
+        </div>
+        {replies.map((rep) => (
+          <div key={rep.who} className="dd-walog__bubble is-in">
+            <strong>{rep.who}</strong>
+            <p>{rep.text}</p>
+            <span>{rep.time}</span>
+          </div>
+        ))}
+      </div>
+      <div className="dd-walog__list">
+        {rows.map((r, i) => {
+          const state = tickState(i)
+          return (
+            <div key={`${r.name}-${i}`} className="dd-walog__row">
+              <span className="dd-walog__avatar">{initialsOf(r.name)}</span>
+              <div>
+                <strong>{r.name}</strong>
+                <span>
+                  {r.phone} · {r.contactName}
+                </span>
+              </div>
+              <em className={cn('dd-walog__tick', `is-${state}`)}>
+                {state === 'sent' ? <Check size={13} /> : <CheckCheck size={13} />}
+                {state}
+              </em>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── Highway outreach — verification cards ── */
+function HighwayLogView({ rows }: { rows: CarrierLog[] }) {
+  return (
+    <div className="dd-hwlog">
+      {rows.map((r, i) => (
+        <div key={`${r.name}-${i}`} className={cn('dd-hwlog__card', r.source === 'GenLogs' && 'is-genlogs')}>
+          <div className="dd-hwlog__top">
+            <i>
+              <ShieldCheck size={14} />
+            </i>
+            <strong>{r.name}</strong>
+            <em>{r.source === 'GenLogs' ? 'GenLogs' : 'Verified'}</em>
+          </div>
+          <span className="dd-hwlog__id">
+            {r.source === 'GenLogs' ? 'GEN' : 'HGW'}-{String(4100 + i * 37)}
+          </span>
+          <div className="dd-hwlog__meta">
+            <span>
+              MC {r.mc} · DOT {r.dot}
+            </span>
+            <span>
+              {r.contactName} · {r.phone}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── DAT / Loadlink — posting ticket ── */
+function BoardTicketView({
+  board,
+  cls,
+  postingId,
+  lane,
+  equipment,
+  miles,
+  rate,
+  hardLimit,
+  extras,
+}: {
+  board: string
+  cls: string
+  postingId: string
+  lane: string
+  equipment: string
+  miles: number
+  rate: string
+  hardLimit: string
+  extras: MetaLog[]
+}) {
+  return (
+    <div className={cn('dd-boardlog', `is-${cls}`)}>
+      <div className="dd-boardlog__ticket">
+        <div className="dd-boardlog__brand">
+          <RadioTower size={16} />
+          <strong>{board}</strong>
+        </div>
+        <div className="dd-boardlog__body">
+          <strong className="dd-boardlog__lane">{lane}</strong>
+          <div className="dd-boardlog__chips">
+            <em>{equipment}</em>
+            <em>{miles.toLocaleString()} mi</em>
+            <em>Posting {postingId}</em>
+          </div>
+          <div className="dd-boardlog__rate">
+            <strong>{rate}</strong>
+            <span>book now · hard limit {hardLimit}</span>
+          </div>
+        </div>
+        <span className="dd-boardlog__live">Live</span>
+      </div>
+      <ul className="dd-boardlog__extras">
+        {extras.map((row) => (
+          <li key={row.name}>
+            <strong>{row.name}</strong>
+            <span>{row.detail}</span>
+            {row.meta && <em>{row.meta}</em>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/* ── Rates — stat tiles ── */
+function RateTilesView({ rows }: { rows: MetaLog[] }) {
+  return (
+    <div className="dd-ratelog">
+      {rows.map((row, i) => (
+        <div key={row.name} className={cn('dd-ratelog__tile', `is-t${i % 3}`)}>
+          <span>{row.name}</span>
+          <strong>{row.detail}</strong>
+          {row.meta && <em>{row.meta}</em>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ── Yes / No confirmation popup ── */
 export function AutoSourcingConfirm({
   mode,
@@ -635,7 +848,10 @@ function ResultPopup({
         <h3>{title}</h3>
         <ul>
           {lines.map((l) => (
-            <li key={l}>{l}</li>
+            <li key={l}>
+              <i className="dd-auto-result__dot" aria-hidden />
+              {l}
+            </li>
           ))}
         </ul>
         <div className="dd-auto-confirm__actions">
@@ -941,7 +1157,9 @@ export function AutoSourcingPanel({
       <aside className="dd-auto-panel" role="dialog" aria-label={modeLabel}>
         <header className="dd-auto-panel__head">
           <div className="dd-auto-panel__title">
-            {mode === 'sourcing' ? <Zap size={16} /> : mode === 'tender' ? <Gauge size={16} /> : <Award size={16} />}
+            <span className={cn('dd-auto-mode-badge', `is-${mode}`)}>
+              {mode === 'sourcing' ? <Zap size={16} /> : mode === 'tender' ? <Gauge size={16} /> : <Award size={16} />}
+            </span>
             <div>
               <strong>{modeLabel}</strong>
               <span>
@@ -965,16 +1183,21 @@ export function AutoSourcingPanel({
               <div className="dd-auto-steps">
                 {(
                   [
-                    [1, 'Automation rule'],
-                    [2, 'Data & limits'],
-                    [3, 'Run & results'],
+                    [1, 'Automation rule', Layers],
+                    [2, 'Data & limits', Gauge],
+                    [3, 'Run & results', Zap],
                   ] as const
-                ).map(([n, label]) => (
+                ).map(([n, label, StepIcon]) => (
                   <div
                     key={n}
-                    className={cn('dd-auto-steps__item', step === n && 'is-active', step > n && 'is-done')}
+                    className={cn(
+                      'dd-auto-steps__item',
+                      `is-s${n}`,
+                      step === n && 'is-active',
+                      step > n && 'is-done'
+                    )}
                   >
-                    <i>{step > n ? <Check size={11} /> : n}</i>
+                    <i>{step > n ? <Check size={12} /> : <StepIcon size={12} />}</i>
                     <span>{label}</span>
                   </div>
                 ))}
@@ -1151,11 +1374,17 @@ export function AutoSourcingPanel({
                         (r): r is CarrierLog => r.kind === 'carrier'
                       )
                       const metaLogs = (t.logs ?? []).filter((r): r is MetaLog => r.kind === 'meta')
+                      const theme = TASK_THEME[t.id] ?? TASK_THEME.rates
+                      const ThemeIcon = theme.icon
+                      const lane = `${detail.load.origin} → ${detail.load.destination}`
+                      const rateStr = `$${Number(bookVal || 0).toFixed(2)}`
+                      const hardStr = `$${maxNum.toFixed(2)}`
                       return (
                         <div
                           key={t.id}
                           className={cn(
                             'dd-auto-run__item',
+                            `is-${theme.cls}`,
                             t.state === 'done' && 'is-done',
                             t.state === 'failed' && 'is-failed',
                             t.state === 'running' && 'is-running',
@@ -1179,12 +1408,9 @@ export function AutoSourcingPanel({
                             tabIndex={canExpand ? 0 : undefined}
                             aria-expanded={canExpand ? isOpen : undefined}
                           >
-                            <i>
-                              {t.state === 'done' && <CheckCircle2 size={15} />}
-                              {t.state === 'failed' && <AlertTriangle size={15} />}
-                              {t.state === 'running' && <Loader2 size={15} className="dd-auto-spin" />}
-                              {t.state === 'queued' && <span className="dd-auto-run__dot" />}
-                            </i>
+                            <span className={cn('dd-auto-tile', `is-${theme.cls}`)}>
+                              <ThemeIcon size={15} />
+                            </span>
                             <div>
                               <strong>{t.label}</strong>
                               <span>
@@ -1194,6 +1420,12 @@ export function AutoSourcingPanel({
                                 {t.state === 'failed' && (t.failResult ?? 'Failed')}
                               </span>
                             </div>
+                            <i className="dd-auto-state">
+                              {t.state === 'done' && <CheckCircle2 size={15} />}
+                              {t.state === 'failed' && <AlertTriangle size={15} />}
+                              {t.state === 'running' && <Loader2 size={15} className="dd-auto-spin" />}
+                              {t.state === 'queued' && <span className="dd-auto-run__dot" />}
+                            </i>
                             {t.state === 'failed' && (
                               <button
                                 type="button"
@@ -1214,60 +1446,38 @@ export function AutoSourcingPanel({
                             )}
                           </div>
                           {canExpand && isOpen && (
-                            <div className="dd-auto-log">
+                            <div className={cn('dd-auto-log', `is-${theme.cls}`)}>
                               <div className="dd-auto-log__head">{t.logTitle}</div>
-                              {carrierLogs.length > 0 ? (
-                                <div className="dd-auto-log-table-wrap">
-                                  <table className="dd-auto-log-table">
-                                    <thead>
-                                      <tr>
-                                        <th>Carrier</th>
-                                        <th>MC #</th>
-                                        <th>DOT</th>
-                                        <th>Source</th>
-                                        <th>Last used</th>
-                                        <th>Blast rate</th>
-                                        <th>Loads</th>
-                                        <th>Contact</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {carrierLogs.map((row, i) => (
-                                        <tr key={`${t.id}-${i}`}>
-                                          <td>
-                                            <strong>{row.name}</strong>
-                                          </td>
-                                          <td>{row.mc}</td>
-                                          <td>{row.dot}</td>
-                                          <td>
-                                            <em className={cn('dd-auto-src', `is-${row.source.toLowerCase()}`)}>
-                                              {row.source}
-                                            </em>
-                                          </td>
-                                          <td>{row.lastUsed}</td>
-                                          <td>{row.blastRate}</td>
-                                          <td>{row.loads}</td>
-                                          <td className="dd-auto-log-contact">
-                                            <strong>{row.contactName}</strong>
-                                            <span>{row.phone}</span>
-                                            <span>{row.email}</span>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : (
-                                <ul>
-                                  {metaLogs.map((row, i) => (
-                                    <li key={`${t.id}-${i}`}>
-                                      <strong>{row.name}</strong>
-                                      <span>{row.detail}</span>
-                                      {row.meta && <em>{row.meta}</em>}
-                                    </li>
-                                  ))}
-                                </ul>
+                              {t.id === 'blast_email' && (
+                                <EmailLogView
+                                  rows={carrierLogs}
+                                  subject={`Load ${detail.load.id} · ${lane} · ${detail.load.equipment}`}
+                                  preview={`Book now ${rateStr} all-in · ${detail.load.miles.toLocaleString()} mi · reply to lock it in`}
+                                />
                               )}
+                              {t.id === 'blast_whatsapp' && (
+                                <WhatsAppLogView
+                                  rows={carrierLogs}
+                                  message={`Load ${detail.load.id}: ${lane}, ${detail.load.equipment}, ${detail.load.miles.toLocaleString()} mi. Book now ${rateStr}. Reply YES to grab it.`}
+                                />
+                              )}
+                              {t.id === 'highway' && <HighwayLogView rows={carrierLogs} />}
+                              {(t.id === 'post_dat' || t.id === 'post_loadlink') && (
+                                <BoardTicketView
+                                  board={t.id === 'post_dat' ? 'DAT' : 'Loadlink'}
+                                  cls={theme.cls}
+                                  postingId={t.id === 'post_dat' ? 'DAT-MOCK-88421' : 'LL-MOCK-22014'}
+                                  lane={lane}
+                                  equipment={detail.load.equipment}
+                                  miles={detail.load.miles}
+                                  rate={rateStr}
+                                  hardLimit={hardStr}
+                                  extras={metaLogs.filter(
+                                    (m) => !['Board', 'Lane', 'Rate posted'].includes(m.name)
+                                  )}
+                                />
+                              )}
+                              {t.id === 'rates' && <RateTilesView rows={metaLogs} />}
                             </div>
                           )}
                         </div>
@@ -1324,14 +1534,16 @@ export function AutoSourcingPanel({
                             i === analysisStep && 'is-running'
                           )}
                         >
-                          <i>
-                            {i < analysisStep && <CheckCircle2 size={15} />}
-                            {i === analysisStep && <Loader2 size={15} className="dd-auto-spin" />}
-                            {i > analysisStep && <span className="dd-auto-run__dot" />}
-                          </i>
-                          <div>
-                            <strong>{label}</strong>
-                            <span>{i < analysisStep ? 'Done' : i === analysisStep ? 'Running…' : 'Queued'}</span>
+                          <div className="dd-auto-run__row">
+                            <i className="dd-auto-state">
+                              {i < analysisStep && <CheckCircle2 size={15} />}
+                              {i === analysisStep && <Loader2 size={15} className="dd-auto-spin" />}
+                              {i > analysisStep && <span className="dd-auto-run__dot" />}
+                            </i>
+                            <div>
+                              <strong>{label}</strong>
+                              <span>{i < analysisStep ? 'Done' : i === analysisStep ? 'Running…' : 'Queued'}</span>
+                            </div>
                           </div>
                         </div>
                       ))}
