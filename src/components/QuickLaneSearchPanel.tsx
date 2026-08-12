@@ -4,11 +4,14 @@ import {
   Calendar,
   CheckCircle2,
   MapPin,
+  Pencil,
+  Plus,
   RefreshCw,
   Route,
   Search,
   Settings2,
   Star,
+  Trash2,
   Truck,
   X,
 } from 'lucide-react'
@@ -30,6 +33,10 @@ export type LaneCarrier = {
   phone?: string
   email?: string
   contact?: string
+  equipment?: string
+  lastContacted?: string
+  lastContactChannel?: string
+  contactedRecently?: boolean
 }
 
 type FavouriteLane = {
@@ -56,6 +63,8 @@ type MarketCard = {
   meta: string
   empty?: boolean
   emptySub?: string
+  trend?: number[]
+  historic?: string
 }
 
 const LANE_CARRIERS: LaneCarrier[] = [
@@ -75,6 +84,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Dispatch',
     phone: '+1 (416) 555-0142',
     email: 'dispatch@uacl.example',
+    equipment: 'DRY-VAN',
+    lastContacted: '08 Aug, 09:12',
+    lastContactChannel: 'Phone',
+    contactedRecently: true,
   },
   {
     id: 'lc2',
@@ -92,6 +105,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Ops desk',
     phone: '+1 (905) 555-0198',
     email: 'ops@kuldip.example',
+    equipment: 'DRY-VAN',
+    lastContacted: '02 Aug, 15:40',
+    lastContactChannel: 'Email',
+    contactedRecently: false,
   },
   {
     id: 'lc3',
@@ -108,6 +125,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Rates',
     phone: '+1 (312) 555-0110',
     email: 'rates@midwestpower.example',
+    equipment: 'POWER ONLY',
+    lastContacted: '10 Aug, 11:05',
+    lastContactChannel: 'SMS',
+    contactedRecently: true,
   },
   {
     id: 'lc4',
@@ -124,6 +145,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Desk',
     phone: '+1 (647) 555-0177',
     email: 'desk@ontarioexpress.example',
+    equipment: 'REEFER',
+    lastContacted: '28 Jul, 13:22',
+    lastContactChannel: 'Phone',
+    contactedRecently: false,
   },
   {
     id: 'lc5',
@@ -140,6 +165,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'New desk',
     phone: '+1 (214) 555-0133',
     email: 'new@peakflatbed.example',
+    equipment: 'FLATBED',
+    lastContacted: '—',
+    lastContactChannel: undefined,
+    contactedRecently: false,
   },
   {
     id: 'lc6',
@@ -156,6 +185,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Samir K.',
     phone: '+1 (519) 555-0188',
     email: 'lanes@greatlakes.example',
+    equipment: 'DRY-VAN',
+    lastContacted: '09 Aug, 16:50',
+    lastContactChannel: 'Email',
+    contactedRecently: true,
   },
   {
     id: 'lc7',
@@ -172,6 +205,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Alex R.',
     phone: '+1 (289) 555-0120',
     email: 'cover@atlas.example',
+    equipment: 'STEP DECK',
+    lastContacted: '01 Aug, 08:18',
+    lastContactChannel: 'Phone',
+    contactedRecently: false,
   },
   {
     id: 'lc8',
@@ -188,6 +225,9 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Intake',
     phone: '+1 (204) 555-0166',
     email: 'intake@redriver.example',
+    // no equipment — included when any equip selected
+    lastContacted: '—',
+    contactedRecently: false,
   },
   {
     id: 'lc9',
@@ -204,6 +244,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Maya P.',
     phone: '+1 (210) 555-0190',
     email: 'desk@southland.example',
+    equipment: 'REEFER',
+    lastContacted: '11 Aug, 07:44',
+    lastContactChannel: 'SMS',
+    contactedRecently: true,
   },
   {
     id: 'lc10',
@@ -220,6 +264,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Luis M.',
     phone: '+1 (956) 555-0144',
     email: 'power@borderline.example',
+    equipment: 'POWER ONLY',
+    lastContacted: '05 Aug, 12:30',
+    lastContactChannel: 'Phone',
+    contactedRecently: false,
   },
   {
     id: 'lc11',
@@ -236,6 +284,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Nina S.',
     phone: '+1 (701) 555-0112',
     email: 'ops@prairiestar.example',
+    equipment: 'FLATBED',
+    lastContacted: '30 Jul, 10:05',
+    lastContactChannel: 'Email',
+    contactedRecently: false,
   },
   {
     id: 'lc12',
@@ -252,6 +304,10 @@ const LANE_CARRIERS: LaneCarrier[] = [
     contact: 'Jordan B.',
     phone: '+1 (214) 555-0177',
     email: 'lanes@texascross.example',
+    equipment: 'DRY-VAN',
+    lastContacted: '10 Aug, 18:02',
+    lastContactChannel: 'Phone',
+    contactedRecently: true,
   },
 ]
 
@@ -280,6 +336,22 @@ const DEFAULT_FAVOURITES: FavouriteLane[] = [
 ]
 
 const TRAILERS = ['DRY-VAN', 'REEFER', 'FLATBED', 'STEP DECK', 'POWER ONLY'] as const
+
+type FavForm = {
+  origin: string
+  destination: string
+  trailer: (typeof TRAILERS)[number] | ''
+  tag: string
+  powerOnly: boolean
+}
+
+const EMPTY_FAV_FORM: FavForm = {
+  origin: '',
+  destination: '',
+  trailer: 'DRY-VAN',
+  tag: '',
+  powerOnly: false,
+}
 
 function shortLane(city: string) {
   const part = city.split(',')[0]?.trim() ?? city
@@ -349,6 +421,37 @@ function RateSourceMark({ id }: { id: MarketCard['id'] }) {
   )
 }
 
+function sparklinePoints(values: number[], width = 72, height = 22, pad = 2) {
+  if (values.length === 0) return ''
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const span = max - min || 1
+  return values
+    .map((v, i) => {
+      const x = pad + (i / Math.max(values.length - 1, 1)) * (width - pad * 2)
+      const y = height - pad - ((v - min) / span) * (height - pad * 2)
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+}
+
+function RateSparkline({ values }: { values: number[] }) {
+  const points = sparklinePoints(values)
+  if (!points) return null
+  const rising = values[values.length - 1]! >= values[0]!
+  return (
+    <svg
+      className={cn('qls-spark', rising ? 'is-up' : 'is-down')}
+      viewBox="0 0 72 22"
+      width="72"
+      height="22"
+      aria-hidden
+    >
+      <polyline fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" points={points} />
+    </svg>
+  )
+}
+
 function buildMarketCards(miles: number, powerOnly: boolean): MarketCard[] {
   const mid = powerOnly ? 1412 : 1280
   const rpm = (mid / Math.max(miles, 1)).toFixed(2)
@@ -366,6 +469,8 @@ function buildMarketCards(miles: number, powerOnly: boolean): MarketCard[] {
       fillStart: 22,
       fillEnd: 78,
       meta: '142 reports · 15-day average · updated 11:04',
+      trend: [1180, 1210, 1195, 1240, 1265, 1290, mid],
+      historic: 'Our hist $1,380',
     },
     {
       id: 'truckstop',
@@ -380,6 +485,8 @@ function buildMarketCards(miles: number, powerOnly: boolean): MarketCard[] {
       fillStart: 24,
       fillEnd: 80,
       meta: '88 reports · 7-day average · updated 10:58',
+      trend: [1240, 1260, 1285, 1270, 1305, 1320, mid + 43],
+      historic: 'Our hist $1,410',
     },
     {
       id: 'loadlink',
@@ -401,31 +508,68 @@ type Props = {
 export function QuickLaneSearchPanel({ open, onClose }: Props) {
   const [origin, setOrigin] = useState('Laredo, TX')
   const [destination, setDestination] = useState('Dallas, TX')
-  const [trailer, setTrailer] = useState<(typeof TRAILERS)[number] | ''>('DRY-VAN')
+  const [equipment, setEquipment] = useState<string[]>(['DRY-VAN'])
   const [radius, setRadius] = useState('50')
   const [available, setAvailable] = useState('2026-08-11')
   const [originZip, setOriginZip] = useState('')
   const [destZip, setDestZip] = useState('')
   const [powerOnly, setPowerOnly] = useState(true)
   const [ctpatOnly, setCtpatOnly] = useState(false)
+  const [excludeContacted, setExcludeContacted] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'loading' | 'results'>('idle')
   const [carrierQ, setCarrierQ] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [favourites, setFavourites] = useState<FavouriteLane[]>(DEFAULT_FAVOURITES)
   const [manageOpen, setManageOpen] = useState(false)
+  const [manageMode, setManageMode] = useState<'list' | 'add' | 'edit'>('list')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [favForm, setFavForm] = useState<FavForm>(EMPTY_FAV_FORM)
   const [miles] = useState(431)
+
+  const primaryEquip = equipment[0] ?? ''
+
+  const toggleEquip = (t: string) => {
+    setEquipment((prev) => {
+      if (prev.includes(t)) {
+        if (prev.length === 1) return prev
+        return prev.filter((x) => x !== t)
+      }
+      return [...prev, t]
+    })
+  }
+
+  const closeManage = () => {
+    setManageOpen(false)
+    setManageMode('list')
+    setEditingId(null)
+    setFavForm(EMPTY_FAV_FORM)
+  }
+
+  const openManage = () => {
+    setManageMode('list')
+    setEditingId(null)
+    setFavForm(EMPTY_FAV_FORM)
+    setManageOpen(true)
+  }
 
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (manageOpen) setManageOpen(false)
-        else onClose()
+        if (manageOpen) {
+          if (manageMode !== 'list') {
+            setManageMode('list')
+            setEditingId(null)
+            setFavForm(EMPTY_FAV_FORM)
+          } else {
+            closeManage()
+          }
+        } else onClose()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose, manageOpen])
+  }, [open, onClose, manageOpen, manageMode])
 
   useEffect(() => {
     if (!open) return
@@ -442,17 +586,21 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
         (f) =>
           f.origin.toLowerCase() === origin.trim().toLowerCase() &&
           f.destination.toLowerCase() === destination.trim().toLowerCase() &&
-          f.trailer === trailer
+          equipment.length === 1 &&
+          equipment[0] === f.trailer
       )?.id ?? null
     )
-  }, [favourites, origin, destination, trailer])
+  }, [favourites, origin, destination, equipment])
 
   const results = useMemo(() => {
     if (phase !== 'results') return []
     let rows = [...LANE_CARRIERS]
+    const radiusMi = Number(radius || 50)
+    rows = rows.filter((r) => r.dhP <= radiusMi)
+    rows = rows.filter((r) => !r.equipment || equipment.includes(r.equipment))
     if (powerOnly) rows = rows.filter((r) => r.source !== 'New')
     if (ctpatOnly) rows = rows.filter((r) => r.source === 'Network' || r.source === 'Past')
-    if (trailer === 'FLATBED') rows = rows.filter((r) => r.id !== 'lc1')
+    if (excludeContacted) rows = rows.filter((r) => !r.contactedRecently)
     const q = carrierQ.trim().toLowerCase()
     if (q) {
       rows = rows.filter(
@@ -464,7 +612,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
       )
     }
     return rows
-  }, [phase, powerOnly, ctpatOnly, trailer, carrierQ])
+  }, [phase, powerOnly, ctpatOnly, equipment, radius, excludeContacted, carrierQ])
 
   const marketCards = useMemo(
     () => buildMarketCards(miles, powerOnly),
@@ -482,19 +630,20 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
     setPhase('idle')
     setOrigin('Laredo, TX')
     setDestination('Dallas, TX')
-    setTrailer('DRY-VAN')
+    setEquipment(['DRY-VAN'])
     setRadius('50')
     setAvailable('2026-08-11')
     setOriginZip('')
     setDestZip('')
     setPowerOnly(false)
     setCtpatOnly(false)
+    setExcludeContacted(false)
     setCarrierQ('')
     setSelected(new Set())
   }
 
   const search = () => {
-    if (!origin.trim() || !destination.trim() || !trailer) return
+    if (!origin.trim() || !destination.trim() || equipment.length === 0) return
     setPhase('loading')
     setSelected(new Set())
     window.setTimeout(() => setPhase('results'), 550)
@@ -503,14 +652,14 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
   const applyFavourite = (fav: FavouriteLane) => {
     setOrigin(fav.origin)
     setDestination(fav.destination)
-    setTrailer(fav.trailer as (typeof TRAILERS)[number])
+    setEquipment([fav.trailer])
     setPowerOnly(Boolean(fav.powerOnly))
     setPhase('loading')
     window.setTimeout(() => setPhase('results'), 450)
   }
 
   const toggleFavouriteCurrent = () => {
-    if (!origin.trim() || !destination.trim() || !trailer) return
+    if (!origin.trim() || !destination.trim() || !primaryEquip) return
     if (activeFavId) {
       setFavourites((prev) => prev.filter((f) => f.id !== activeFavId))
       return
@@ -520,7 +669,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
         id: `fav-${Date.now()}`,
         origin: origin.trim(),
         destination: destination.trim(),
-        trailer,
+        trailer: primaryEquip,
         powerOnly,
         tag: powerOnly ? 'P0' : undefined,
       },
@@ -530,6 +679,80 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
 
   const removeFavourite = (id: string) => {
     setFavourites((prev) => prev.filter((f) => f.id !== id))
+    if (editingId === id) {
+      setManageMode('list')
+      setEditingId(null)
+      setFavForm(EMPTY_FAV_FORM)
+    }
+  }
+
+  const startAddFavourite = () => {
+    setManageMode('add')
+    setEditingId(null)
+    setFavForm({
+      origin: origin.trim() || '',
+      destination: destination.trim() || '',
+      trailer: (TRAILERS.includes(primaryEquip as (typeof TRAILERS)[number])
+        ? primaryEquip
+        : 'DRY-VAN') as (typeof TRAILERS)[number],
+      tag: '',
+      powerOnly,
+    })
+  }
+
+  const startEditFavourite = (fav: FavouriteLane) => {
+    setManageMode('edit')
+    setEditingId(fav.id)
+    setFavForm({
+      origin: fav.origin,
+      destination: fav.destination,
+      trailer: (TRAILERS.includes(fav.trailer as (typeof TRAILERS)[number])
+        ? fav.trailer
+        : 'DRY-VAN') as (typeof TRAILERS)[number],
+      tag: fav.tag || '',
+      powerOnly: Boolean(fav.powerOnly),
+    })
+  }
+
+  const saveFavouriteForm = () => {
+    const o = favForm.origin.trim()
+    const d = favForm.destination.trim()
+    if (!o || !d || !favForm.trailer) return
+
+    const next: FavouriteLane = {
+      id: manageMode === 'edit' && editingId ? editingId : `fav-${Date.now()}`,
+      origin: o,
+      destination: d,
+      trailer: favForm.trailer,
+      tag: favForm.tag.trim() || undefined,
+      powerOnly: favForm.powerOnly,
+    }
+
+    setFavourites((prev) => {
+      if (manageMode === 'edit' && editingId) {
+        return prev.map((f) => (f.id === editingId ? next : f))
+      }
+      const exists = prev.some(
+        (f) =>
+          f.origin.toLowerCase() === o.toLowerCase() &&
+          f.destination.toLowerCase() === d.toLowerCase() &&
+          f.trailer === favForm.trailer
+      )
+      if (exists) {
+        return prev.map((f) =>
+          f.origin.toLowerCase() === o.toLowerCase() &&
+          f.destination.toLowerCase() === d.toLowerCase() &&
+          f.trailer === favForm.trailer
+            ? { ...next, id: f.id }
+            : f
+        )
+      }
+      return [next, ...prev]
+    })
+
+    setManageMode('list')
+    setEditingId(null)
+    setFavForm(EMPTY_FAV_FORM)
   }
 
   const toggleRow = (id: string) => {
@@ -596,13 +819,13 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               type="button"
               className={cn('qls__save', activeFavId && 'is-saved')}
               onClick={toggleFavouriteCurrent}
-              disabled={!origin.trim() || !destination.trim() || !trailer}
+              disabled={!origin.trim() || !destination.trim() || equipment.length === 0}
               title={activeFavId ? 'Remove from favourites' : 'Save current lane'}
             >
               <Star size={12} fill={activeFavId ? 'currentColor' : 'none'} />
               {activeFavId ? 'Saved' : 'Save'}
             </button>
-            <button type="button" className="qls__manage" onClick={() => setManageOpen(true)}>
+            <button type="button" className="qls__manage" onClick={openManage}>
               <Settings2 size={13} />
               Manage
             </button>
@@ -638,23 +861,30 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               </div>
             </label>
 
-            <label className="qls__field">
+            <div className="qls__field qls__field--equip">
               <span className="qls__label">Equipment</span>
-              <div className={cn('qls__control', !trailer && 'is-invalid')}>
-                <Truck size={14} />
-                <select
-                  value={trailer}
-                  onChange={(e) => setTrailer(e.target.value as (typeof TRAILERS)[number] | '')}
-                >
-                  <option value="">Select</option>
-                  {TRAILERS.map((t) => (
-                    <option key={t} value={t}>
+              <div
+                className={cn('qls__equip-chips', equipment.length === 0 && 'is-invalid')}
+                role="group"
+                aria-label="Equipment"
+              >
+                <Truck size={14} className="qls__equip-ico" aria-hidden />
+                {TRAILERS.map((t) => {
+                  const on = equipment.includes(t)
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      className={cn('qls__equip-chip', on && 'is-on')}
+                      aria-pressed={on}
+                      onClick={() => toggleEquip(t)}
+                    >
                       {t}
-                    </option>
-                  ))}
-                </select>
+                    </button>
+                  )
+                })}
               </div>
-            </label>
+            </div>
 
             <button type="button" className="qls__search-btn" onClick={search}>
               <Search size={15} />
@@ -781,8 +1011,18 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                       </>
                     ) : (
                       <>
-                        <div className="qls-mcard__value">{card.total}</div>
+                        <div className="qls-mcard__value-row">
+                          <div className="qls-mcard__value">{card.total}</div>
+                          {card.trend && card.trend.length > 0 ? (
+                            <RateSparkline values={card.trend} />
+                          ) : null}
+                        </div>
                         <div className="qls-mcard__rpm">{card.rpm}</div>
+                        {card.historic ? (
+                          <div className="qls-mcard__hist">
+                            Our hist · {card.historic.replace(/^Our hist\s+/i, '')}
+                          </div>
+                        ) : null}
                         <div className="qls-mcard__range">
                           <span>{card.low} low</span>
                           <div className="qls-mcard__bar">
@@ -805,15 +1045,28 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
               </div>
 
               <div className="qls__carriers-head">
-                <strong>Carriers ({results.length})</strong>
-                <label className="qls__carrier-search">
-                  <Search size={13} />
-                  <input
-                    value={carrierQ}
-                    onChange={(e) => setCarrierQ(e.target.value)}
-                    placeholder="Carrier, MC#, DOT#…"
-                  />
-                </label>
+                <div className="qls__carriers-title">
+                  <strong>Carriers ({results.length})</strong>
+                  <em>Within {radius || 50} mi DH-P</em>
+                </div>
+                <div className="qls__carriers-tools">
+                  <label className="qls__exclude">
+                    <input
+                      type="checkbox"
+                      checked={excludeContacted}
+                      onChange={(e) => setExcludeContacted(e.target.checked)}
+                    />
+                    <span>Exclude contacted</span>
+                  </label>
+                  <label className="qls__carrier-search">
+                    <Search size={13} />
+                    <input
+                      value={carrierQ}
+                      onChange={(e) => setCarrierQ(e.target.value)}
+                      placeholder="Carrier, MC#, DOT#…"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="qls__table-wrap">
@@ -831,6 +1084,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                       <th>Carrier</th>
                       <th>Source</th>
                       <th>Last used</th>
+                      <th>Last contacted</th>
                       <th>DH-P</th>
                       <th>DH-D</th>
                       <th>Last rate</th>
@@ -870,6 +1124,12 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                             <em>{r.lastUsedRel}</em>
                           </div>
                         </td>
+                        <td>
+                          <div className="qls__cell-2">
+                            <strong>{r.lastContacted ?? '—'}</strong>
+                            <em>{r.lastContactChannel ?? (r.contactedRecently ? 'Recent' : '—')}</em>
+                          </div>
+                        </td>
                         <td className="num">{r.dhP}</td>
                         <td className="num">{r.dhD}</td>
                         <td className="num">{r.lastRate}</td>
@@ -904,7 +1164,7 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
                     ))}
                     {results.length === 0 && (
                       <tr>
-                        <td colSpan={10} className="qls__table-empty">
+                        <td colSpan={11} className="qls__table-empty">
                           No carriers match these filters.
                         </td>
                       </tr>
@@ -935,68 +1195,209 @@ export function QuickLaneSearchPanel({ open, onClose }: Props) {
             <div className="qls-manage__card">
               <div className="qls-manage__head">
                 <div>
-                  <strong>Manage favourite lanes</strong>
-                  <em>Save lanes you search often. Use Save next to Manage to add the current search.</em>
+                  <strong>
+                    {manageMode === 'add'
+                      ? 'Add favourite lane'
+                      : manageMode === 'edit'
+                        ? 'Edit favourite lane'
+                        : 'Manage favourite lanes'}
+                  </strong>
+                  <em>
+                    {manageMode === 'list'
+                      ? 'Add, edit, or remove lanes you search often.'
+                      : 'Origin, destination, and equipment define the saved lane.'}
+                  </em>
                 </div>
                 <button
                   type="button"
                   className="qls__icon-btn"
                   aria-label="Close manage"
-                  onClick={() => setManageOpen(false)}
+                  onClick={closeManage}
                 >
                   <X size={15} />
                 </button>
               </div>
 
-              <div className="qls-manage__list">
-                {favourites.length === 0 && (
-                  <div className="qls-manage__empty">No favourites saved.</div>
-                )}
-                {favourites.map((fav) => (
-                  <div key={fav.id} className="qls-manage__row">
-                    <button type="button" className="qls-manage__main" onClick={() => {
-                      applyFavourite(fav)
-                      setManageOpen(false)
-                    }}>
-                      <Star size={14} fill="currentColor" />
-                      <div>
-                        <strong>
-                          {fav.origin} → {fav.destination}
-                        </strong>
-                        <em>
-                          {fav.trailer}
-                          {fav.powerOnly ? ' · Power only' : ''}
-                          {fav.tag ? ` · ${fav.tag}` : ''}
-                        </em>
+              {manageMode === 'list' ? (
+                <>
+                  <div className="qls-manage__toolbar">
+                    <span className="qls-manage__count">
+                      {favourites.length} saved lane{favourites.length === 1 ? '' : 's'}
+                    </span>
+                    <button type="button" className="qls-manage__add" onClick={startAddFavourite}>
+                      <Plus size={14} strokeWidth={2.4} />
+                      Add lane
+                    </button>
+                  </div>
+
+                  <div className="qls-manage__list">
+                    {favourites.length === 0 && (
+                      <div className="qls-manage__empty">
+                        <Star size={22} strokeWidth={1.6} />
+                        <strong>No favourites yet</strong>
+                        <em>Add a lane here, or save the current search from the toolbar.</em>
+                        <button type="button" className="qls-manage__add" onClick={startAddFavourite}>
+                          <Plus size={14} strokeWidth={2.4} />
+                          Add your first lane
+                        </button>
                       </div>
+                    )}
+                    {favourites.map((fav) => (
+                      <div key={fav.id} className="qls-manage__row">
+                        <button
+                          type="button"
+                          className="qls-manage__main"
+                          onClick={() => {
+                            applyFavourite(fav)
+                            closeManage()
+                          }}
+                          title="Apply this lane"
+                        >
+                          <span className="qls-manage__star" aria-hidden>
+                            <Star size={13} fill="currentColor" />
+                          </span>
+                          <div className="qls-manage__meta">
+                            <strong>
+                              {fav.origin} → {fav.destination}
+                            </strong>
+                            <em>
+                              <span>{fav.trailer}</span>
+                              {fav.powerOnly ? <span>Power only</span> : null}
+                              {fav.tag ? <span className="qls-manage__tag">{fav.tag}</span> : null}
+                            </em>
+                          </div>
+                        </button>
+                        <div className="qls-manage__actions">
+                          <button
+                            type="button"
+                            className="qls-manage__icon-btn"
+                            aria-label={`Edit ${fav.origin} to ${fav.destination}`}
+                            title="Edit"
+                            onClick={() => startEditFavourite(fav)}
+                          >
+                            <Pencil size={13} strokeWidth={2.2} />
+                          </button>
+                          <button
+                            type="button"
+                            className="qls-manage__icon-btn is-danger"
+                            aria-label={`Remove ${fav.origin} to ${fav.destination}`}
+                            title="Remove"
+                            onClick={() => removeFavourite(fav.id)}
+                          >
+                            <Trash2 size={13} strokeWidth={2.2} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="qls-manage__foot">
+                    <button
+                      type="button"
+                      className="qls__search-btn qls__search-btn--ghost"
+                      onClick={toggleFavouriteCurrent}
+                      disabled={!origin.trim() || !destination.trim() || equipment.length === 0}
+                    >
+                      <Star size={14} fill={activeFavId ? 'currentColor' : 'none'} />
+                      {activeFavId ? 'Unsave current' : 'Save current search'}
+                    </button>
+                    <button type="button" className="qls__search-btn" onClick={closeManage}>
+                      Done
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <form
+                    className="qls-manage__form"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      saveFavouriteForm()
+                    }}
+                  >
+                    <label className="qls-manage__field">
+                      <span>Origin</span>
+                      <input
+                        value={favForm.origin}
+                        onChange={(e) => setFavForm((f) => ({ ...f, origin: e.target.value }))}
+                        placeholder="e.g. Laredo, TX"
+                        autoFocus
+                      />
+                    </label>
+                    <label className="qls-manage__field">
+                      <span>Destination</span>
+                      <input
+                        value={favForm.destination}
+                        onChange={(e) => setFavForm((f) => ({ ...f, destination: e.target.value }))}
+                        placeholder="e.g. Dallas, TX"
+                      />
+                    </label>
+                    <div className="qls-manage__form-row">
+                      <label className="qls-manage__field">
+                        <span>Equipment</span>
+                        <select
+                          value={favForm.trailer}
+                          onChange={(e) =>
+                            setFavForm((f) => ({
+                              ...f,
+                              trailer: e.target.value as FavForm['trailer'],
+                            }))
+                          }
+                        >
+                          {TRAILERS.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="qls-manage__field">
+                        <span>Tag</span>
+                        <input
+                          value={favForm.tag}
+                          onChange={(e) => setFavForm((f) => ({ ...f, tag: e.target.value }))}
+                          placeholder="Optional · P0, Hot…"
+                          maxLength={12}
+                        />
+                      </label>
+                    </div>
+                    <label className="qls-manage__check">
+                      <input
+                        type="checkbox"
+                        checked={favForm.powerOnly}
+                        onChange={(e) =>
+                          setFavForm((f) => ({ ...f, powerOnly: e.target.checked }))
+                        }
+                      />
+                      <span>Power only</span>
+                    </label>
+                  </form>
+
+                  <div className="qls-manage__foot">
+                    <button
+                      type="button"
+                      className="qls__search-btn qls__search-btn--ghost"
+                      onClick={() => {
+                        setManageMode('list')
+                        setEditingId(null)
+                        setFavForm(EMPTY_FAV_FORM)
+                      }}
+                    >
+                      Cancel
                     </button>
                     <button
                       type="button"
-                      className="qls-manage__remove"
-                      onClick={() => removeFavourite(fav.id)}
+                      className="qls__search-btn"
+                      onClick={saveFavouriteForm}
+                      disabled={
+                        !favForm.origin.trim() || !favForm.destination.trim() || !favForm.trailer
+                      }
                     >
-                      Remove
+                      {manageMode === 'edit' ? 'Save changes' : 'Add favourite'}
                     </button>
                   </div>
-                ))}
-              </div>
-
-              <div className="qls-manage__foot">
-                <button
-                  type="button"
-                  className="qls__search-btn qls__search-btn--ghost"
-                  onClick={() => {
-                    toggleFavouriteCurrent()
-                  }}
-                  disabled={!origin.trim() || !destination.trim() || !trailer}
-                >
-                  <Star size={14} />
-                  {activeFavId ? 'Unsave current lane' : 'Save current lane'}
-                </button>
-                <button type="button" className="qls__search-btn" onClick={() => setManageOpen(false)}>
-                  Done
-                </button>
-              </div>
+                </>
+              )}
             </div>
           </div>
         )}

@@ -105,7 +105,12 @@ export type CarrierDetail = CarrierListItem & {
     status: string
     source: string
     domain: string
+    highwayVerified?: boolean
+    whatsappStatus?: 'Active' | 'Unknown' | 'Inactive'
   }[]
+  preferredChannel?: 'Email' | 'WhatsApp' | 'SMS' | 'Phone'
+  authorizedDomains?: string[]
+  regionsPresent?: string[]
   contractTypes: string[]
   documents: { id: string; folder: string; name: string; date: string; kind: string }[]
   notes: { id: string; type: 'Internal' | 'External' | 'Carrier Dispatch Alert'; text: string; when: string; who: string }[]
@@ -390,6 +395,8 @@ function detailFromList(base: CarrierListItem, extras: Partial<CarrierDetail>): 
         status: 'Approved',
         source: 'Internal',
         domain: base.email.split('@')[1] ?? '—',
+        highwayVerified: true,
+        whatsappStatus: 'Active' as const,
       },
       {
         name: 'Dispatch Desk',
@@ -397,8 +404,10 @@ function detailFromList(base: CarrierListItem, extras: Partial<CarrierDetail>): 
         email: `desk@${base.email.split('@')[1] ?? 'carrier.example'}`,
         phone: base.phone,
         status: 'Approved',
-        source: 'Internal',
+        source: 'Highway',
         domain: base.email.split('@')[1] ?? '—',
+        highwayVerified: true,
+        whatsappStatus: 'Unknown' as const,
       },
       {
         name: 'Insurance Broker',
@@ -408,8 +417,16 @@ function detailFromList(base: CarrierListItem, extras: Partial<CarrierDetail>): 
         status: 'Pending',
         source: 'Highway',
         domain: 'reliance.example',
+        highwayVerified: false,
+        whatsappStatus: 'Inactive' as const,
       },
     ],
+    preferredChannel: 'Email' as const,
+    authorizedDomains: [base.email.split('@')[1] ?? 'carrier.example'],
+    regionsPresent:
+      base.state === 'ON' || /toronto|brampton|on\b/i.test(`${base.city} ${base.state}`)
+        ? ['ON', 'MI', 'NY']
+        : ['TX', 'CA', 'IL', 'MO'],
     contractTypes: ['Freight Move', 'Brokerage Spot', 'Power Only'],
     documents: [
       { id: 'd1', folder: 'Contract', name: `${base.mc}-CONTRACT.pdf`, date: 'Oct 24, 2025', kind: 'pdf' },

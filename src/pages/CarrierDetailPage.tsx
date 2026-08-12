@@ -192,6 +192,9 @@ export function CarrierDetailPage({ carrierId, onBack }: Props) {
 }
 
 function OverviewTab({ c }: { c: CarrierDetail }) {
+  const [preferred, setPreferred] = useState(c.preferredChannel ?? 'Email')
+  const channels = ['Email', 'WhatsApp', 'SMS', 'Phone'] as const
+
   return (
     <div className="cd-stack">
       <div className="cd-metrics">
@@ -216,6 +219,29 @@ function OverviewTab({ c }: { c: CarrierDetail }) {
           <span className="cd-metric__sub">Current limit</span>
         </div>
       </div>
+
+      <section className="cd-card">
+        <h3 className="cd-card__title">Preferred communication</h3>
+        <p className="cd-muted" style={{ margin: '0 0 10px' }}>
+          Used for blast outreach mocks · Email / text / WhatsApp / phone
+        </p>
+        <div className="cd-pref-row">
+          {channels.map((ch) => (
+            <button
+              key={ch}
+              type="button"
+              className={cn('cd-pref-chip', preferred === ch && 'is-active')}
+              onClick={() => setPreferred(ch)}
+            >
+              {ch}
+            </button>
+          ))}
+        </div>
+        <div className="cd-facts" style={{ marginTop: 12 }}>
+          <FactRow label="Authorized domains" value={(c.authorizedDomains ?? []).join(', ') || '—'} />
+          <FactRow label="Regions present (GenLogs)" value={(c.regionsPresent ?? []).join(', ') || '—'} />
+        </div>
+      </section>
 
       <section className="cd-card">
         <h3 className="cd-card__title">Insurance & coverage</h3>
@@ -724,9 +750,17 @@ function DirectoryTab({ c }: { c: CarrierDetail }) {
                   {ct.email}
                 </div>
                 <div className="cd-muted">{ct.phone}</div>
-                <span className={cn('cd-tag', ct.status === 'Approved' ? 'is-ok' : 'is-warn')}>
-                  {ct.status}
-                </span>
+                <div className="cd-contact__badges">
+                  {ct.highwayVerified && <span className="cd-tag is-ok">Highway verified</span>}
+                  {ct.whatsappStatus && (
+                    <span className={cn('cd-tag', ct.whatsappStatus === 'Active' ? 'is-ok' : 'is-warn')}>
+                      WhatsApp: {ct.whatsappStatus}
+                    </span>
+                  )}
+                  <span className={cn('cd-tag', ct.status === 'Approved' ? 'is-ok' : 'is-warn')}>
+                    {ct.status}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

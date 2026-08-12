@@ -22,6 +22,9 @@ export type CmtReviewItem = {
   submittedAt: string
   reviewerNote?: string
   status: 'Pending' | 'Approved' | 'Rejected'
+  /** Award region missing GenLogs presence (#16) */
+  missingGenLogsRegion?: boolean
+  awardRegion?: string
 }
 
 export const cmtReviewQueue: CmtReviewItem[] = [
@@ -41,6 +44,8 @@ export const cmtReviewQueue: CmtReviewItem[] = [
     currency: 'USD',
     submittedAt: '11 min ago',
     status: 'Pending',
+    missingGenLogsRegion: true,
+    awardRegion: 'CA',
     flags: [
       {
         id: 'f1',
@@ -99,6 +104,8 @@ export const cmtReviewQueue: CmtReviewItem[] = [
     currency: 'USD',
     submittedAt: '1h ago',
     status: 'Pending',
+    missingGenLogsRegion: true,
+    awardRegion: 'TX',
     flags: [
       {
         id: 'f5',

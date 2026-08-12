@@ -29,15 +29,26 @@ export function FindPostView({
 }) {
   const [q, setQ] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [excludeContacted, setExcludeContacted] = useState(false)
+  const [blastOpen, setBlastOpen] = useState(false)
+  const [blastChannel, setBlastChannel] = useState<'Email' | 'WhatsApp'>('Email')
+  const [blastSubject, setBlastSubject] = useState('')
+  const [blastBody, setBlastBody] = useState('')
+  const [blastResponses, setBlastResponses] = useState<
+    { id: string; channel: 'Email' | 'WhatsApp'; carriers: number; subject: string; at: string }[]
+  >([])
 
-  const rows = detail.carriers.filter(
-    (c) =>
-      !q ||
-      c.name.toLowerCase().includes(q.toLowerCase()) ||
+  const rows = detail.carriers.filter((c) => {
+    if (excludeContacted && c.contactedRecently) return false
+    if (!q) return true
+    const needle = q.toLowerCase()
+    return (
+      c.name.toLowerCase().includes(needle) ||
       (c.mc ?? '').includes(q) ||
-      (c.dot ?? '').toLowerCase().includes(q.toLowerCase()) ||
-      (c.email ?? '').toLowerCase().includes(q.toLowerCase())
-  )
+      (c.dot ?? '').toLowerCase().includes(needle) ||
+      (c.email ?? '').toLowerCase().includes(needle)
+    )
+  })
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -53,8 +64,30 @@ export function FindPostView({
     else setSelected(new Set(rows.map((r) => r.id)))
   }
 
-  const blast = () => {
+  const openBlast = (channel: 'Email' | 'WhatsApp') => {
     if (selected.size === 0) return
+    setBlastChannel(channel)
+    setBlastSubject(
+      channel === 'Email'
+        ? `Load ${detail.load.identifier} — ${detail.stops[0]?.facility ?? 'Pickup'} → ${detail.stops[detail.stops.length - 1]?.facility ?? 'Delivery'}`
+        : ''
+    )
+    setBlastBody('')
+    setBlastOpen(true)
+  }
+
+  const mockSendBlast = () => {
+    setBlastResponses((prev) => [
+      {
+        id: `br-${Date.now()}`,
+        channel: blastChannel,
+        carriers: selected.size,
+        subject: blastSubject || '(no subject)',
+        at: 'Just now',
+      },
+      ...prev,
+    ])
+    setBlastOpen(false)
     onAdvanceToOffers()
   }
 
@@ -62,14 +95,24 @@ export function FindPostView({
     <div className="dd-stage dd-find">
       <StageActionBar
         leading={
-          <label className="dd-search dd-search--toolbar">
-            <Search size={14} />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search carrier, MC #, or contact…"
-            />
-          </label>
+          <>
+            <label className="dd-search dd-search--toolbar">
+              <Search size={14} />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search carrier, MC #, or contact…"
+              />
+            </label>
+            <button
+              type="button"
+              className={cn('dd-exclude-toggle', excludeContacted && 'is-on')}
+              aria-pressed={excludeContacted}
+              onClick={() => setExcludeContacted((v) => !v)}
+            >
+              Exclude contacted
+            </button>
+          </>
         }
         actions={
           <>
@@ -80,19 +123,19 @@ export function FindPostView({
               type="button"
               className="dd-pill-btn"
               disabled={selected.size === 0}
-              onClick={blast}
+              onClick={() => openBlast('Email')}
             >
               <Mail size={14} />
-              Last Email
+              Blast email
             </button>
             <button
               type="button"
               className="dd-pill-btn"
               disabled={selected.size === 0}
-              onClick={blast}
+              onClick={() => openBlast('WhatsApp')}
             >
               <MessageCircle size={14} />
-              Last WhatsApp
+              Blast WhatsApp
             </button>
             <button type="button" className="dd-pill-btn dd-pill-btn--emphasis" onClick={onPostLoad}>
               <Share2 size={14} />
@@ -101,6 +144,16 @@ export function FindPostView({
           </>
         }
       />
+
+      {blastResponses.length > 0 && (
+        <div className="dd-blast-trail" aria-live="polite">
+          {blastResponses.slice(0, 3).map((r) => (
+            <span key={r.id} className="dd-chip-soft">
+              Mock {r.channel} → {r.carriers} · {r.at}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="dd-find__table-wrap">
         <table className="dd-carrier-table">
@@ -118,6 +171,7 @@ export function FindPostView({
               <th>MC # / DOT #</th>
               <th>Source</th>
               <th>Last used</th>
+              <th>Last contacted</th>
               <th>DH-P</th>
               <th>DH-D</th>
               <th>Last rate</th>
@@ -135,6 +189,10 @@ export function FindPostView({
               const idLine = [c.mc ? `MC ${c.mc}` : null, c.dot ? `DOT ${c.dot}` : null]
                 .filter(Boolean)
                 .join(' · ')
+              const contacted =
+                c.lastContacted && c.lastContacted !== 'Never'
+                  ? `${c.lastContacted}${c.lastContactChannel ? ` · ${c.lastContactChannel}` : ''}`
+                  : (c.lastContacted ?? '—')
               return (
                 <tr key={c.id} className={cn(selected.has(c.id) && 'is-selected')}>
                   <td>
@@ -149,6 +207,7 @@ export function FindPostView({
                     <div className="dd-carrier-name">
                       {c.favorite && <Star size={12} className="is-star" />}
                       <span className="dd-carrier-name__text">{c.name}</span>
+                      {c.recommended && <span className="dd-rec-chip">Recommended</span>}
                     </div>
                   </td>
                   <td className="mono">{idLine || '—'}</td>
@@ -160,6 +219,7 @@ export function FindPostView({
                   <td className="mono">
                     {c.lastUsed !== '—' ? `${c.lastUsed} · ${c.lastUsedRel}` : c.lastUsedRel}
                   </td>
+                  <td className="dd-muted">{contacted}</td>
                   <td className="mono">{c.dhP}</td>
                   <td className="mono">{c.dhD}</td>
                   <td className="mono">{c.lastRate}</td>
@@ -192,6 +252,87 @@ export function FindPostView({
           </tbody>
         </table>
       </div>
+
+      {blastOpen && (
+        <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="dd-blast-title">
+          <button
+            type="button"
+            className="dd-modal-backdrop"
+            aria-label="Close"
+            onClick={() => setBlastOpen(false)}
+          />
+          <div className="dd-modal dd-blast-modal">
+            <header className="dd-modal__head">
+              <div>
+                <div className="dd-modal__eyebrow">No probill required · mock</div>
+                <h3 id="dd-blast-title">Blast {blastChannel}</h3>
+                <p>
+                  Free-form message to {selected.size} selected carrier
+                  {selected.size === 1 ? '' : 's'}.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="dd-icon-btn dd-icon-btn--light"
+                onClick={() => setBlastOpen(false)}
+              >
+                <X size={16} />
+              </button>
+            </header>
+            <div className="dd-modal__body">
+              <section className="dd-modal-card">
+                <div className="dd-seg">
+                  <span className="dd-field__label">Channel</span>
+                  <div>
+                    {(['Email', 'WhatsApp'] as const).map((ch) => (
+                      <button
+                        key={ch}
+                        type="button"
+                        className={cn(blastChannel === ch && 'is-active')}
+                        onClick={() => setBlastChannel(ch)}
+                      >
+                        {blastChannel === ch && <Check size={12} />}
+                        {ch}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {blastChannel === 'Email' && (
+                  <label>
+                    Subject
+                    <input
+                      value={blastSubject}
+                      onChange={(e) => setBlastSubject(e.target.value)}
+                      placeholder="Subject line…"
+                    />
+                  </label>
+                )}
+                <label>
+                  Message
+                  <textarea
+                    value={blastBody}
+                    onChange={(e) => setBlastBody(e.target.value)}
+                    placeholder="Write your blast…"
+                    rows={5}
+                  />
+                </label>
+                <p className="dd-muted dd-blast-modal__count">
+                  Selected carriers: <strong>{selected.size}</strong>
+                </p>
+              </section>
+            </div>
+            <footer className="dd-modal__foot">
+              <button type="button" className="dd-btn" onClick={() => setBlastOpen(false)}>
+                Cancel
+              </button>
+              <button type="button" className="dd-btn dd-btn--primary" onClick={mockSendBlast}>
+                <Send size={14} />
+                Mock send
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -548,7 +689,10 @@ export function PostMarketplaceModal({
   const pickup = detail.stops[0]
   const delivery = detail.stops[detail.stops.length - 1]
   const [refreshEvery, setRefreshEvery] = useState('6')
-  const [contact, setContact] = useState<'Email' | 'Phone'>('Email')
+  const [contact, setContact] = useState<'Email' | 'Phone' | 'WhatsApp' | 'SMS'>('Email')
+  const [datOn, setDatOn] = useState(true)
+  const [loadlinkOn, setLoadlinkOn] = useState(false)
+  const marketplaceCount = (datOn ? 1 : 0) + (loadlinkOn ? 1 : 0)
 
   return (
     <div className="dd-modal-root" role="dialog" aria-modal="true">
@@ -637,7 +781,7 @@ export function PostMarketplaceModal({
               <div className="dd-seg">
                 <span className="dd-field__label">Preferred contact</span>
                 <div>
-                  {(['Email', 'Phone'] as const).map((c) => (
+                  {(['Email', 'Phone', 'WhatsApp', 'SMS'] as const).map((c) => (
                     <button
                       key={c}
                       type="button"
@@ -682,11 +826,27 @@ export function PostMarketplaceModal({
 
           <section className="dd-modal-card">
             <div className="dd-card__title">Marketplaces</div>
-            <button type="button" className="dd-market-tile is-active">
-              <Check size={14} />
-              DAT
-            </button>
-            <p className="dd-muted">Will post to 1 marketplace.</p>
+            <div className="dd-market-tiles">
+              <button
+                type="button"
+                className={cn('dd-market-tile', datOn && 'is-active')}
+                onClick={() => setDatOn((v) => !v)}
+              >
+                {datOn && <Check size={14} />}
+                DAT
+              </button>
+              <button
+                type="button"
+                className={cn('dd-market-tile', loadlinkOn && 'is-active')}
+                onClick={() => setLoadlinkOn((v) => !v)}
+              >
+                {loadlinkOn && <Check size={14} />}
+                Loadlink
+              </button>
+            </div>
+            <p className="dd-muted">
+              Will post to {marketplaceCount} marketplace{marketplaceCount === 1 ? '' : 's'}.
+            </p>
           </section>
 
           <section className="dd-modal-card">
@@ -699,9 +859,14 @@ export function PostMarketplaceModal({
           <button type="button" className="dd-btn" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="dd-btn dd-btn--primary" onClick={onClose}>
+          <button
+            type="button"
+            className="dd-btn dd-btn--primary"
+            onClick={onClose}
+            disabled={marketplaceCount === 0}
+          >
             <CloudUpload size={14} />
-            Post Load
+            Post Load (mock)
           </button>
         </footer>
       </div>

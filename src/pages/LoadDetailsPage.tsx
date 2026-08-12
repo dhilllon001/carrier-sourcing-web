@@ -33,6 +33,12 @@ import {
 } from '@/components/details/LaterStageViews'
 import { cn } from '@/lib/cn'
 import {
+  SEED_ACTIVITY,
+  makeActivity,
+  type ActivityAction,
+  type ActivityEvent,
+} from '@/data/activityLog'
+import {
   buildLoadDetail,
   isFindPost,
   type CommodityLine,
@@ -862,24 +868,80 @@ function DetailRail({
 }
 
 function ActivityTab({ detail }: { detail: LoadDetail }) {
-  const events = [
-    { when: detail.startedAt, who: detail.csr, text: 'Opened Overview for load review' },
-    { when: 'Just now', who: 'System', text: 'Readiness checklist evaluated against posting rules' },
-    { when: 'Today', who: detail.salesRep, text: 'Customer rate confirmed on order' },
-  ]
+  const [filter, setFilter] = useState<'all' | ActivityAction>('all')
+  const [events, setEvents] = useState<ActivityEvent[]>(() => [
+    makeActivity({
+      when: detail.startedAt,
+      who: detail.csr,
+      action: 'other',
+      text: 'Opened Overview for load review',
+      loadId: detail.load.id,
+    }),
+    ...SEED_ACTIVITY.map((e) => ({ ...e, loadId: detail.load.id })),
+    makeActivity({
+      when: 'Today',
+      who: detail.salesRep,
+      action: 'other',
+      text: 'Customer rate confirmed on order',
+      loadId: detail.load.id,
+    }),
+  ])
+
+  const filtered =
+    filter === 'all' ? events : events.filter((e) => e.action === filter)
+
   return (
     <div className="dd-activity">
-      {events.map((e) => (
-        <article key={`${e.when}-${e.text}`} className="dd-activity__item">
+      <div className="dd-activity__toolbar">
+        <strong>Activity log</strong>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as typeof filter)}
+          aria-label="Filter activity"
+        >
+          <option value="all">All actions</option>
+          <option value="max_buy">Max buy</option>
+          <option value="stage_move">Stage moves</option>
+          <option value="post_dat">DAT post</option>
+          <option value="post_loadlink">Loadlink post</option>
+          <option value="blast_email">Blast email</option>
+          <option value="blast_whatsapp">Blast WhatsApp</option>
+          <option value="cmt_approve">CMT approve</option>
+          <option value="cmt_reject">CMT reject</option>
+          <option value="offer_add">Offers</option>
+          <option value="other">Other</option>
+        </select>
+        <button
+          type="button"
+          className="dd-pill-btn"
+          onClick={() =>
+            setEvents((prev) => [
+              makeActivity({
+                when: 'Just now',
+                who: 'Sukhdeep Dhillon',
+                action: 'stage_move',
+                text: `Mock note logged on ${detail.load.id}`,
+                loadId: detail.load.id,
+              }),
+              ...prev,
+            ])
+          }
+        >
+          Add mock event
+        </button>
+      </div>
+      {filtered.map((e) => (
+        <article key={e.id} className="dd-activity__item">
           <div className="dd-activity__dot" />
           <div>
             <strong>{e.text}</strong>
             <span>
-              {e.who} · {e.when}
+              {e.who} · {e.when} · <em className="dd-activity__action">{e.action.replace(/_/g, ' ')}</em>
             </span>
           </div>
         </article>
       ))}
+      {filtered.length === 0 && <div className="dd-muted">No events for this filter.</div>}
     </div>
   )
 }
@@ -1074,7 +1136,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               {i < detail.stops.length - 1 && (
                 <div className="dd-route__bridge" aria-hidden>
                   {crossBorder && <span className="dd-route__note">Cross-border · pedimento</span>}
-                  <span className="dd-route__miles">{load.miles.toLocaleString()} mi</span>
+                  <span className="dd-route__miles">
+                    {(stop.legMiles ?? load.miles).toLocaleString()} mi
+                  </span>
                 </div>
               )}
             </div>

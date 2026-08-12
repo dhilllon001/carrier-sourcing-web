@@ -23,6 +23,7 @@ import { MyCarriersPage } from '@/pages/MyCarriersPage'
 import { CarrierDetailPage } from '@/pages/CarrierDetailPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { CmtReviewPage } from '@/pages/CmtReviewPage'
+import { AccessManagementPage } from '@/pages/AccessManagementPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
 import { cn } from '@/lib/cn'
@@ -146,7 +147,9 @@ export default function App() {
                         ? 'Search carrier, MC, DOT, contact…'
                         : nav === 'cmt'
                           ? 'Search carrier, lane, equipment, notes…'
-                          : 'Search probills, PO, customer, equipment…'
+                          : nav === 'access'
+                            ? 'Search user, role, team…'
+                            : 'Search probills, PO, customer, equipment…'
                   }
                 />
               </label>
@@ -224,6 +227,8 @@ export default function App() {
               />
             ) : nav === 'cmt' ? (
               <CmtReviewPage search={search} refreshKey={refreshKey} />
+            ) : nav === 'access' ? (
+              <AccessManagementPage search={search} />
             ) : (
               <div className="sr-page">
                 <div className="sr-card sr-card__pad">

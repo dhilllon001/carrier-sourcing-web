@@ -1194,3 +1194,34 @@
     grid-template-columns: 1fr;
   }
 }
+
+.cd-pref-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cd-pref-chip {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cd-pref-chip.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.cd-contact__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}

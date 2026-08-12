@@ -127,6 +127,15 @@ export function CmtReviewPage({ search, refreshKey }: Props) {
 
               <div className="cmt-drawer__flags">
                 <span className="cmt-eyebrow">Flags</span>
+                {active.missingGenLogsRegion && (
+                  <div className="cmt-flag-row">
+                    <strong>GENLOGS</strong>
+                    <span>
+                      No GenLogs presence in awarded region ({active.awardRegion ?? '—'}). Confirm
+                      before sending carrier confirmation to verified email only.
+                    </span>
+                  </div>
+                )}
                 {active.flags.map((f) => (
                   <div key={f.id} className="cmt-flag-row">
                     <strong>{f.code}</strong>
@@ -211,6 +220,11 @@ function CmtCard({
       <div className="cmt-panel cmt-panel--flags">
         <span className="cmt-panel__label">Flags</span>
         <div className="cmt-panel__chips">
+          {item.missingGenLogsRegion && (
+            <span className="cmt-chip" title={`No GenLogs presence in ${item.awardRegion ?? 'award'} region`}>
+              GENLOGS
+            </span>
+          )}
           {item.flags.map((f) => (
             <span key={f.id} className="cmt-chip" title={f.detail}>
               {f.code}

@@ -8,7 +8,6 @@ import {
   FileText,
   MapPin,
   Package,
-  Plus,
   RefreshCw,
   Send,
   ShieldCheck,
@@ -1018,11 +1017,21 @@ export function BookingStageView({
   kind: 'Send Confirmation' | 'Signed Confirmation' | 'Resources'
 }) {
   const awarded = awardedBid(detail)
+  const verifiedContacts = [
+    { id: 'v1', name: 'Sukhdeep Dhillon', email: 'sukhdeep@chargerlogistics.com', verified: true },
+    { id: 'v2', name: 'Denise Da Costa', email: 'denise@chargerlogistics.com', verified: true },
+    { id: 'v3', name: 'External Ops', email: 'ops@gmail.com', verified: false },
+  ]
+  const [ccIds, setCcIds] = useState<string[]>(['v1'])
   const [note, setNote] = useState('')
-  const [ccName, setCcName] = useState('Sukhdeep')
   const contactLabel = awarded
     ? `${awarded.contact ?? awarded.carrier}${awarded.email ? ` [${awarded.email}]` : ''}`
     : 'Select carrier contact…'
+
+  const toggleCc = (id: string, verified: boolean) => {
+    if (!verified) return
+    setCcIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
 
   if (kind === 'Resources') {
     return (
@@ -1136,15 +1145,28 @@ export function BookingStageView({
           </label>
 
           <label className="dd-field">
-            <span>Email CC</span>
-            <div className="dd-cc-row">
-              <input value={ccName} onChange={(e) => setCcName(e.target.value)} />
-              <span className="dd-cc-domain">@chargerlogistics.com</span>
-              <button type="button" className="dd-cc-add" aria-label="Add CC">
-                <Plus size={14} />
-              </button>
+            <span>Email CC · Highway verified only</span>
+            <div className="dd-cc-picker">
+              {verifiedContacts.map((c) => (
+                <label
+                  key={c.id}
+                  className={cn('dd-cc-option', !c.verified && 'is-blocked', ccIds.includes(c.id) && 'is-on')}
+                >
+                  <input
+                    type="checkbox"
+                    checked={ccIds.includes(c.id)}
+                    disabled={!c.verified}
+                    onChange={() => toggleCc(c.id, c.verified)}
+                  />
+                  <span>
+                    <strong>{c.name}</strong>
+                    <em>{c.email}</em>
+                  </span>
+                  <i>{c.verified ? 'Verified' : 'Blocked'}</i>
+                </label>
+              ))}
             </div>
-            <em>Internal recipients copied on the confirmation</em>
+            <em>Only Highway-verified contacts can be CC’d (mock validation)</em>
           </label>
 
           <label className="dd-field">

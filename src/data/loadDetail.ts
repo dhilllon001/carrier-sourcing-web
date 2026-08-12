@@ -30,6 +30,8 @@ export type RouteStop = {
   status: string
   statusTone: 'live' | 'pending' | 'neutral'
   appointmentRequired?: boolean
+  /** Miles from this stop to the next (omit on final stop). */
+  legMiles?: number
 }
 
 export type CommodityLine = {
@@ -53,6 +55,9 @@ export type CarrierRow = {
   source: 'PAST' | 'DAT' | 'NEW'
   lastUsed: string
   lastUsedRel: string
+  lastContacted?: string
+  lastContactChannel?: 'Email' | 'WhatsApp' | 'Phone' | 'SMS'
+  contactedRecently?: boolean
   dhP: number
   dhD: number
   lastRate: string
@@ -64,6 +69,8 @@ export type CarrierRow = {
   offer?: string
   configRate?: string
   updated?: string
+  recommended?: boolean
+  recommendScore?: number
 }
 
 export type BidOffer = {
@@ -226,6 +233,9 @@ const CARRIERS: CarrierRow[] = [
     source: 'DAT',
     lastUsed: '27 May, 14:59',
     lastUsedRel: '2m ago',
+    lastContacted: 'Today, 09:12',
+    lastContactChannel: 'Email',
+    contactedRecently: true,
     dhP: 0,
     dhD: 7,
     lastRate: '$135',
@@ -237,6 +247,8 @@ const CARRIERS: CarrierRow[] = [
     offer: 'Not sent',
     configRate: '—',
     updated: '2m ago',
+    recommended: true,
+    recommendScore: 92,
   },
   {
     id: 'c2',
@@ -245,6 +257,9 @@ const CARRIERS: CarrierRow[] = [
     source: 'PAST',
     lastUsed: '12 Jun, 09:12',
     lastUsedRel: '4d ago',
+    lastContacted: '4d ago',
+    lastContactChannel: 'WhatsApp',
+    contactedRecently: true,
     dhP: 12,
     dhD: 0,
     lastRate: '$210',
@@ -255,6 +270,8 @@ const CARRIERS: CarrierRow[] = [
     offer: 'Not sent',
     configRate: '$1.85',
     updated: '1h ago',
+    recommended: true,
+    recommendScore: 84,
   },
   {
     id: 'c3',
@@ -263,6 +280,9 @@ const CARRIERS: CarrierRow[] = [
     source: 'DAT',
     lastUsed: '01 Jul, 16:40',
     lastUsedRel: '12d ago',
+    lastContacted: '12d ago',
+    lastContactChannel: 'Phone',
+    contactedRecently: false,
     dhP: 34,
     dhD: 18,
     lastRate: '$980',
@@ -273,6 +293,7 @@ const CARRIERS: CarrierRow[] = [
     offer: 'Sent',
     configRate: '$2.10',
     updated: '3d ago',
+    recommendScore: 71,
   },
   {
     id: 'c4',
@@ -281,6 +302,9 @@ const CARRIERS: CarrierRow[] = [
     source: 'PAST',
     lastUsed: '08 Jul, 11:05',
     lastUsedRel: '5d ago',
+    lastContacted: '5d ago',
+    lastContactChannel: 'Email',
+    contactedRecently: true,
     dhP: 6,
     dhD: 9,
     lastRate: '$420',
@@ -292,6 +316,8 @@ const CARRIERS: CarrierRow[] = [
     offer: 'Not sent',
     configRate: '—',
     updated: '5d ago',
+    recommended: true,
+    recommendScore: 88,
   },
   {
     id: 'c5',
@@ -300,6 +326,8 @@ const CARRIERS: CarrierRow[] = [
     source: 'NEW',
     lastUsed: '—',
     lastUsedRel: 'Never',
+    lastContacted: 'Never',
+    contactedRecently: false,
     dhP: 55,
     dhD: 40,
     lastRate: '—',
@@ -310,6 +338,7 @@ const CARRIERS: CarrierRow[] = [
     offer: 'Not sent',
     configRate: '—',
     updated: '—',
+    recommendScore: 45,
   },
 ]
 
@@ -412,6 +441,16 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
   const orderNumber = String(11_280_000 + (h % 9000))
   const poNumber = load.identifier.replace(/^PO-?/i, '') || String(600000 + (h % 90000))
 
+  const originCity = load.origin.split(',')[0]?.trim() || load.origin
+  const destCity = load.destination.split(',')[0]?.trim() || load.destination
+  const midCity =
+    load.origin.includes('ON') || load.destination.includes('ON')
+      ? 'London, ON'
+      : load.origin.includes('TX')
+        ? 'San Antonio, TX'
+        : 'Columbus, OH'
+  const midCityShort = midCity.split(',')[0]
+
   const stops: RouteStop[] =
     load.miles > 500
       ? [
@@ -419,30 +458,33 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
             kind: 'Pickup',
             index: 1,
             role: 'Hook',
-            facility: `${load.customer.split(' ')[0].toUpperCase()} DC`,
+            facility: `${originCity.toUpperCase()} DC`,
             city: load.origin,
             address: `1200 Industrial Pkwy, ${load.origin}`,
             when: load.pickupDate,
             status: 'Live Appointment',
             statusTone: 'live',
             appointmentRequired: true,
+            legMiles: Math.round(load.miles * 0.28),
           },
           {
             kind: 'Pickup',
             index: 2,
             role: 'Hook',
-            facility: 'CROSS-DOCK HUB',
-            city: load.origin,
-            address: `88 Transfer Rd, ${load.origin}`,
+            facility: `${midCityShort.toUpperCase()} CROSS-DOCK`,
+            city: midCity,
+            address: `88 Transfer Rd, ${midCity}`,
             when: load.pickupDate,
             status: 'Live Appointment',
             statusTone: 'live',
             appointmentRequired: false,
+            legMiles: Math.round(load.miles * 0.72),
           },
           {
             kind: 'Delivery',
+            index: 3,
             role: 'Drop',
-            facility: load.customer.toUpperCase(),
+            facility: `${destCity.toUpperCase()} DOCK`,
             city: load.destination,
             address: `400 Receiving Dock, ${load.destination}`,
             when: load.deliveryDate,
@@ -456,19 +498,20 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
             kind: 'Pickup',
             index: 1,
             role: 'Hook',
-            facility: `${load.origin.split(',')[0].toUpperCase()} YARD`,
+            facility: `${originCity.toUpperCase()} YARD`,
             city: load.origin,
             address: `100 Main St, ${load.origin}`,
             when: load.pickupDate,
             status: 'Live Window',
             statusTone: 'live',
             appointmentRequired: true,
+            legMiles: load.miles,
           },
           {
             kind: 'Delivery',
             index: 2,
             role: 'Drop',
-            facility: `${load.destination.split(',')[0].toUpperCase()} DOCK`,
+            facility: `${destCity.toUpperCase()} DOCK`,
             city: load.destination,
             address: `250 Harbor Ave, ${load.destination}`,
             when: load.deliveryDate,
