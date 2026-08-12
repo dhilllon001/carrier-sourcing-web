@@ -684,10 +684,9 @@ function HighwayLogView({ rows }: { rows: CarrierLog[] }) {
   )
 }
 
-/* ── DAT / Loadlink — posting ticket ── */
+/* ── DAT / Loadlink — posting details grid ── */
 function BoardTicketView({
   board,
-  cls,
   postingId,
   lane,
   equipment,
@@ -697,7 +696,6 @@ function BoardTicketView({
   extras,
 }: {
   board: string
-  cls: string
   postingId: string
   lane: string
   equipment: string
@@ -706,36 +704,34 @@ function BoardTicketView({
   hardLimit: string
   extras: MetaLog[]
 }) {
+  const fields: { label: string; value: string; note?: string }[] = [
+    { label: 'Load board', value: board },
+    { label: 'Posting ID', value: postingId },
+    { label: 'Lane', value: lane },
+    { label: 'Equipment', value: equipment },
+    { label: 'Miles', value: `${miles.toLocaleString()} mi` },
+    { label: 'Rate posted', value: rate, note: 'Book now' },
+    { label: 'Hard limit', value: hardLimit, note: 'Max buy' },
+    ...extras.map((m) => ({ label: m.name, value: m.detail, note: m.meta })),
+  ]
   return (
-    <div className={cn('dd-boardlog', `is-${cls}`)}>
-      <div className="dd-boardlog__ticket">
-        <div className="dd-boardlog__brand">
-          <RadioTower size={16} />
-          <strong>{board}</strong>
-        </div>
-        <div className="dd-boardlog__body">
-          <strong className="dd-boardlog__lane">{lane}</strong>
-          <div className="dd-boardlog__chips">
-            <em>{equipment}</em>
-            <em>{miles.toLocaleString()} mi</em>
-            <em>Posting {postingId}</em>
-          </div>
-          <div className="dd-boardlog__rate">
-            <strong>{rate}</strong>
-            <span>book now · hard limit {hardLimit}</span>
-          </div>
-        </div>
-        <span className="dd-boardlog__live">Live</span>
+    <div className="dd-boardlog">
+      <div className="dd-boardlog__head">
+        <i>
+          <RadioTower size={14} />
+        </i>
+        <strong>{lane}</strong>
+        <em className="dd-boardlog__live">Live</em>
       </div>
-      <ul className="dd-boardlog__extras">
-        {extras.map((row) => (
-          <li key={row.name}>
-            <strong>{row.name}</strong>
-            <span>{row.detail}</span>
-            {row.meta && <em>{row.meta}</em>}
-          </li>
+      <div className="dd-boardlog__grid">
+        {fields.map((f) => (
+          <div key={f.label} className="dd-boardlog__field">
+            <span>{f.label}</span>
+            <strong>{f.value}</strong>
+            {f.note && <em>{f.note}</em>}
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }
@@ -1464,8 +1460,7 @@ export function AutoSourcingPanel({
                               {t.id === 'highway' && <HighwayLogView rows={carrierLogs} />}
                               {(t.id === 'post_dat' || t.id === 'post_loadlink') && (
                                 <BoardTicketView
-                                  board={t.id === 'post_dat' ? 'DAT' : 'Loadlink'}
-                                  cls={theme.cls}
+                                  board={t.id === 'post_dat' ? 'DAT Load Board' : 'Loadlink'}
                                   postingId={t.id === 'post_dat' ? 'DAT-MOCK-88421' : 'LL-MOCK-22014'}
                                   lane={lane}
                                   equipment={detail.load.equipment}

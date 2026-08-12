@@ -9533,16 +9533,11 @@
   --ch-border: #ddccf9;
 }
 
-.dd-auto-run__item.is-dat {
-  --ch: #b45309;
-  --ch-soft: #fef4e2;
-  --ch-border: #f1dcae;
-}
-
+.dd-auto-run__item.is-dat,
 .dd-auto-run__item.is-loadlink {
-  --ch: #ea580c;
-  --ch-soft: #feefe4;
-  --ch-border: #f8d0b4;
+  --ch: var(--accent);
+  --ch-soft: var(--accent-soft);
+  --ch-border: var(--accent-line);
 }
 
 /* colored icon tile + left accent on each run row */
@@ -9991,93 +9986,49 @@
   color: var(--ink-3);
 }
 
-/* ── DAT / Loadlink — board posting ticket ── */
+/* ── DAT / Loadlink — posting details grid (theme-neutral) ── */
 .dd-boardlog {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.dd-boardlog__ticket {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  border: 1px solid var(--ch-border);
-  border-radius: 12px;
+  border: 1px solid var(--sr-border-2);
+  border-radius: 10px;
   background: #fff;
   overflow: hidden;
 }
 
-.dd-boardlog__brand {
+.dd-boardlog__head {
   display: flex;
-  flex: none !important;
-  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sr-border-2);
+  background: #f8f9fb;
+}
+
+.dd-boardlog__head > i {
+  display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 78px;
-  background: linear-gradient(160deg, var(--ch) 0%, color-mix(in srgb, var(--ch) 72%, #000) 100%);
-  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
-.dd-auto-log .dd-boardlog__brand strong {
-  font: 800 12px/1 var(--sr-font-heading);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.dd-boardlog__body {
+.dd-auto-log .dd-boardlog__head strong {
   flex: 1;
   min-width: 0;
-  padding: 12px 14px;
-}
-
-.dd-auto-log .dd-boardlog__lane {
-  display: block;
-  font: 700 13.5px/1.25 var(--sr-font-heading);
+  font: 700 12.5px/1.25 var(--sr-font-heading);
   color: var(--ink);
-}
-
-.dd-boardlog__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 7px 0 9px;
-}
-
-.dd-auto-log .dd-boardlog__chips em {
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--ch-border);
-  background: var(--ch-soft);
-  font: 650 10px/1 var(--sr-font-body);
-  font-style: normal;
-  color: var(--ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dd-boardlog__rate {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.dd-auto-log .dd-boardlog__rate strong {
-  font: 800 20px/1 var(--sr-font-heading);
-  color: var(--ch);
-}
-
-.dd-auto-log .dd-boardlog__rate span {
-  font: 500 11px/1.2 var(--sr-font-body);
-  color: var(--ink-3);
-}
-
 .dd-auto-log .dd-boardlog__live {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 5px;
   padding: 3px 9px;
@@ -10085,6 +10036,7 @@
   border: 1px solid #bbe3c8;
   background: #f0faf3;
   font: 700 10px/1 var(--sr-font-body);
+  font-style: normal;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #15803d;
@@ -10109,13 +10061,48 @@
   }
 }
 
-.dd-boardlog__extras {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.dd-boardlog__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--sr-border-2);
+}
+
+.dd-boardlog__field {
+  padding: 9px 12px;
+  background: #fff;
+}
+
+.dd-auto-log .dd-boardlog__field span {
+  display: block;
+  font: 700 9.5px/1.2 var(--sr-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.dd-auto-log .dd-boardlog__field strong {
+  display: block;
+  margin-top: 3px;
+  font: 650 12px/1.3 var(--sr-font-body);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-auto-log .dd-boardlog__field em {
+  display: block;
+  margin-top: 1px;
+  font: 500 10.5px/1.3 var(--sr-font-body);
+  font-style: normal;
+  color: var(--ink-2);
+}
+
+@media (max-width: 1100px) {
+  .dd-boardlog__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ── Rates — stat tiles ── */
