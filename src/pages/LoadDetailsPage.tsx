@@ -1038,12 +1038,14 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             /mexico|nuevo|monterrey|guadalajara|mx\b/i.test(
               `${detail.stops[i + 1]?.city ?? ''} ${detail.stops[i + 1]?.address ?? ''}`
             )
+          const showStatusAlert = stop.statusTone === 'pending'
           return (
             <div key={`${stop.facility}-${i}`} className="dd-route__pair">
               <article
                 className={cn(
                   'dd-stop-card',
-                  stop.kind === 'Delivery' ? 'is-drop' : 'is-hook'
+                  stop.kind === 'Delivery' ? 'is-drop' : 'is-hook',
+                  (stop.appointmentRequired || showStatusAlert) && 'has-alert'
                 )}
               >
                 <div className="dd-stop-card__top">
@@ -1055,7 +1057,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                   </div>
                   <div className="dd-stop-card__when">
                     <em>{stop.when}</em>
-                    <span className={cn('dd-stop__status', `is-${stop.statusTone}`)}>{stop.status}</span>
+                    {showStatusAlert && (
+                      <span className="dd-stop-card__status is-pending">{stop.status}</span>
+                    )}
                   </div>
                 </div>
                 {stop.appointmentRequired && (
