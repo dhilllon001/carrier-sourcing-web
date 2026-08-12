@@ -32,7 +32,12 @@ import {
   FinalizeAwardView,
   FinalizeTenderView,
 } from '@/components/details/LaterStageViews'
-import { AutoSourcingConfirm, AutoSourcingPanel } from '@/components/details/AutoSourcingPanel'
+import {
+  AUTO_MODE_LABEL,
+  AutoSourcingConfirm,
+  AutoSourcingPanel,
+  type AutoMode,
+} from '@/components/details/AutoSourcingPanel'
 import { cn } from '@/lib/cn'
 import {
   SEED_ACTIVITY,
@@ -984,6 +989,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     (detail.maxBuy === '—' || detail.maxBuy === '$0.00' ? 1 : 0) +
     (detail.bookNowRate === '—' ? 1 : 0)
 
+  /* sourcing not done → Auto Sourcing; done → Auto Tender / Auto Award on later stages */
+  const autoMode: AutoMode | null =
+    stage === 'Sourcing' ? 'sourcing' : stage === 'Tender' ? 'tender' : stage === 'Award' ? 'award' : null
+
   const stageWorkspace =
     isFindPost(subStage) ||
     subStage === 'Offers & Bids' ||
@@ -1026,18 +1035,22 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           </div>
 
           <div className="dd-top__right">
-            <button
-              type="button"
-              className="dd-auto-btn"
-              onClick={() => {
-                setAutoAsk(false)
-                setAutoOpen(true)
-              }}
-            >
-              <Zap size={14} />
-              Auto Sourcing
-              {autoMissing > 0 && <i className="dd-auto-btn__badge">{autoMissing}</i>}
-            </button>
+            {autoMode && (
+              <button
+                type="button"
+                className="dd-auto-btn"
+                onClick={() => {
+                  setAutoAsk(false)
+                  setAutoOpen(true)
+                }}
+              >
+                <Zap size={14} />
+                {AUTO_MODE_LABEL[autoMode]}
+                {autoMode === 'sourcing' && autoMissing > 0 && (
+                  <i className="dd-auto-btn__badge">{autoMissing}</i>
+                )}
+              </button>
+            )}
             <button type="button" className="dd-icon-btn dd-icon-btn--light" aria-label="Refresh">
               <RefreshCw size={15} />
             </button>
@@ -1316,9 +1329,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           onNo={() => setAutoAsk(false)}
         />
       )}
-      {autoOpen && (
+      {autoOpen && autoMode && (
         <AutoSourcingPanel
           detail={detail}
+          mode={autoMode}
           onClose={() => setAutoOpen(false)}
           onApplyRates={(patch) => setDetail((d) => ({ ...d, ...patch }))}
           onGoFindPost={() => {
