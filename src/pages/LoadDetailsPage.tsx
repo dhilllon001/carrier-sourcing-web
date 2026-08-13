@@ -47,6 +47,7 @@ import {
 import {
   CaseActivityRail,
   CaseCenterHeader,
+  CaseWorkBar,
   LoadStructureTree,
   type CaseActionId,
 } from '@/components/details/View3CaseLayout'
@@ -2003,39 +2004,26 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           <div className="v3-main">
             {!stageWorkspace && (
               <>
-                <CaseCenterHeader
-                  detail={detail}
-                  load={load}
+                <CaseWorkBar
+                  tab={v3Tab}
+                  onTab={setV3Tab}
+                  docCount={detail.documents.length}
                   stage={stage}
                   subStage={subStage}
-                  readinessPct={readinessPct}
-                  tags={tags}
-                  onTags={setTags}
+                  status={load.status}
                   autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
                   onAuto={() => {
                     setAutoAsk(false)
                     setAutoOpen(true)
                   }}
+                />
+                <CaseCenterHeader
+                  detail={detail}
+                  readinessPct={readinessPct}
+                  tags={tags}
+                  onTags={setTags}
                   onAction={runCaseAction}
                 />
-                <div className="v3-tabs">
-                  {(
-                    [
-                      ['overview', 'Overview'],
-                      ['instructions', 'Instructions'],
-                      ['documents', `Documents ${detail.documents.length}`],
-                    ] as const
-                  ).map(([id, label]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className={cn(v3Tab === id && 'is-on')}
-                      onClick={() => setV3Tab(id)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
                 <div className="v3-main__content">
                   {v3Tab === 'overview' && (
                     <SummaryTab

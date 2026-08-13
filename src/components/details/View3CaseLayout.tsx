@@ -20,7 +20,6 @@ import { cn } from '@/lib/cn'
 import { SEED_ACTIVITY, makeActivity, type ActivityEvent } from '@/data/activityLog'
 import type { AiActivityEntry } from '@/data/aiActivity'
 import type { DetailStage, LoadDetail } from '@/data/loadDetail'
-import type { ReportLoad } from '@/data/report'
 import { TagPopover } from '@/components/report/TagPopover'
 
 type StructureSelect = (stage: DetailStage, sub: string) => void
@@ -212,30 +211,79 @@ export function LoadStructureTree({
 }
 
 export type CaseActionId = 'maxbuy' | 'hook' | 'drop' | 'broker' | 'post' | 'offers'
+export type CaseTab = 'overview' | 'instructions' | 'documents'
 
 const rateOrDash = (v: string) => (!v || v === '—' || v === '$0.00' ? null : v)
 
-export function CaseCenterHeader({
-  detail,
-  load,
+export function CaseWorkBar({
+  tab,
+  onTab,
+  docCount,
   stage,
   subStage,
+  status,
+  autoLabel,
+  onAuto,
+}: {
+  tab: CaseTab
+  onTab: (tab: CaseTab) => void
+  docCount: number
+  stage: string
+  subStage: string
+  status: string
+  autoLabel: string | null
+  onAuto: () => void
+}) {
+  const tabs: [CaseTab, string, number | null][] = [
+    ['overview', 'Overview', null],
+    ['instructions', 'Instructions', null],
+    ['documents', 'Documents', docCount],
+  ]
+
+  return (
+    <div className="v3-bar">
+      <div className="v3-bar__tabs" role="tablist">
+        {tabs.map(([id, label, count]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={cn(tab === id && 'is-on')}
+            onClick={() => onTab(id)}
+          >
+            {label}
+            {count !== null && <i>{count}</i>}
+          </button>
+        ))}
+      </div>
+      <div className="v3-bar__right">
+        <span className="v3-bar__stage">
+          {stage} · {subStage}
+        </span>
+        <span className={cn('v3-bar__status', status === 'NeedCarrier' && 'is-warn')}>{status}</span>
+        {autoLabel && (
+          <button type="button" className="v3-case__cta" onClick={onAuto}>
+            <Zap size={13} />
+            {autoLabel}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function CaseCenterHeader({
+  detail,
   readinessPct,
   tags,
   onTags,
-  autoLabel,
-  onAuto,
   onAction,
 }: {
   detail: LoadDetail
-  load: ReportLoad
-  stage: string
-  subStage: string
   readinessPct: number
   tags: string[]
   onTags: (tags: string[]) => void
-  autoLabel: string | null
-  onAuto: () => void
   onAction: (id: CaseActionId) => void
 }) {
   const alerts = readinessAlerts(detail)
@@ -258,23 +306,6 @@ export function CaseCenterHeader({
 
   return (
     <div className="v3-case">
-      <div className="v3-case__top">
-        <div className="v3-case__chips">
-          <span className="is-id">{load.id}</span>
-          <span>{load.mode}</span>
-          <span>
-            {stage} · {subStage}
-          </span>
-          <span className={cn(load.status === 'NeedCarrier' && 'is-warn')}>{load.status}</span>
-        </div>
-        {autoLabel && (
-          <button type="button" className="v3-case__cta" onClick={onAuto}>
-            <Zap size={13} />
-            {autoLabel}
-          </button>
-        )}
-      </div>
-
       <section className="v3-ready">
         <div className="v3-ready__head">
           <div>
