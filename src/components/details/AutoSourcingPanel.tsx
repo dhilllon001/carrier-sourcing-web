@@ -1211,20 +1211,33 @@ export function AutoSourcingPanel({
         <header className="dd-auto-panel__head">
           <div className="dd-auto-panel__title">
             <span className={cn('dd-auto-mode-badge', `is-${mode}`)}>
-              {mode === 'sourcing' ? <Zap size={16} /> : mode === 'tender' ? <Gauge size={16} /> : <Award size={16} />}
+              {mode === 'sourcing' ? <Zap size={15} /> : mode === 'tender' ? <Gauge size={15} /> : <Award size={15} />}
             </span>
-            <div>
-              <strong>{modeLabel}</strong>
-              <span>
-                {detail.load.id} · {detail.load.origin} → {detail.load.destination} ·{' '}
-                {detail.load.equipment}
-              </span>
+            <div className="dd-auto-panel__titletext">
+              <div className="dd-auto-panel__titlerow">
+                <strong>{modeLabel}</strong>
+                <em className="dd-auto-panel__probill">{detail.load.id}</em>
+              </div>
+              <div className="dd-auto-panel__meta">
+                <span>
+                  {detail.load.origin} → {detail.load.destination}
+                </span>
+                <b aria-hidden />
+                <span>{detail.load.miles.toLocaleString()} mi</span>
+                <b aria-hidden />
+                <span>{detail.load.equipment}</span>
+              </div>
             </div>
           </div>
           <div className="dd-auto-panel__head-right">
             <span className="dd-auto-phase">Phase 1 · single order</span>
-            <button type="button" className="dd-icon-btn dd-icon-btn--light" aria-label="Close" onClick={onClose}>
-              <X size={16} />
+            <button
+              type="button"
+              className="dd-auto-panel__x"
+              aria-label="Close panel"
+              onClick={onClose}
+            >
+              <X size={15} />
             </button>
           </div>
         </header>
