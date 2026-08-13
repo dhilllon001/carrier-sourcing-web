@@ -538,9 +538,9 @@ export function CarrierSourcingReportPage({
                 return (
                   <section key={block.stage} className="sr-cards-col">
                     <div className="sr-cards-col__head">
-                      <span className="sr-life-section__num">{block.number}</span>
+                      <span className="sr-cards-col__num">{block.number}</span>
                       <strong>{block.stage}</strong>
-                      <span className="sr-life-section__badge">{display.toLocaleString()}</span>
+                      <span className="sr-cards-col__count">{display.toLocaleString()}</span>
                     </div>
                     <div className="sr-cards-col__body">
                       {cards.map((row) => (
