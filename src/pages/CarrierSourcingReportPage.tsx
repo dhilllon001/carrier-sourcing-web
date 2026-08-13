@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
-import {
-  AppliedFiltersRow,
-  SrDataTable,
-  TagPopover,
-  type SrColumn,
-} from '@/components/report'
+import { SrDataTable, TagPopover, type SrColumn } from '@/components/report'
 import { LifecycleRail } from '@/components/report/LifecycleRail'
 import {
   colFiltersApplied,
@@ -434,59 +429,53 @@ export function CarrierSourcingReportPage({
         </label>
       </div>
 
-      <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">
-        <div className="sr-express-group" role="group" aria-label="Mode">
-          <div className="sr-express-group__label">Mode</div>
-          <div className="sr-express-segment">
-            {(
-              [
-                ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot],
-                ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited],
-                ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed],
-                ['Mexico', 'Mexico', MODE_DISPLAY_COUNTS.Mexico],
-                ['PowerOnly', 'P/O', MODE_DISPLAY_COUNTS.PowerOnly],
-              ] as const
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                type="button"
-                className={cn('sr-express-chip', filters.mode === key && 'is-active')}
-                onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
-              >
-                <span className="sr-express-chip__name">{label}</span>
-                <span className="sr-express-chip__value">{count.toLocaleString()}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="sr-quick" role="toolbar" aria-label="Mode and status filters">
+        {(
+          [
+            ['Spot', 'Spot', MODE_DISPLAY_COUNTS.Spot],
+            ['Expedited', 'Expedited', MODE_DISPLAY_COUNTS.Expedited],
+            ['Managed', 'Managed', MODE_DISPLAY_COUNTS.Managed],
+            ['Mexico', 'Mexico', MODE_DISPLAY_COUNTS.Mexico],
+            ['PowerOnly', 'P/O', MODE_DISPLAY_COUNTS.PowerOnly],
+          ] as const
+        ).map(([key, label, count]) => (
+          <button
+            key={key}
+            type="button"
+            className={cn('sr-quick__pill', filters.mode === key && 'is-active')}
+            onClick={() => patch({ mode: filters.mode === key ? 'ALL' : key })}
+          >
+            {label}
+            <em>{count.toLocaleString()}</em>
+          </button>
+        ))}
 
-        <div className="sr-express-group" role="group" aria-label="Status">
-          <div className="sr-express-group__label">Status</div>
-          <div className="sr-express-segment">
-            {(
-              [
-                ['NeedCarrier', 'Need carrier', STATUS_DISPLAY_COUNTS.NeedCarrier],
-                ['Posted', 'Posted', STATUS_DISPLAY_COUNTS.Posted],
-                ['Covered', 'Covered', STATUS_DISPLAY_COUNTS.Covered],
-              ] as const
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                type="button"
-                className={cn('sr-express-chip', filters.status === key && 'is-active')}
-                onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
-              >
-                <span className="sr-express-chip__name">{label}</span>
-                <span className="sr-express-chip__value">{count.toLocaleString()}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <span className="sr-quick__split" aria-hidden />
+
+        {(
+          [
+            ['NeedCarrier', 'Need carrier', STATUS_DISPLAY_COUNTS.NeedCarrier],
+            ['Posted', 'Posted', STATUS_DISPLAY_COUNTS.Posted],
+            ['Covered', 'Covered', STATUS_DISPLAY_COUNTS.Covered],
+          ] as const
+        ).map(([key, label, count]) => (
+          <button
+            key={key}
+            type="button"
+            className={cn('sr-quick__pill', filters.status === key && 'is-active')}
+            onClick={() => patch({ status: filters.status === key ? 'ALL' : key })}
+          >
+            {label}
+            <em>{count.toLocaleString()}</em>
+          </button>
+        ))}
+
+        {appliedFilters.length > 0 && (
+          <button type="button" className="sr-quick__clear" onClick={resetFilters}>
+            Clear {appliedFilters.length}
+          </button>
+        )}
       </div>
-
-      {appliedFilters.length > 0 && (
-        <AppliedFiltersRow chips={appliedFilters} onClearAll={resetFilters} />
-      )}
 
       <div className={cn('sr-page__split', lifeCollapsed && 'is-life-collapsed')}>
         <LifecycleRail
