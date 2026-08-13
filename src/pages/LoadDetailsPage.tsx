@@ -803,68 +803,53 @@ function AiActivityFeed({ entries }: { entries: AiActivityEntry[] }) {
   const done = entries.filter((e) => e.status === 'success').length
   const lastRun = entries[0]
 
-  return (
-    <div className="dd-rail-stack">
-      <section className="dd-rail-card dd-ai-sum">
-        <div className="dd-ai-sum__row">
-          <div>
-            <strong>{lastRun ? lastRun.run : 'No runs yet'}</strong>
-            <span>{lastRun ? `Last action at ${lastRun.when}` : 'Run automation to see logs here'}</span>
-          </div>
-          <span className={cn('dd-ai-sum__pill', failed > 0 ? 'is-warn' : 'is-ok')}>
-            {failed > 0 ? `${failed} issue${failed === 1 ? '' : 's'}` : 'All clear'}
-          </span>
-        </div>
-        <div className="dd-ai-sum__stats">
-          <div>
-            <em>{entries.length}</em>
-            <span>Actions</span>
-          </div>
-          <div>
-            <em>{done}</em>
-            <span>Succeeded</span>
-          </div>
-          <div>
-            <em>{failed}</em>
-            <span>Failed</span>
-          </div>
-        </div>
-      </section>
-
-      {entries.length === 0 ? (
+  if (entries.length === 0) {
+    return (
+      <div className="dd-rail-stack">
         <div className="dd-empty">No AI activity on this load yet</div>
-      ) : (
-        <ol className="dd-ai-log">
-          {entries.map((entry) => {
-            const Icon = AI_KIND_ICON[entry.kind]
-            return (
-              <li key={entry.id} className={cn('dd-ai-log__item', `is-${entry.status}`)}>
-                <i className="dd-ai-log__icon">
-                  <Icon size={13} />
-                </i>
-                <div className="dd-ai-log__body">
-                  <div className="dd-ai-log__top">
-                    <strong>{entry.title}</strong>
-                    <em>{entry.when}</em>
-                  </div>
-                  <span className="dd-ai-log__run">{entry.run}</span>
-                  <p>{entry.detail}</p>
-                  {entry.stats && entry.stats.length > 0 && (
-                    <div className="dd-ai-log__stats">
-                      {entry.stats.map((stat) => (
-                        <span key={stat.label}>
-                          {stat.label}
-                          <b>{stat.value}</b>
-                        </span>
-                      ))}
-                    </div>
-                  )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="dd-rail-stack dd-ai">
+      <div className="dd-ai__sum">
+        <strong>{entries.length} actions</strong>
+        <span className="is-ok">{done} succeeded</span>
+        {failed > 0 && <span className="is-warn">{failed} failed</span>}
+        <em>Last {lastRun.when}</em>
+      </div>
+
+      <ol className="dd-ai-tl">
+        {entries.map((entry) => {
+          const Icon = AI_KIND_ICON[entry.kind]
+          return (
+            <li key={entry.id} className={cn('dd-ai-tl__item', `is-${entry.status}`)}>
+              <i className="dd-ai-tl__mark">
+                <Icon size={12} />
+              </i>
+              <div className="dd-ai-tl__body">
+                <div className="dd-ai-tl__top">
+                  <strong>{entry.title}</strong>
+                  <em>{entry.when}</em>
                 </div>
-              </li>
-            )
-          })}
-        </ol>
-      )}
+                <span className="dd-ai-tl__run">{entry.run}</span>
+                <p>{entry.detail}</p>
+                {entry.stats && entry.stats.length > 0 && (
+                  <dl className="dd-ai-tl__stats">
+                    {entry.stats.map((stat) => (
+                      <div key={stat.label}>
+                        <dt>{stat.label}</dt>
+                        <dd>{stat.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ol>
     </div>
   )
 }
