@@ -96,9 +96,6 @@ function DetailLifecycle({
   onToggle: () => void
   onSelect: (stage: DetailStage, sub: string) => void
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(detail.stages.map((s) => [s.stage, s.stage === stage]))
-  )
   const pct = Math.round((detail.completedSubs / detail.totalSubs) * 100)
 
   if (collapsed) {
@@ -119,88 +116,69 @@ function DetailLifecycle({
         </button>
       </div>
 
-      <div className="dd-life__progress">
-        <div className="dd-life__progress-meta">
-          <span>
-            {detail.completedSubs}/{detail.totalSubs} sub-stages
-          </span>
-          <span>{pct}%</span>
-        </div>
-        <div className="dd-life__bar">
-          <div style={{ width: `${pct}%` }} />
-        </div>
-      </div>
+      <p className="dd-life__meta">
+        <strong>
+          {detail.completedSubs}/{detail.totalSubs}
+        </strong>
+        done · {pct}%
+      </p>
 
-      <div className="dd-life__list">
+      <ol className="dd-tl">
         {detail.stages.map((block) => {
-          const isOpen = open[block.stage] !== false
           const doneCount = block.items.filter((i) => i.done).length
           const stageDone = doneCount === block.items.length && block.items.length > 0
           const active = block.stage === stage
           return (
-            <section
+            <li
               key={block.stage}
-              className={cn('dd-life-stage', active && 'is-active', stageDone && 'is-complete')}
-            >
-              <div className="dd-life-stage__head">
-                <button
-                  type="button"
-                  className="dd-life-stage__main"
-                  onClick={() => {
-                    onSelect(block.stage, block.items[0]?.label ?? 'ALL')
-                    setOpen((p) => ({ ...p, [block.stage]: true }))
-                  }}
-                >
-                  <span className={cn('dd-life-stage__num', stageDone && 'is-done')}>
-                    {stageDone ? <Check size={11} strokeWidth={3} /> : block.number}
-                  </span>
-                  <span className="dd-life-stage__name">{block.stage}</span>
-                  <span className="dd-life-stage__count">
-                    {doneCount}/{block.items.length}
-                  </span>
-                  {active && <span className="dd-life-stage__dot" aria-hidden />}
-                </button>
-                <button
-                  type="button"
-                  className="dd-life-stage__chev"
-                  aria-expanded={isOpen}
-                  onClick={() =>
-                    setOpen((p) => ({ ...p, [block.stage]: !isOpen }))
-                  }
-                >
-                  <ChevronDown size={14} className={cn(!isOpen && 'is-rot')} />
-                </button>
-              </div>
-              {isOpen && (
-                <div className="dd-life-stage__body">
-                  {block.items.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      className={cn(
-                        'dd-life-sub',
-                        subStage === item.label && 'is-active'
-                      )}
-                      onClick={() => onSelect(block.stage, item.label)}
-                    >
-                      <span
-                        className={cn(
-                          'dd-life-check',
-                          item.done && 'is-done',
-                          subStage === item.label && !item.done && 'is-current'
-                        )}
-                      >
-                        {item.done ? <Check size={10} strokeWidth={3} /> : null}
-                      </span>
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
+              className={cn(
+                'dd-tl-stage',
+                stageDone && 'is-done',
+                active && 'is-active',
+                !stageDone && !active && 'is-todo'
               )}
-            </section>
+            >
+              <button
+                type="button"
+                className="dd-tl-stage__row"
+                onClick={() => onSelect(block.stage, block.items[0]?.label ?? 'ALL')}
+              >
+                <i className="dd-tl-stage__mark">
+                  {stageDone ? <Check size={11} strokeWidth={3.5} /> : null}
+                </i>
+                <span className="dd-tl-stage__name">{block.stage}</span>
+                <em className="dd-tl-stage__count">
+                  {doneCount}/{block.items.length}
+                </em>
+              </button>
+
+              {/* sub-stages belong to the stage you are working in */}
+              {active && (
+                <ul className="dd-tl-subs">
+                  {block.items.map((item) => (
+                    <li key={item.label}>
+                      <button
+                        type="button"
+                        className={cn(
+                          'dd-tl-sub',
+                          item.done && 'is-done',
+                          subStage === item.label && 'is-current'
+                        )}
+                        onClick={() => onSelect(block.stage, item.label)}
+                      >
+                        <i className="dd-tl-sub__mark">
+                          {item.done ? <Check size={9} strokeWidth={3.5} /> : null}
+                        </i>
+                        <span>{item.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
           )
         })}
-      </div>
+      </ol>
     </aside>
   )
 }

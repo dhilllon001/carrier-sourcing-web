@@ -653,156 +653,178 @@
   color: var(--sr-text-primary);
 }
 
-.dd-life__progress {
-  margin-bottom: 12px;
-}
-
-.dd-life__progress-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 11.5px;
+.dd-life__meta {
+  margin: 0 0 14px;
+  padding: 0 2px;
+  font: 500 11px/1.2 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
   color: var(--sr-text-meta);
 }
 
-.dd-life__bar {
-  height: 4px;
-  border-radius: 999px;
-  background: #dde2e9;
-  overflow: hidden;
+.dd-life__meta strong {
+  font-weight: 700;
+  color: var(--sr-text-primary);
 }
 
-.dd-life__bar > div {
-  height: 100%;
-  background: var(--sr-action);
-  border-radius: inherit;
-}
-
-.dd-life__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ── Lifecycle timeline: one rail, a check per finished stage ── */
+.dd-tl {
+  margin: 0;
+  padding: 0 2px;
+  list-style: none;
   min-height: 0;
   overflow-y: auto;
 }
 
-.dd-life-stage {
-  background: var(--sr-surface-1);
-  border: 1px solid var(--sr-border-1);
-  border-radius: 8px;
-  overflow: hidden;
+.dd-tl-stage {
+  position: relative;
+  padding-bottom: 4px;
 }
 
-.dd-life-stage.is-active {
-  border-color: #c8d7ea;
+/* rail links the marks and stops at the final stage */
+.dd-tl-stage:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  bottom: -4px;
+  left: 8px;
+  width: 1.5px;
+  border-radius: 2px;
+  background: #dfe3ea;
 }
 
-.dd-life-stage__head {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  background: #f1f3f6;
+.dd-tl-stage.is-done:not(:last-child)::before {
+  background: #b6e0c4;
 }
 
-.dd-life-stage__main {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+.dd-tl-stage__row {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 8px 8px 8px 10px;
-  border: none;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 6px 5px 0;
+  border: 0;
   background: transparent;
   text-align: left;
+  cursor: pointer;
 }
 
-.dd-life-stage__num {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--sr-text-meta);
-}
-
-.dd-life-stage__name {
-  font-size: 12.5px;
-  font-weight: 650;
-  color: var(--sr-text-primary);
-}
-
-.dd-life-stage__count {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--sr-text-meta);
-  font-variant-numeric: tabular-nums;
-}
-
-.dd-life-stage__dot {
-  width: 7px;
-  height: 7px;
+.dd-tl-stage__mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid #d3d8e0;
   border-radius: 999px;
-  background: var(--sr-action);
+  background: #fff;
+  color: #fff;
 }
 
-.dd-life-stage__chev {
-  width: 28px;
-  border: none;
-  background: transparent;
-  color: var(--sr-text-meta);
+.dd-tl-stage.is-done .dd-tl-stage__mark {
+  border-color: var(--sr-positive);
+  background: var(--sr-positive);
 }
 
-.dd-life-stage__chev svg.is-rot {
-  transform: rotate(-90deg);
+/* the stage in play reads as a ring, not a finished check */
+.dd-tl-stage.is-active .dd-tl-stage__mark {
+  border-color: var(--sr-action);
+  border-width: 4.5px;
 }
 
-.dd-life-stage__body {
-  border-top: 1px solid var(--sr-border-1);
+.dd-tl-stage__name {
+  flex: 1;
+  min-width: 0;
+  font: 650 12.5px/1.3 var(--sr-font-body);
+  color: var(--sr-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dd-life-sub {
+.dd-tl-stage__count {
+  flex: none;
+  font: 600 10.5px/1.2 var(--sr-font-body);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: #9aa2ac;
+}
+
+.dd-tl-stage.is-active .dd-tl-stage__name {
+  color: var(--sr-action);
+  font-weight: 750;
+}
+
+.dd-tl-stage.is-done .dd-tl-stage__count {
+  color: #4f9e6c;
+}
+
+/* stages not reached yet stay quiet */
+.dd-tl-stage.is-todo .dd-tl-stage__name {
+  color: #9aa2ac;
+  font-weight: 600;
+}
+
+.dd-tl-stage.is-todo:hover .dd-tl-stage__name {
+  color: var(--sr-text-secondary);
+}
+
+.dd-tl-subs {
+  margin: 0 0 6px;
+  padding: 2px 0 0 27px;
+  list-style: none;
+}
+
+.dd-tl-sub {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-top: 1px solid var(--sr-border-1);
+  padding: 4px 8px 4px 6px;
+  border: 0;
+  border-radius: 7px;
   background: transparent;
+  font: 500 11.5px/1.35 var(--sr-font-body);
   color: var(--sr-text-secondary);
-  font-size: 12px;
   text-align: left;
+  cursor: pointer;
 }
 
-.dd-life-sub:first-child {
-  border-top: none;
+.dd-tl-sub:hover {
+  background: #eef1f5;
 }
 
-.dd-life-sub:hover {
-  background: var(--sr-table-hover);
-}
-
-.dd-life-sub.is-active {
-  background: #eef4fb;
-  color: var(--sr-action);
-  font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--sr-action);
-}
-
-.dd-life-check {
-  width: 14px;
-  height: 14px;
+.dd-tl-sub__mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid #d3d8e0;
   border-radius: 999px;
-  border: 1.5px solid var(--sr-border-2);
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.dd-life-check.is-done {
-  border-color: var(--sr-positive);
-  background: var(--sr-positive);
+  background: #fff;
   color: #fff;
 }
 
-.dd-life-check.is-current {
+.dd-tl-sub.is-done .dd-tl-sub__mark {
+  border-color: var(--sr-positive);
+  background: var(--sr-positive);
+}
+
+.dd-tl-sub:not(.is-done):not(.is-current) {
+  color: #9aa2ac;
+}
+
+.dd-tl-sub.is-current {
+  background: #eaf1fb;
+  color: var(--sr-action);
+  font-weight: 650;
+}
+
+.dd-tl-sub.is-current .dd-tl-sub__mark {
   border-color: var(--sr-action);
+  border-width: 4px;
 }
 
 .dd-life-float,
@@ -9787,26 +9809,6 @@
   to {
     opacity: 1;
   }
-}
-
-.dd-life-stage__num.is-done {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: #16a34a;
-  color: #fff;
-}
-
-.dd-life-stage.is-complete .dd-life-stage__name {
-  color: #15803d;
-}
-
-.dd-life-stage.is-complete .dd-life-stage__count {
-  color: #16a34a;
-  font-weight: 700;
 }
 
 /* ── Expandable Auto Sourcing action logs ── */
