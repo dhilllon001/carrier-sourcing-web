@@ -1,15 +1,10 @@
-import { useState } from 'react'
 import {
   Activity,
-  AlertTriangle,
   ArrowRight,
   CalendarClock,
   Check,
-  ChevronDown,
-  ChevronRight,
   ClipboardCheck,
   DollarSign,
-  FileText,
   Gauge,
   Layers,
   Sparkles,
@@ -53,16 +48,6 @@ export function LoadStructureTree({
   subStage: string
   onSelect: StructureSelect
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({
-    lifecycle: true,
-    alerts: true,
-    offers: true,
-    documents: false,
-  })
-
-  const alerts = readinessAlerts(detail)
-  const alertDone = alerts.filter((a) => a.done).length
-
   return (
     <aside className="v3-struct">
       <header className="v3-struct__head">
@@ -74,136 +59,55 @@ export function LoadStructureTree({
       </header>
 
       <div className="v3-struct__body">
-        <button
-          type="button"
-          className="v3-struct__group"
-          onClick={() => setOpen((p) => ({ ...p, lifecycle: !p.lifecycle }))}
-        >
-          {open.lifecycle ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        <div className="v3-struct__group is-static">
           <Layers size={13} />
           <span>Lifecycle</span>
           <em>
             {detail.completedSubs}/{detail.totalSubs}
           </em>
-        </button>
-        {open.lifecycle &&
-          detail.stages.map((block) => {
-            const doneCount = block.items.filter((i) => i.done).length
-            const stageDone = doneCount === block.items.length && block.items.length > 0
-            const active = block.stage === stage
-            return (
-              <div key={block.stage} className={cn('v3-struct__stage', active && 'is-on')}>
-                <button
-                  type="button"
-                  className={cn('v3-struct__row', stageDone && 'is-done')}
-                  onClick={() => onSelect(block.stage, block.items[0]?.label ?? 'ALL')}
-                >
-                  <i className={cn('v3-struct__mark', stageDone && 'is-done')}>
-                    {stageDone ? <Check size={10} strokeWidth={3} /> : null}
-                  </i>
-                  <span>{block.stage}</span>
-                  <em>
-                    {doneCount}/{block.items.length}
-                  </em>
-                </button>
-                {active && (
-                  <ul className="v3-struct__subs">
-                    {block.items.map((item) => (
-                      <li key={item.label}>
-                        <button
-                          type="button"
-                          className={cn(
-                            'v3-struct__sub',
-                            item.done && 'is-done',
-                            subStage === item.label && 'is-current'
-                          )}
-                          onClick={() => onSelect(block.stage, item.label)}
-                        >
-                          <i>{item.done ? <Check size={9} strokeWidth={3} /> : null}</i>
-                          <span>{item.label}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )
-          })}
-
-        <button
-          type="button"
-          className="v3-struct__group"
-          onClick={() => setOpen((p) => ({ ...p, alerts: !p.alerts }))}
-        >
-          {open.alerts ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-          <AlertTriangle size={13} />
-          <span>Alerts</span>
-          <em>
-            {alertDone}/{alerts.length}
-          </em>
-        </button>
-        {open.alerts && (
-          <ul className="v3-struct__list">
-            {alerts.map((a) => (
-              <li key={a.id} className={cn(a.done && 'is-done')}>
-                <i>{a.done ? <Check size={9} strokeWidth={3} /> : null}</i>
-                <span>{a.title}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <button
-          type="button"
-          className="v3-struct__group"
-          onClick={() => setOpen((p) => ({ ...p, offers: !p.offers }))}
-        >
-          {open.offers ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-          <Users size={13} />
-          <span>Carriers / Offers</span>
-          <em>{detail.bids.length}</em>
-        </button>
-        {open.offers && (
-          <ul className="v3-struct__list">
-            {detail.bids.length === 0 ? (
-              <li className="is-empty">No offers yet</li>
-            ) : (
-              detail.bids.slice(0, 4).map((b) => (
-                <li key={b.id} className="is-done">
-                  <i>
-                    <Check size={9} strokeWidth={3} />
-                  </i>
-                  <span>
-                    {b.carrier} · {b.allIn ?? b.amount}
-                  </span>
-                </li>
-              ))
-            )}
-          </ul>
-        )}
-
-        <button
-          type="button"
-          className="v3-struct__group"
-          onClick={() => setOpen((p) => ({ ...p, documents: !p.documents }))}
-        >
-          {open.documents ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-          <FileText size={13} />
-          <span>Documents</span>
-          <em>{detail.documents.length}</em>
-        </button>
-        {open.documents && (
-          <ul className="v3-struct__list">
-            {detail.documents.map((d) => (
-              <li key={d.id} className="is-done">
-                <i>
-                  <Check size={9} strokeWidth={3} />
+        </div>
+        {detail.stages.map((block) => {
+          const doneCount = block.items.filter((i) => i.done).length
+          const stageDone = doneCount === block.items.length && block.items.length > 0
+          const active = block.stage === stage
+          return (
+            <div key={block.stage} className={cn('v3-struct__stage', active && 'is-on')}>
+              <button
+                type="button"
+                className={cn('v3-struct__row', stageDone && 'is-done')}
+                onClick={() => onSelect(block.stage, block.items[0]?.label ?? 'ALL')}
+              >
+                <i className={cn('v3-struct__mark', stageDone && 'is-done')}>
+                  {stageDone ? <Check size={10} strokeWidth={3} /> : null}
                 </i>
-                <span>{d.name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+                <span>{block.stage}</span>
+                <em>
+                  {doneCount}/{block.items.length}
+                </em>
+              </button>
+              {active && (
+                <ul className="v3-struct__subs">
+                  {block.items.map((item) => (
+                    <li key={item.label}>
+                      <button
+                        type="button"
+                        className={cn(
+                          'v3-struct__sub',
+                          item.done && 'is-done',
+                          subStage === item.label && 'is-current'
+                        )}
+                        onClick={() => onSelect(block.stage, item.label)}
+                      >
+                        <i>{item.done ? <Check size={9} strokeWidth={3} /> : null}</i>
+                        <span>{item.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )
+        })}
       </div>
     </aside>
   )

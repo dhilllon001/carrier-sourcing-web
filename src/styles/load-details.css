@@ -11675,8 +11675,12 @@
   color: #7c848f;
 }
 
-.v3-struct__group:hover {
-  background: #f4f6f9;
+.v3-struct__group.is-static {
+  cursor: default;
+}
+
+.v3-struct__group.is-static:hover {
+  background: transparent;
 }
 
 .v3-struct__stage {
