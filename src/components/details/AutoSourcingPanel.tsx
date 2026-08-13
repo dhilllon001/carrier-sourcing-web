@@ -992,6 +992,7 @@ export function AutoSourcingPanel({
   /* tender / award flow */
   const [analysis, setAnalysis] = useState<'idle' | 'running' | 'done'>('idle')
   const [analysisStep, setAnalysisStep] = useState(0)
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null)
 
   const maxNum = Number(maxBuy)
   const maxOk = Boolean(maxBuy) && !Number.isNaN(maxNum) && maxNum > 0
@@ -1224,6 +1225,14 @@ export function AutoSourcingPanel({
     [analysis, detail.bids, maxOk, maxNum]
   )
   const recommended = scored.find((s) => !s.overLimit)
+
+  useEffect(() => {
+    if (analysis !== 'done') return
+    setSelectedOfferId((current) => {
+      const currentIsEligible = scored.some((offer) => offer.bid.id === current && !offer.overLimit)
+      return currentIsEligible ? current : (recommended?.bid.id ?? null)
+    })
+  }, [analysis, recommended?.bid.id, scored])
 
   const running = tasks.some((t) => t.state === 'queued' || t.state === 'running')
   const failCount = tasks.filter((t) => t.state === 'failed').length
@@ -1661,24 +1670,57 @@ export function AutoSourcingPanel({
 
                   {analysis === 'done' && (
                     <div className="dd-auto-offers">
-                      {scored.map((s, rank) => {
+                      <div className="dd-auto-offers__guide">
+                        <div>
+                          <strong>Choose an offer</strong>
+                          <span>Select any eligible carrier. The suggested offer is preselected.</span>
+                        </div>
+                        <span>{scored.filter((offer) => !offer.overLimit).length} eligible</span>
+                      </div>
+                      {scored.map((s) => {
                         const isRec = recommended === s
+                        const isSelected = selectedOfferId === s.bid.id
                         return (
                           <article
                             key={s.bid.id}
                             className={cn(
                               'dd-auto-offer',
                               isRec && 'is-recommended',
+                              isSelected && 'is-selected',
                               s.overLimit && 'is-excluded'
                             )}
+                            role="radio"
+                            aria-checked={isSelected}
+                            aria-disabled={s.overLimit}
+                            tabIndex={s.overLimit ? -1 : 0}
+                            onClick={() => !s.overLimit && setSelectedOfferId(s.bid.id)}
+                            onKeyDown={(event) => {
+                              if (!s.overLimit && (event.key === 'Enter' || event.key === ' ')) {
+                                event.preventDefault()
+                                setSelectedOfferId(s.bid.id)
+                              }
+                            }}
                           >
-                            {isRec && (
-                              <div className="dd-auto-offer__banner">
-                                <BadgeCheck size={13} />
-                                Suggested — accept this offer
+                            {(isRec || isSelected) && (
+                              <div className="dd-auto-offer__labels">
+                                {isRec && (
+                                  <div className="dd-auto-offer__banner">
+                                    <BadgeCheck size={13} />
+                                    AI suggested
+                                  </div>
+                                )}
+                                {isSelected && (
+                                  <div className="dd-auto-offer__selected">
+                                    <Check size={12} />
+                                    Selected
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div className="dd-auto-offer__row">
+                              <div className="dd-auto-offer__selector" aria-hidden>
+                                {isSelected && <Check size={12} />}
+                              </div>
                               <div className="dd-auto-offer__who">
                                 <strong>{s.bid.carrier}</strong>
                                 <span>
@@ -1727,23 +1769,24 @@ export function AutoSourcingPanel({
                               )}
                             </div>
                             <div className="dd-auto-offer__why">{s.reasons.join(' · ')}</div>
-                            {rank === 0 && !s.overLimit && (
+                            {isSelected && !s.overLimit && (
                               <button
                                 type="button"
                                 className="dd-btn dd-btn--primary dd-auto-offer__accept"
-                                onClick={() =>
+                                onClick={(event) => {
+                                  event.stopPropagation()
                                   setPopup({
-                                    title: `${modeLabel}: offer accepted (mock)`,
+                                    title: `${modeLabel}: selected offer accepted (mock)`,
                                     lines: [
                                       `${s.bid.carrier} — ${s.bid.allIn ?? s.bid.amount} all-in`,
                                       ...s.reasons,
                                       'No live tender was sent · mock only',
                                     ],
                                   })
-                                }
+                                }}
                               >
                                 <Check size={14} />
-                                Accept suggestion
+                                Accept selected offer
                               </button>
                             )}
                           </article>

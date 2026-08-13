@@ -6,13 +6,19 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
+  DollarSign,
   Download,
   ExternalLink,
   FileText,
+  Gauge,
   Info,
   Layers,
+  Mail,
+  MessageCircle,
   Pencil,
   Plus,
+  RadioTower,
   RefreshCw,
   Search,
   PanelRightClose,
@@ -45,6 +51,12 @@ import {
   type ActivityAction,
   type ActivityEvent,
 } from '@/data/activityLog'
+import {
+  buildAiActivity,
+  clockNow,
+  type AiActivityEntry,
+  type AiActivityKind,
+} from '@/data/aiActivity'
 import {
   buildLoadDetail,
   isFindPost,
@@ -777,17 +789,101 @@ function DocumentsTab({ detail }: { detail: LoadDetail }) {
 }
 
 
+const AI_KIND_ICON: Record<AiActivityKind, typeof Zap> = {
+  check: ClipboardCheck,
+  rate: DollarSign,
+  email: Mail,
+  whatsapp: MessageCircle,
+  board: RadioTower,
+  score: Gauge,
+}
+
+function AiActivityFeed({ entries }: { entries: AiActivityEntry[] }) {
+  const failed = entries.filter((e) => e.status === 'warn').length
+  const done = entries.filter((e) => e.status === 'success').length
+  const lastRun = entries[0]
+
+  return (
+    <div className="dd-rail-stack">
+      <section className="dd-rail-card dd-ai-sum">
+        <div className="dd-ai-sum__row">
+          <div>
+            <strong>{lastRun ? lastRun.run : 'No runs yet'}</strong>
+            <span>{lastRun ? `Last action at ${lastRun.when}` : 'Run automation to see logs here'}</span>
+          </div>
+          <span className={cn('dd-ai-sum__pill', failed > 0 ? 'is-warn' : 'is-ok')}>
+            {failed > 0 ? `${failed} issue${failed === 1 ? '' : 's'}` : 'All clear'}
+          </span>
+        </div>
+        <div className="dd-ai-sum__stats">
+          <div>
+            <em>{entries.length}</em>
+            <span>Actions</span>
+          </div>
+          <div>
+            <em>{done}</em>
+            <span>Succeeded</span>
+          </div>
+          <div>
+            <em>{failed}</em>
+            <span>Failed</span>
+          </div>
+        </div>
+      </section>
+
+      {entries.length === 0 ? (
+        <div className="dd-empty">No AI activity on this load yet</div>
+      ) : (
+        <ol className="dd-ai-log">
+          {entries.map((entry) => {
+            const Icon = AI_KIND_ICON[entry.kind]
+            return (
+              <li key={entry.id} className={cn('dd-ai-log__item', `is-${entry.status}`)}>
+                <i className="dd-ai-log__icon">
+                  <Icon size={13} />
+                </i>
+                <div className="dd-ai-log__body">
+                  <div className="dd-ai-log__top">
+                    <strong>{entry.title}</strong>
+                    <em>{entry.when}</em>
+                  </div>
+                  <span className="dd-ai-log__run">{entry.run}</span>
+                  <p>{entry.detail}</p>
+                  {entry.stats && entry.stats.length > 0 && (
+                    <div className="dd-ai-log__stats">
+                      {entry.stats.map((stat) => (
+                        <span key={stat.label}>
+                          {stat.label}
+                          <b>{stat.value}</b>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+    </div>
+  )
+}
+
 function DetailRail({
   detail,
   collapsed,
   onToggle,
   onAssignBroker,
+  aiLog,
 }: {
   detail: LoadDetail
   collapsed: boolean
   onToggle: () => void
   onAssignBroker: () => void
+  aiLog: AiActivityEntry[]
 }) {
+  const [tab, setTab] = useState<'rate' | 'ai'>('rate')
+
   if (collapsed) {
     return (
       <button type="button" className="dd-rail-bar" onClick={onToggle} aria-label="Expand rate coverage">
@@ -802,15 +898,35 @@ function DetailRail({
   return (
     <aside className="dd-rail dd-rail--ov">
       <div className="dd-rail__head">
-        <button type="button" className="dd-rail__title-btn" onClick={onToggle}>
-          <span className="dd-rail__title">Rate & coverage</span>
-          <ChevronDown size={15} />
-        </button>
+        <div className="dd-rail-tabs" role="tablist" aria-label="Right rail sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'rate'}
+            className={cn('dd-rail-tab', tab === 'rate' && 'is-on')}
+            onClick={() => setTab('rate')}
+          >
+            Rate & coverage
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'ai'}
+            className={cn('dd-rail-tab', tab === 'ai' && 'is-on')}
+            onClick={() => setTab('ai')}
+          >
+            AI activity
+            <span className="dd-rail-tab__count">{aiLog.length}</span>
+          </button>
+        </div>
         <button type="button" className="dd-icon-btn" aria-label="Collapse right rail" onClick={onToggle}>
           <PanelRightClose size={14} />
         </button>
       </div>
 
+      {tab === 'ai' ? (
+        <AiActivityFeed entries={aiLog} />
+      ) : (
       <div className="dd-rail-stack">
         <div className="dd-rail-rate-pair">
           <button type="button" className="dd-rail-rate-tile">
@@ -885,6 +1001,7 @@ function DetailRail({
           </div>
         </section>
       </div>
+      )}
     </aside>
   )
 }
@@ -1326,6 +1443,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [view, setView] = useState<DetailView>('v1')
   const [factsOpen, setFactsOpen] = useState(false)
   const [routeOpen, setRouteOpen] = useState(false)
+  const [aiLog, setAiLog] = useState<AiActivityEntry[]>(() => buildAiActivity(base))
 
   useEffect(() => {
     setDetail(base)
@@ -1333,6 +1451,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setSubStage(load.subStage)
     setTags(base.tags)
     setAutoOpen(false)
+    setAiLog(buildAiActivity(base))
 
     const sourcingDone = base.stages
       .find((s) => s.stage === 'Sourcing')
@@ -1375,6 +1494,19 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       const completedSubs = stages.reduce((n, s) => n + s.items.filter((i) => i.done).length, 0)
       return { ...d, stages, completedSubs }
     })
+    setAiLog((prev) => [
+      {
+        id: `ai-run-${prev.length}`,
+        run: 'Auto Sourcing',
+        when: clockNow(),
+        title: 'Run completed',
+        detail: 'Sourcing marked complete — Overview and Find & Post are now done.',
+        status: 'success',
+        kind: 'check',
+        stats: [{ label: 'Next', value: 'Auto Tender' }],
+      },
+      ...prev,
+    ])
     setAutoOpen(false)
     setStage('Tender')
     setSubStage('Offers & Bids')
@@ -1782,6 +1914,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               load: { ...d.load, broker: d.load.broker || d.salesRep },
             }))
           }
+          aiLog={aiLog}
         />
         )}
       </div>
