@@ -22,8 +22,12 @@ export function clockNow() {
 /* Mock feed: the runs Auto Sourcing / Auto Tender have already performed on this load */
 export function buildAiActivity(detail: LoadDetail): AiActivityEntry[] {
   const lane = `${detail.load.origin} → ${detail.load.destination}`
-  const hardLimit = detail.maxBuy && detail.maxBuy !== '—' ? detail.maxBuy : 'not set'
-  const bookNow = detail.bookNowRate && detail.bookNowRate !== '—' ? detail.bookNowRate : 'not set'
+  const isSet = (value: string) => Boolean(value) && value !== '—' && value !== '$0.00'
+  const maxSet = isSet(detail.maxBuy)
+  const bookSet = isSet(detail.bookNowRate)
+  const hardLimit = maxSet ? detail.maxBuy : 'Not set'
+  const bookNow = bookSet ? detail.bookNowRate : 'Not set'
+  const ratesReady = maxSet && bookSet
   const topBid = detail.bids[0]
 
   const feed: AiActivityEntry[] = [
@@ -44,9 +48,11 @@ export function buildAiActivity(detail: LoadDetail): AiActivityEntry[] {
       id: 'ai-rate',
       run: 'Auto Sourcing',
       when: '12:04 PM',
-      title: 'Rates applied',
-      detail: `Book now ${bookNow}, max buy ${hardLimit} locked as a hard limit.`,
-      status: 'success',
+      title: ratesReady ? 'Rates applied' : 'Rates still needed',
+      detail: ratesReady
+        ? `Book now ${bookNow} with max buy ${hardLimit} locked as a hard limit.`
+        : 'Book now and max buy must be confirmed before a run can send anything.',
+      status: ratesReady ? 'success' : 'warn',
       kind: 'rate',
       stats: [
         { label: 'Book now', value: bookNow },
