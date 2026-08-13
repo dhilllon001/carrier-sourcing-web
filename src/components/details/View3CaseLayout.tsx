@@ -373,28 +373,18 @@ export function CaseCenterHeader({
       <div className="v3-agents">
         <article>
           <ClipboardCheck size={14} />
-          <div>
-            <strong>Readiness agent · {readinessPct}%</strong>
-            <p>Checked book now, max buy, appointments and broker ownership against posting rules.</p>
-          </div>
+          <span>Readiness</span>
+          <strong>{readinessPct}%</strong>
         </article>
         <article>
           <Sparkles size={14} />
-          <div>
-            <strong>Reach agent · mock</strong>
-            <p>Would blast internal carriers and post boards once rates and appointments are set.</p>
-          </div>
+          <span>Reach</span>
+          <strong>{blocking === 0 ? 'Ready' : 'Waiting'}</strong>
         </article>
         <article>
           <Gauge size={14} />
-          <div>
-            <strong>Offer score · {detail.bids.length} bids</strong>
-            <p>
-              {detail.bids.length > 0
-                ? `Top suggestion ${detail.bids[0].carrier} at ${detail.bids[0].allIn ?? detail.bids[0].amount}.`
-                : 'No offers to score yet — run Auto Sourcing first.'}
-            </p>
-          </div>
+          <span>Offers</span>
+          <strong>{detail.bids.length > 0 ? `${detail.bids.length} bids` : 'None'}</strong>
         </article>
       </div>
 

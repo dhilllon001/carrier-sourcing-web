@@ -12118,31 +12118,31 @@
 
 .v3-agents article {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 10px 11px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
   border: 1px solid #eceff3;
   border-radius: 8px;
   background: #fff;
-  color: #5a636e;
 }
 
 .v3-agents article svg {
   flex: none;
-  margin-top: 1px;
   color: #8a929c;
 }
 
-.v3-agents strong {
-  display: block;
-  font: 700 12.5px/1.25 var(--sr-font-heading);
-  color: #14181e;
+.v3-agents span {
+  flex: 1;
+  min-width: 0;
+  font: 600 11.5px/1 var(--sr-font-body);
+  color: #6b7685;
 }
 
-.v3-agents p {
-  margin: 3px 0 0;
-  font: 400 11.5px/1.45 var(--sr-font-body);
-  color: #56606c;
+.v3-agents strong {
+  flex: none;
+  font: 750 12.5px/1 var(--sr-font-heading);
+  font-variant-numeric: tabular-nums;
+  color: #14181e;
 }
 
 .v3-main__content,
