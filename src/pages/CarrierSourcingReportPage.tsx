@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
 import {
   AppliedFiltersRow,
   SrDataTable,
@@ -91,7 +90,6 @@ export function CarrierSourcingReportPage({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
   const [board, setBoard] = useState<string>('ALL')
-  const [boardQuery, setBoardQuery] = useState('')
   const [rowTags, setRowTags] = useState<Record<string, string[]>>({
     '11436778': ['Priority'],
     '11440520': ['Hot lane', 'Hazmat'],
@@ -140,11 +138,6 @@ export function CarrierSourcingReportPage({
     }
     return counts
   }, [baseFiltered])
-
-  const visibleBoards = useMemo(() => {
-    const q = boardQuery.trim().toLowerCase()
-    return q ? PLANNING_BOARDS.filter((b) => b.toLowerCase().includes(q)) : [...PLANNING_BOARDS]
-  }, [boardQuery])
 
   const appliedFilters = useMemo(
     () => [
@@ -319,7 +312,7 @@ export function CarrierSourcingReportPage({
             All boards
             <em>{baseFiltered.length.toLocaleString()}</em>
           </button>
-          {visibleBoards.map((b) => (
+          {PLANNING_BOARDS.map((b) => (
             <button
               key={b}
               type="button"
@@ -332,19 +325,7 @@ export function CarrierSourcingReportPage({
               <em>{(boardCounts.get(b) ?? 0).toLocaleString()}</em>
             </button>
           ))}
-          {visibleBoards.length === 0 && (
-            <span className="sr-boards__none">No boards match “{boardQuery}”</span>
-          )}
         </div>
-        <label className="sr-boards__find">
-          <Search size={13} />
-          <input
-            value={boardQuery}
-            onChange={(e) => setBoardQuery(e.target.value)}
-            placeholder="Find board"
-            aria-label="Find board"
-          />
-        </label>
       </div>
 
       <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">

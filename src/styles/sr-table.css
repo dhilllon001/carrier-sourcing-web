@@ -1324,3 +1324,84 @@ body.sr-col-resizing * {
   flex: 1;
   width: 100%;
 }
+
+/* ═══════════ Crisp grid: black header, near-black body text ═══════════ */
+.sr-table--ops th,
+.sr-table--ops .sr-table-header-row th {
+  background: #101419;
+  color: #ffffff;
+  border-bottom: 1px solid #101419;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.sr-table--ops th .sr-th-label,
+.sr-table--ops th .sr-col-filter-header__label {
+  color: #ffffff;
+}
+
+.sr-table--ops th .sr-col-filter-btn {
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 1;
+}
+
+.sr-table--ops th .sr-col-filter-btn:hover,
+.sr-table--ops th .sr-col-filter-btn.is-open,
+.sr-table--ops th .sr-col-filter-btn.is-active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.sr-table--ops th .sr-col-resizer::after,
+.sr-table--ops th:hover .sr-col-resizer::after {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.sr-table--ops th .sr-col-resizer:hover::after {
+  background: #ffffff;
+}
+
+/* popover lives inside the dark header — keep it light */
+.sr-table--ops th .sr-col-filter-popover {
+  color: var(--ink);
+  background: #ffffff;
+  border-color: var(--sr-border-2);
+}
+
+.sr-table--ops td {
+  color: #101419;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sr-table--ops .sr-stage-main,
+.sr-table--ops .rep-name,
+.sr-table--ops .sr-route-city,
+.sr-table--ops .mono {
+  color: #101419;
+  font-weight: 600;
+}
+
+.sr-table--ops .sr-equip,
+.sr-table--ops .sr-team {
+  color: #1d232b;
+  font-weight: 600;
+}
+
+.sr-table--ops .sr-mode-detail,
+.sr-table--ops .sr-probill-po,
+.sr-table--ops .sr-stage-sub,
+.sr-table--ops .sr-route-time {
+  color: #5a636e;
+  font-weight: 500;
+}
+
+.sr-table--ops .sr-route-miles {
+  color: #1d232b;
+  font-weight: 650;
+  border-color: #d9dde3;
+}
+
+.sr-table--ops .sr-probill-link {
+  font-weight: 700;
+}
