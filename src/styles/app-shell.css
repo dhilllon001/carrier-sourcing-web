@@ -807,6 +807,135 @@ button {
   color: inherit;
 }
 
+/* Planning boards — tab strip above the grid */
+.sr-boards {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e4e7eb;
+  border-radius: 12px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+
+.sr-boards__tabs {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.sr-boards__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 0 12px;
+  height: 34px;
+  border: none;
+  border-right: 1px solid var(--sr-border-1);
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sr-text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.sr-boards__tab:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.sr-boards__tab:last-of-type {
+  border-right: none;
+}
+
+.sr-boards__tab:hover {
+  background: #f4f7fb;
+  color: var(--sr-text-primary);
+}
+
+.sr-boards__tab.is-active {
+  background: rgba(43, 79, 211, 0.08);
+  color: var(--sr-action, var(--accent));
+  box-shadow: inset 0 -2px 0 var(--sr-action, var(--accent));
+}
+
+.sr-boards__tab em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--sr-surface-2, #f1f3f6);
+  color: var(--sr-text-meta, #6b7685);
+}
+
+.sr-boards__tab.is-active em {
+  background: rgba(43, 79, 211, 0.12);
+  color: var(--sr-action, var(--accent));
+}
+
+.sr-boards__none {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--sr-text-meta, #6b7685);
+  white-space: nowrap;
+}
+
+.sr-boards__find {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  width: 168px;
+  padding: 0 10px;
+  border: 1px solid var(--sr-border-1);
+  border-radius: 8px;
+  background: #f7f8fa;
+  color: var(--sr-text-meta, #6b7685);
+}
+
+.sr-boards__find input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12px;
+  color: var(--sr-text-primary);
+}
+
+.sr-boards__find input::placeholder {
+  color: var(--sr-text-meta, #9aa4b1);
+}
+
+.sr-boards__find:focus-within {
+  border-color: #b7cae6;
+  background: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  .sr-boards {
+    flex-direction: column;
+  }
+
+  .sr-boards__find {
+    width: auto;
+    height: 32px;
+  }
+}
+
 /* Legacy card selectors kept inert so old tone classes don't flash color */
 .sr-express-card,
 .sr-express-card--spot,

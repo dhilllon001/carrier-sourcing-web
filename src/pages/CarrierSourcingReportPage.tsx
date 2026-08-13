@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { Search } from 'lucide-react'
 import {
   AppliedFiltersRow,
   SrDataTable,
@@ -54,6 +55,31 @@ function money(n: number) {
   })
 }
 
+/* ── Planning boards (mock) ── */
+const PLANNING_BOARDS = [
+  'B1 NAZ NorthBound DED',
+  'BMW - MX JIX',
+  'TS-NB Highway Expedite',
+  'TS-SB Highway Expedite',
+  'TS-NB Regional Expedite',
+  'TS-SB Regional Expedite',
+  'FCA MX NorthBound',
+  'Michael Pilot Team',
+  'CDN East Coast Inbound',
+  'Dallas Local',
+  'Linamar Dedicated',
+] as const
+
+function boardHash(s: string) {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
+  return h
+}
+
+function boardOf(id: string) {
+  return PLANNING_BOARDS[boardHash(id) % PLANNING_BOARDS.length]
+}
+
 export function CarrierSourcingReportPage({
   search,
   onSearchChange,
@@ -64,6 +90,8 @@ export function CarrierSourcingReportPage({
   const [filters, setFilters] = useState<ReportFilters>({ ...DEFAULT_FILTERS })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
+  const [board, setBoard] = useState<string>('ALL')
+  const [boardQuery, setBoardQuery] = useState('')
   const [rowTags, setRowTags] = useState<Record<string, string[]>>({
     '11436778': ['Priority'],
     '11440520': ['Hot lane', 'Hazmat'],
@@ -94,10 +122,29 @@ export function CarrierSourcingReportPage({
     setSelectedId(null)
   }, [onSearchChange])
 
-  const filtered = useMemo(
+  const baseFiltered = useMemo(
     () => filterReportLoads(reportLoads, mergedFilters),
     [mergedFilters, refreshKey]
   )
+
+  const filtered = useMemo(
+    () => (board === 'ALL' ? baseFiltered : baseFiltered.filter((r) => boardOf(r.id) === board)),
+    [baseFiltered, board]
+  )
+
+  const boardCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const r of baseFiltered) {
+      const b = boardOf(r.id)
+      counts.set(b, (counts.get(b) ?? 0) + 1)
+    }
+    return counts
+  }, [baseFiltered])
+
+  const visibleBoards = useMemo(() => {
+    const q = boardQuery.trim().toLowerCase()
+    return q ? PLANNING_BOARDS.filter((b) => b.toLowerCase().includes(q)) : [...PLANNING_BOARDS]
+  }, [boardQuery])
 
   const appliedFilters = useMemo(
     () => [
@@ -260,6 +307,46 @@ export function CarrierSourcingReportPage({
 
   return (
     <div className="sr-page">
+      <div className="sr-boards" role="tablist" aria-label="Planning boards">
+        <div className="sr-boards__tabs">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={board === 'ALL'}
+            className={cn('sr-boards__tab', board === 'ALL' && 'is-active')}
+            onClick={() => setBoard('ALL')}
+          >
+            All boards
+            <em>{baseFiltered.length.toLocaleString()}</em>
+          </button>
+          {visibleBoards.map((b) => (
+            <button
+              key={b}
+              type="button"
+              role="tab"
+              aria-selected={board === b}
+              className={cn('sr-boards__tab', board === b && 'is-active')}
+              onClick={() => setBoard(board === b ? 'ALL' : b)}
+            >
+              {b}
+              <em>{(boardCounts.get(b) ?? 0).toLocaleString()}</em>
+            </button>
+          ))}
+          {visibleBoards.length === 0 && (
+            <span className="sr-boards__none">No boards match “{boardQuery}”</span>
+          )}
+        </div>
+        <label className="sr-boards__find">
+          <Search size={13} />
+          <input
+            value={boardQuery}
+            onChange={(e) => setBoardQuery(e.target.value)}
+            placeholder="Find board"
+            aria-label="Find board"
+          />
+        </label>
+      </div>
+
       <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">
         <div className="sr-express-group" role="group" aria-label="Mode">
           <div className="sr-express-group__label">Mode</div>
