@@ -968,6 +968,348 @@ function ActivityTab({ detail }: { detail: LoadDetail }) {
   )
 }
 
+/* ══════════════ View 2 (redesign preview) building blocks ══════════════ */
+
+type DetailView = 'v1' | 'v2'
+
+function ViewSwitch({ view, onView }: { view: DetailView; onView: (v: DetailView) => void }) {
+  return (
+    <div className="dd-viewsw" role="group" aria-label="Layout view">
+      {(
+        [
+          ['v1', 'View 1', 'Current theme'],
+          ['v2', 'View 2', 'Redesign preview'],
+        ] as const
+      ).map(([id, label, hint]) => (
+        <button
+          key={id}
+          type="button"
+          title={hint}
+          aria-pressed={view === id}
+          className={cn(view === id && 'is-active')}
+          onClick={() => onView(id)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/* Compact lane bar replaces the full stop-card gallery in View 2 */
+function LaneBar({
+  detail,
+  routeOpen,
+  onExpand,
+}: {
+  detail: LoadDetail
+  routeOpen: boolean
+  onExpand: () => void
+}) {
+  const stops = detail.stops
+  const first = stops[0]
+  const last = stops[stops.length - 1]
+  const apptCount = stops.filter((s) => s.appointmentRequired).length
+  const pendingCount = stops.filter((s) => s.statusTone === 'pending').length
+  const crossBorder = stops.some((s) =>
+    /mexico|nuevo|monterrey|guadalajara|mx\b/i.test(`${s.city} ${s.address}`)
+  )
+
+  return (
+    <div className="dd-lane">
+      <div className="dd-lane__end">
+        <span className="dd-lane__role">Hook</span>
+        <strong>{first?.city}</strong>
+        <em>{first?.when}</em>
+      </div>
+
+      <div className="dd-lane__link" aria-hidden>
+        <span className="dd-lane__miles">{detail.load.miles.toLocaleString()} mi</span>
+      </div>
+
+      <div className="dd-lane__end is-drop">
+        <span className="dd-lane__role">Drop</span>
+        <strong>{last?.city}</strong>
+        <em>{last?.when}</em>
+      </div>
+
+      <div className="dd-lane__flags">
+        {stops.length > 2 && <span className="dd-lane__chip">{stops.length} stops</span>}
+        {apptCount > 0 && (
+          <span className="dd-lane__chip is-warn">
+            <AlertTriangle size={11} />
+            {apptCount} appt needed
+          </span>
+        )}
+        {pendingCount > 0 && <span className="dd-lane__chip is-warn">{pendingCount} pending</span>}
+        {crossBorder && <span className="dd-lane__chip is-info">Cross-border</span>}
+        <button
+          type="button"
+          className={cn('dd-lane__more', routeOpen && 'is-open')}
+          onClick={onExpand}
+          aria-expanded={routeOpen}
+        >
+          {routeOpen ? 'Hide stops' : 'All stops'}
+          <ChevronDown size={12} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+type RailCheck = { label: string; ok: boolean; hint?: string }
+
+/* Stage-aware right rail: shows the context that matters for the current sub-stage */
+function ContextRail({
+  detail,
+  stage,
+  subStage,
+  collapsed,
+  onToggle,
+  onAssignBroker,
+  onGoto,
+  onAuto,
+  autoLabel,
+}: {
+  detail: LoadDetail
+  stage: DetailStage
+  subStage: string
+  collapsed: boolean
+  onToggle: () => void
+  onAssignBroker: () => void
+  onGoto: (stage: DetailStage, sub: string) => void
+  onAuto: () => void
+  autoLabel: string | null
+}) {
+  if (collapsed) {
+    return (
+      <button type="button" className="dd-rail-bar" onClick={onToggle} aria-label="Expand context rail">
+        <span>Context</span>
+      </button>
+    )
+  }
+
+  const bookUnset = !detail.bookNowRate || detail.bookNowRate === '—'
+  const maxUnset = !detail.maxBuy || detail.maxBuy === '—' || detail.maxBuy === '$0.00'
+  const apptOpen = detail.stops.filter((s) => s.appointmentRequired).length
+
+  const bids = detail.bids
+  const accepted = bids.find((b) => b.status === 'Accepted')
+  const best = bids.find((b) => b.best) ?? accepted ?? bids[0]
+  const pending = bids.filter((b) => b.status === 'Pending' || b.status === 'Countered').length
+
+  const readiness: RailCheck[] = [
+    { label: 'Equipment', ok: Boolean(detail.load.equipment), hint: detail.load.equipment },
+    { label: 'Book now rate', ok: !bookUnset, hint: bookUnset ? 'Not set' : detail.bookNowRate },
+    { label: 'Max buy (hard limit)', ok: !maxUnset, hint: maxUnset ? 'Not set' : detail.maxBuy },
+    { label: 'Broker assigned', ok: Boolean(detail.load.broker), hint: detail.load.broker || 'Unassigned' },
+    {
+      label: 'Appointments',
+      ok: apptOpen === 0,
+      hint: apptOpen === 0 ? 'All booked' : `${apptOpen} to book`,
+    },
+  ]
+  const blockers = readiness.filter((c) => !c.ok).length
+
+  /* one primary next action per sub-stage */
+  const next: { title: string; body: string; cta: string; run: () => void } = (() => {
+    if (stage === 'Sourcing' && !isFindPost(subStage))
+      return {
+        title: blockers ? `${blockers} item${blockers > 1 ? 's' : ''} to resolve` : 'Ready to post',
+        body: blockers ? 'Fill the highlighted gates to post this load.' : 'Rates and gates are set.',
+        cta: 'Go to Find & Post',
+        run: () => onGoto('Sourcing', 'Find & Post'),
+      }
+    if (isFindPost(subStage))
+      return {
+        title: 'Reach carriers',
+        body: 'Blast your shortlist or post to DAT / Loadlink.',
+        cta: 'Review offers',
+        run: () => onGoto('Tender', 'Offers & Bids'),
+      }
+    if (subStage === 'Offers & Bids')
+      return {
+        title: accepted ? 'Offer accepted' : `${bids.length} offers in`,
+        body: accepted ? `${accepted.carrier} at ${accepted.amount}.` : `${pending} awaiting your reply.`,
+        cta: 'Finalize tender',
+        run: () => onGoto('Tender', 'Finalize Tender'),
+      }
+    if (subStage === 'Finalize Tender')
+      return {
+        title: 'Confirm the carrier',
+        body: accepted ? `${accepted.carrier} is awarded.` : 'No accepted offer yet.',
+        cta: 'Send to CMT',
+        run: () => onGoto('Award', 'CMT'),
+      }
+    if (stage === 'Award')
+      return {
+        title: 'Validate & award',
+        body: 'Check compliance, then move to booking.',
+        cta: 'Go to Booking',
+        run: () => onGoto('Booking', 'Create Contract'),
+      }
+    return {
+      title: 'Booking',
+      body: 'Build the contract and send confirmation.',
+      cta: 'Open Resources',
+      run: () => onGoto('Booking', 'Resources'),
+    }
+  })()
+
+  return (
+    <aside className="dd-rail dd-rail--ctx">
+      <div className="dd-rail__head">
+        <span className="dd-rail__title">Context</span>
+        <button type="button" className="dd-icon-btn" aria-label="Collapse right rail" onClick={onToggle}>
+          <PanelRightClose size={14} />
+        </button>
+      </div>
+
+      <div className="dd-rail-stack">
+        <section className={cn('dd-ctx-next', blockers > 0 && stage === 'Sourcing' && 'is-warn')}>
+          <span className="dd-ctx-next__eyebrow">Next action</span>
+          <strong>{next.title}</strong>
+          <p>{next.body}</p>
+          <div className="dd-ctx-next__row">
+            <button type="button" className="dd-ctx-next__cta" onClick={next.run}>
+              {next.cta}
+              <ChevronRight size={13} />
+            </button>
+            {autoLabel && (
+              <button type="button" className="dd-ctx-next__auto" onClick={onAuto}>
+                <Zap size={12} />
+                {autoLabel}
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* Rates travel with every stage — single source, no duplicate entry */}
+        <section className="dd-ctx-card">
+          <div className="dd-ctx-card__head">
+            <strong>Rates & gates</strong>
+            <span className="dd-ctx-card__note">{detail.currency}</span>
+          </div>
+          <div className="dd-ctx-rates">
+            <div className={cn('dd-ctx-rate', bookUnset && 'is-empty')}>
+              <span>Book now</span>
+              <strong>{bookUnset ? 'Not set' : detail.bookNowRate}</strong>
+            </div>
+            <div className={cn('dd-ctx-rate is-max', maxUnset && 'is-empty')}>
+              <span>Max buy</span>
+              <strong>{maxUnset ? 'Not set' : detail.maxBuy}</strong>
+            </div>
+          </div>
+          <div className="dd-ctx-market">
+            <span>Market mid</span>
+            <strong>{detail.marketMid}</strong>
+          </div>
+        </section>
+
+        {stage === 'Sourcing' && (
+          <section className="dd-ctx-card">
+            <div className="dd-ctx-card__head">
+              <strong>Readiness</strong>
+              <span className={cn('dd-ctx-pill', blockers === 0 ? 'is-ok' : 'is-warn')}>
+                {blockers === 0 ? 'Ready' : `${blockers} open`}
+              </span>
+            </div>
+            <ul className="dd-ctx-checks">
+              {readiness.map((c) => (
+                <li key={c.label} className={c.ok ? 'is-ok' : 'is-open'}>
+                  <i>{c.ok ? <Check size={11} /> : <AlertTriangle size={11} />}</i>
+                  <span>{c.label}</span>
+                  {c.label === 'Broker assigned' && !c.ok ? (
+                    <button type="button" className="dd-assign-link" onClick={onAssignBroker}>
+                      + Assign
+                    </button>
+                  ) : (
+                    <em>{c.hint}</em>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {(stage === 'Tender' || stage === 'Award') && (
+          <section className="dd-ctx-card">
+            <div className="dd-ctx-card__head">
+              <strong>Offers</strong>
+              <span className="dd-ctx-card__note">{bids.length} total</span>
+            </div>
+            {best ? (
+              <div className="dd-ctx-offer">
+                <div className="dd-ctx-offer__top">
+                  <strong>{best.carrier}</strong>
+                  <span className={cn('dd-ctx-pill', best.status === 'Accepted' ? 'is-ok' : 'is-info')}>
+                    {best.status}
+                  </span>
+                </div>
+                <div className="dd-ctx-offer__nums">
+                  <div>
+                    <span>Amount</span>
+                    <strong>{best.amount}</strong>
+                  </div>
+                  <div>
+                    <span>vs target</span>
+                    <strong>{best.vsTarget}</strong>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="dd-ctx-linkbtn"
+                  onClick={() => onGoto('Tender', 'Offers & Bids')}
+                >
+                  Open negotiation
+                  <ChevronRight size={12} />
+                </button>
+              </div>
+            ) : (
+              <div className="dd-muted">No offers yet.</div>
+            )}
+            <div className="dd-ctx-mini">
+              <div>
+                <span>Pending</span>
+                <strong>{pending}</strong>
+              </div>
+              <div>
+                <span>Accepted</span>
+                <strong>{accepted ? 1 : 0}</strong>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="dd-ctx-card">
+          <div className="dd-ctx-kv">
+            <div>
+              <span>Broker</span>
+              {detail.load.broker ? (
+                <strong>{detail.load.broker}</strong>
+              ) : (
+                <button type="button" className="dd-assign-link" onClick={onAssignBroker}>
+                  + Assign
+                </button>
+              )}
+            </div>
+            <div>
+              <span>Team</span>
+              <strong>{detail.load.team}</strong>
+            </div>
+            <div>
+              <span>Customer rate</span>
+              <strong>
+                {detail.load.fee.toFixed(2)} {detail.currency}
+              </strong>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  )
+}
+
 export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const base = useMemo(() => buildLoadDetail(load), [load])
   const [detail, setDetail] = useState(base)
@@ -981,6 +1323,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [offerOpen, setOfferOpen] = useState(false)
   const [autoAsk, setAutoAsk] = useState(false)
   const [autoOpen, setAutoOpen] = useState(false)
+  const [view, setView] = useState<DetailView>('v1')
+  const [factsOpen, setFactsOpen] = useState(false)
+  const [routeOpen, setRouteOpen] = useState(false)
 
   useEffect(() => {
     setDetail(base)
@@ -1063,16 +1408,28 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     subStage === 'Signed Confirmation' ||
     subStage === 'Resources'
 
+  const isV2 = view === 'v2'
+
   return (
-    <div className="dd-page">
-      <header className="dd-top">
+    <div className={cn('dd-page', isV2 && 'dd-page--v2')}>
+      <header className={cn('dd-top', isV2 && 'dd-top--v2')}>
         <div className="dd-top__row">
           <button type="button" className="dd-back" onClick={onBack}>
             <ArrowLeft size={16} />
             Back
           </button>
 
-          <div className="dd-top__ids">
+          {isV2 ? (
+            <div className="dd-v2id">
+              <strong>{load.id}</strong>
+              <ModeBadge mode={load.mode} />
+              <span className="dd-v2id__cust">{load.customer}</span>
+              <span className="dd-v2id__stage">
+                {stage} · {subStage}
+              </span>
+            </div>
+          ) : (
+            <div className="dd-top__ids">
             <div className="dd-top__group">
               <span className="dd-top__label">Probill</span>
               <strong>{load.id}</strong>
@@ -1091,9 +1448,23 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               </span>
               <strong>{load.customer}</strong>
             </div>
-          </div>
+            </div>
+          )}
 
           <div className="dd-top__right">
+            <ViewSwitch view={view} onView={setView} />
+            {isV2 && (
+              <button
+                type="button"
+                className={cn('dd-v2facts', factsOpen && 'is-open')}
+                onClick={() => setFactsOpen((v) => !v)}
+                aria-expanded={factsOpen}
+              >
+                <Info size={13} />
+                Facts
+                <ChevronDown size={12} />
+              </button>
+            )}
             {autoMode && (
               <button
                 type="button"
@@ -1117,7 +1488,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         </div>
       </header>
 
-      <div className="dd-meta">
+      {(!isV2 || factsOpen) && (
+      <div className={cn('dd-meta', isV2 && 'dd-meta--v2')}>
         <div className="dd-meta__item">
           <span>Trailer</span>
           <strong>{load.equipment}</strong>
@@ -1194,7 +1566,17 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           </button>
         </div>
       </div>
+      )}
 
+      {isV2 && (
+        <LaneBar
+          detail={detail}
+          routeOpen={routeOpen}
+          onExpand={() => setRouteOpen((v) => !v)}
+        />
+      )}
+
+      {(!isV2 || routeOpen) && (
       <div className="dd-route dd-route--ov">
         {detail.stops.map((stop, i) => {
           const role = stop.role ?? (stop.kind === 'Delivery' ? 'Drop' : 'Hook')
@@ -1248,6 +1630,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           )
         })}
       </div>
+      )}
 
       <div
         className={cn(
@@ -1349,6 +1732,31 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           </div>
         </div>
 
+        {isV2 ? (
+          <ContextRail
+            detail={detail}
+            stage={stage}
+            subStage={subStage}
+            collapsed={railCollapsed}
+            onToggle={() => setRailCollapsed((v) => !v)}
+            onAssignBroker={() =>
+              setDetail((d) => ({
+                ...d,
+                load: { ...d.load, broker: d.load.broker || d.salesRep },
+              }))
+            }
+            onGoto={(s, sub) => {
+              setStage(s)
+              setSubStage(sub)
+              setTab('summary')
+            }}
+            onAuto={() => {
+              setAutoAsk(false)
+              setAutoOpen(true)
+            }}
+            autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
+          />
+        ) : (
         <DetailRail
           detail={{
             ...detail,
@@ -1370,6 +1778,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             }))
           }
         />
+        )}
       </div>
 
       {postOpen && (

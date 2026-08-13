@@ -1325,48 +1325,20 @@ body.sr-col-resizing * {
   width: 100%;
 }
 
-/* ═══════════ Crisp grid: black header, near-black body text ═══════════ */
+/* ═══════════ Crisp grid: clean light header, near-black body text ═══════════ */
 .sr-table--ops th,
 .sr-table--ops .sr-table-header-row th {
-  background: #101419;
-  color: #ffffff;
-  border-bottom: 1px solid #101419;
+  background: #f7f8fa;
+  color: #6b7480;
+  border-bottom: 1px solid #e4e7eb;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .sr-table--ops th .sr-th-label,
 .sr-table--ops th .sr-col-filter-header__label {
-  color: #ffffff;
-}
-
-.sr-table--ops th .sr-col-filter-btn {
-  color: rgba(255, 255, 255, 0.72);
-  opacity: 1;
-}
-
-.sr-table--ops th .sr-col-filter-btn:hover,
-.sr-table--ops th .sr-col-filter-btn.is-open,
-.sr-table--ops th .sr-col-filter-btn.is-active {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.sr-table--ops th .sr-col-resizer::after,
-.sr-table--ops th:hover .sr-col-resizer::after {
-  background: rgba(255, 255, 255, 0.24);
-}
-
-.sr-table--ops th .sr-col-resizer:hover::after {
-  background: #ffffff;
-}
-
-/* popover lives inside the dark header — keep it light */
-.sr-table--ops th .sr-col-filter-popover {
-  color: var(--ink);
-  background: #ffffff;
-  border-color: var(--sr-border-2);
+  color: #6b7480;
 }
 
 .sr-table--ops td {
@@ -1404,4 +1376,34 @@ body.sr-col-resizing * {
 
 .sr-table--ops .sr-probill-link {
   font-weight: 700;
+}
+
+/* Rate cell: flag + amount, hard-limit sub-line (matches ops grid) */
+.sr-rate-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.sr-rate-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sr-rate-flag {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.sr-table--ops .sr-rate-amt {
+  color: #101419;
+  font-weight: 700;
+}
+
+.sr-rate-max {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #8a929c;
 }

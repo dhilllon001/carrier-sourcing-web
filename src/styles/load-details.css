@@ -10236,3 +10236,638 @@
 .dd-auto-result li:nth-child(6n + 4) .dd-auto-result__dot { background: #d97706; }
 .dd-auto-result li:nth-child(6n + 5) .dd-auto-result__dot { background: #ea580c; }
 .dd-auto-result li:nth-child(6n + 6) .dd-auto-result__dot { background: #4f46e5; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   View 2 — redesign preview. Everything here is scoped to
+   .dd-page--v2 (or V2-only classes) so View 1 renders unchanged.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── View switcher (lives in the dark header, both views) ── */
+.dd-viewsw {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dd-viewsw button {
+  padding: 0 10px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b9c4d2;
+  font: 600 11.5px/1 var(--sr-font-body);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+.dd-viewsw button:hover {
+  color: #fff;
+}
+
+.dd-viewsw button.is-active {
+  background: #fff;
+  color: #16202e;
+}
+
+/* ── V2 slim command header ── */
+.dd-top--v2 .dd-top__row {
+  min-height: 46px;
+  padding: 6px 16px;
+}
+
+.dd-v2id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dd-v2id > strong {
+  font: 700 15px/1.1 var(--sr-font-heading);
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.dd-v2id__cust {
+  font-size: 12.5px;
+  font-weight: 550;
+  color: #aab6c6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-v2id__stage {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-weight: 650;
+  color: #dce4ee;
+  white-space: nowrap;
+}
+
+.dd-v2facts {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dd-v2facts:hover,
+.dd-v2facts.is-open {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.dd-v2facts.is-open svg:last-child {
+  transform: rotate(180deg);
+}
+
+.dd-meta--v2 {
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── V2 compact lane bar (replaces the stop-card gallery) ── */
+.dd-lane {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  padding: 9px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.dd-lane__end {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dd-lane__role {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  font: 700 9.5px/1.35 var(--sr-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.dd-lane__end.is-drop .dd-lane__role {
+  border-color: var(--green-line);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.dd-lane__end > strong {
+  font: 650 13px/1.2 var(--sr-font-body);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-lane__end > em {
+  font: 500 11.5px/1.2 var(--sr-font-body);
+  font-style: normal;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* dashed connector with the mileage riding on top */
+.dd-lane__link {
+  position: relative;
+  flex: 1;
+  min-width: 60px;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--sr-border-2) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+.dd-lane__miles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: 650 10.5px/1.3 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.dd-lane__flags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.dd-lane__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font: 600 10.5px/1.3 var(--sr-font-body);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.dd-lane__chip.is-warn {
+  border-color: var(--amber-line);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.dd-lane__chip.is-info {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dd-lane__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  font: 600 11.5px/1 var(--sr-font-body);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.dd-lane__more:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dd-lane__more.is-open svg {
+  transform: rotate(180deg);
+}
+
+/* ── V2 contextual right rail ── */
+.dd-rail--ctx .dd-rail__title {
+  font: 700 12px/1 var(--sr-font-heading);
+  color: var(--ink);
+}
+
+/* Next action — the single most important thing on the rail */
+.dd-ctx-next {
+  padding: 12px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-lg);
+  background: linear-gradient(160deg, #f6f8ff, #fdfdff);
+}
+
+.dd-ctx-next.is-warn {
+  border-color: var(--amber-line);
+  background: linear-gradient(160deg, #fffaf1, #fffdf9);
+}
+
+.dd-ctx-next__eyebrow {
+  display: block;
+  font: 700 9.5px/1.2 var(--sr-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-3);
+}
+
+.dd-ctx-next > strong {
+  display: block;
+  margin-top: 5px;
+  font: 700 13.5px/1.25 var(--sr-font-heading);
+  color: var(--ink);
+}
+
+.dd-ctx-next > p {
+  margin: 3px 0 0;
+  font: 500 11.5px/1.45 var(--sr-font-body);
+  color: var(--ink-2);
+}
+
+.dd-ctx-next__row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dd-ctx-next__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font: 650 12px/1 var(--sr-font-body);
+  cursor: pointer;
+}
+
+.dd-ctx-next__cta:hover {
+  filter: brightness(1.06);
+}
+
+.dd-ctx-next__auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--accent-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent);
+  font: 650 11.5px/1 var(--sr-font-body);
+  cursor: pointer;
+}
+
+.dd-ctx-next__auto:hover {
+  background: var(--accent-soft);
+}
+
+/* Rail cards */
+.dd-ctx-card {
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.dd-ctx-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.dd-ctx-card__head > strong {
+  font: 700 11.5px/1 var(--sr-font-heading);
+  color: var(--ink);
+}
+
+.dd-ctx-card__note {
+  font: 600 10.5px/1 var(--sr-font-body);
+  color: var(--ink-3);
+}
+
+.dd-ctx-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font: 700 10px/1.4 var(--sr-font-body);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.dd-ctx-pill.is-ok {
+  border-color: var(--green-line);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.dd-ctx-pill.is-warn {
+  border-color: var(--amber-line);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.dd-ctx-pill.is-info {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Rates & gates */
+.dd-ctx-rates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.dd-ctx-rate {
+  padding: 8px 9px;
+  border: 1px solid var(--accent-line);
+  border-radius: 9px;
+  background: var(--accent-soft);
+}
+
+.dd-ctx-rate.is-max {
+  border-color: var(--amber-line);
+  background: var(--amber-soft);
+}
+
+.dd-ctx-rate > span {
+  display: block;
+  font: 650 9.5px/1.2 var(--sr-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+
+.dd-ctx-rate > strong {
+  display: block;
+  margin-top: 3px;
+  font: 700 14px/1.2 var(--sr-font-heading);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.dd-ctx-rate.is-empty > strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.dd-ctx-market {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+.dd-ctx-market > span {
+  font: 600 10.5px/1 var(--sr-font-body);
+  color: var(--ink-3);
+}
+
+.dd-ctx-market > strong {
+  font: 650 12px/1 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Readiness checklist */
+.dd-ctx-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-ctx-checks li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dd-ctx-checks li:last-child {
+  border-bottom: 0;
+}
+
+.dd-ctx-checks li > i {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+}
+
+.dd-ctx-checks li.is-ok > i {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.dd-ctx-checks li.is-open > i {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.dd-ctx-checks li > span {
+  flex: 1;
+  min-width: 0;
+  font: 550 11.5px/1.3 var(--sr-font-body);
+  color: var(--ink);
+}
+
+.dd-ctx-checks li > em {
+  flex: none;
+  max-width: 96px;
+  font: 600 11px/1.3 var(--sr-font-body);
+  font-style: normal;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-ctx-checks li.is-open > em {
+  color: var(--amber);
+}
+
+/* Best offer block */
+.dd-ctx-offer {
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+
+.dd-ctx-offer__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dd-ctx-offer__top > strong {
+  min-width: 0;
+  font: 650 12px/1.25 var(--sr-font-body);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-ctx-offer__nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.dd-ctx-offer__nums span {
+  display: block;
+  font: 600 9.5px/1.2 var(--sr-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+
+.dd-ctx-offer__nums strong {
+  display: block;
+  margin-top: 2px;
+  font: 700 12.5px/1.2 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.dd-ctx-linkbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 9px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 650 11.5px/1 var(--sr-font-body);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.dd-ctx-linkbtn:hover {
+  text-decoration: underline;
+}
+
+.dd-ctx-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.dd-ctx-mini > div {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.dd-ctx-mini span {
+  display: block;
+  font: 600 9.5px/1.2 var(--sr-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+
+.dd-ctx-mini strong {
+  display: block;
+  margin-top: 2px;
+  font: 700 13px/1.2 var(--sr-font-heading);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Key-value footer */
+.dd-ctx-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dd-ctx-kv > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dd-ctx-kv > div:last-child {
+  border-bottom: 0;
+}
+
+.dd-ctx-kv span {
+  font: 550 11px/1.3 var(--sr-font-body);
+  color: var(--ink-3);
+}
+
+.dd-ctx-kv strong {
+  font: 650 11.5px/1.3 var(--sr-font-body);
+  color: var(--ink);
+  text-align: right;
+}

@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import {
   AppliedFiltersRow,
   SrDataTable,
@@ -79,6 +80,21 @@ function boardOf(id: string) {
   return PLANNING_BOARDS[boardHash(id) % PLANNING_BOARDS.length]
 }
 
+const CA_PROV = new Set(['ON', 'QC', 'BC', 'AB', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE'])
+const MX_HINT = ['MX', 'Nuevo Laredo', 'Monterrey', 'Sonora', 'Juarez']
+
+function flagFor(place: string) {
+  const state = place.split(',').pop()?.trim() ?? ''
+  if (MX_HINT.some((h) => place.includes(h))) return '🇲🇽'
+  if (CA_PROV.has(state)) return '🇨🇦'
+  return '🇺🇸'
+}
+
+/* Mock hard-limit ceiling derived from the load fee */
+function maxBuyFor(row: ReportLoad) {
+  return Math.max(1, Math.round(row.fee / 100))
+}
+
 export function CarrierSourcingReportPage({
   search,
   onSearchChange,
@@ -90,6 +106,7 @@ export function CarrierSourcingReportPage({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
   const [board, setBoard] = useState<string>('ALL')
+  const [boardQuery, setBoardQuery] = useState('')
   const [rowTags, setRowTags] = useState<Record<string, string[]>>({
     '11436778': ['Priority'],
     '11440520': ['Hot lane', 'Hazmat'],
@@ -138,6 +155,44 @@ export function CarrierSourcingReportPage({
     }
     return counts
   }, [baseFiltered])
+
+  const visibleBoards = useMemo(() => {
+    const q = boardQuery.trim().toLowerCase()
+    return q ? PLANNING_BOARDS.filter((b) => b.toLowerCase().includes(q)) : [...PLANNING_BOARDS]
+  }, [boardQuery])
+
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const [tabScroll, setTabScroll] = useState({ left: false, right: false })
+
+  const syncTabScroll = useCallback(() => {
+    const el = tabsRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    setTabScroll({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 })
+  }, [])
+
+  useEffect(() => {
+    syncTabScroll()
+    const el = tabsRef.current
+    if (!el) return
+    const ro = new ResizeObserver(syncTabScroll)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [syncTabScroll, visibleBoards])
+
+  const scrollTabs = useCallback((dir: -1 | 1) => {
+    const el = tabsRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.7), behavior: 'smooth' })
+  }, [])
+
+  /* Let a vertical wheel gesture pan the tab strip horizontally */
+  const onTabsWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
+    if (el.scrollWidth <= el.clientWidth) return
+    el.scrollLeft += e.deltaY
+  }, [])
 
   const appliedFilters = useMemo(
     () => [
@@ -268,10 +323,20 @@ export function CarrierSourcingReportPage({
         header: 'Rate',
         align: 'right',
         thClassName: 'col-rate',
-        width: 84,
-        minWidth: 68,
+        width: 104,
+        minWidth: 84,
         cell: (row) => (
-          <span className={cn('mono', !row.rate && 'sr-empty')}>{row.rate ?? '—'}</span>
+          <div className="sr-rate-cell">
+            <span className="sr-rate-line">
+              <span className="sr-rate-flag" aria-hidden>
+                {flagFor(row.destination)}
+              </span>
+              <span className={cn('mono sr-rate-amt', !row.rate && 'sr-empty')}>
+                {row.rate ?? '—'}
+              </span>
+            </span>
+            <span className="sr-rate-max">Max Buy {maxBuyFor(row)}</span>
+          </div>
         ),
       },
       {
@@ -300,8 +365,30 @@ export function CarrierSourcingReportPage({
 
   return (
     <div className="sr-page">
-      <div className="sr-boards" role="tablist" aria-label="Planning boards">
-        <div className="sr-boards__tabs">
+      <div
+        className={cn(
+          'sr-boards',
+          tabScroll.left && 'has-left',
+          tabScroll.right && 'has-right'
+        )}
+        role="tablist"
+        aria-label="Planning boards"
+      >
+        <button
+          type="button"
+          className="sr-boards__nav is-left"
+          aria-label="Scroll boards left"
+          tabIndex={-1}
+          onClick={() => scrollTabs(-1)}
+        >
+          <ChevronLeft size={15} />
+        </button>
+        <div
+          className="sr-boards__tabs"
+          ref={tabsRef}
+          onScroll={syncTabScroll}
+          onWheel={onTabsWheel}
+        >
           <button
             type="button"
             role="tab"
@@ -312,7 +399,7 @@ export function CarrierSourcingReportPage({
             All boards
             <em>{baseFiltered.length.toLocaleString()}</em>
           </button>
-          {PLANNING_BOARDS.map((b) => (
+          {visibleBoards.map((b) => (
             <button
               key={b}
               type="button"
@@ -326,6 +413,25 @@ export function CarrierSourcingReportPage({
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="sr-boards__nav is-right"
+          aria-label="Scroll boards right"
+          tabIndex={-1}
+          onClick={() => scrollTabs(1)}
+        >
+          <ChevronRight size={15} />
+        </button>
+        <label className="sr-boards__find">
+          <Search size={13} aria-hidden />
+          <input
+            type="text"
+            value={boardQuery}
+            onChange={(e) => setBoardQuery(e.target.value)}
+            placeholder="Find board"
+            aria-label="Find planning board"
+          />
+        </label>
       </div>
 
       <div className="sr-express-rail" role="toolbar" aria-label="Mode and status filters">
