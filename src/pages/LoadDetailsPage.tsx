@@ -50,6 +50,7 @@ import {
   CaseWorkBar,
   LoadStructureTree,
   type CaseActionId,
+  type CaseEvent,
 } from '@/components/details/View3CaseLayout'
 import { cn } from '@/lib/cn'
 import {
@@ -1465,6 +1466,29 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [routeOpen, setRouteOpen] = useState(false)
   const [aiLog, setAiLog] = useState<AiActivityEntry[]>(() => buildAiActivity(base))
   const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
+  const [caseEvents, setCaseEvents] = useState<CaseEvent[]>([])
+
+  const logCase = (e: {
+    key?: string
+    title: string
+    detail?: string
+    who?: string
+    status?: CaseEvent['status']
+  }) => {
+    setCaseEvents((prev) => {
+      const entry: CaseEvent = {
+        id: `case-${Date.now()}-${prev.length}`,
+        key: e.key,
+        title: e.title,
+        detail: e.detail,
+        who: e.who ?? 'You',
+        when: clockNow(),
+        status: e.status ?? 'ok',
+      }
+      if (e.key && prev[0]?.key === e.key) return [entry, ...prev.slice(1)]
+      return [entry, ...prev]
+    })
+  }
 
   const setDetailView = (next: DetailView) => {
     setView(next)
@@ -1482,6 +1506,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setTags(base.tags)
     setAutoOpen(false)
     setAiLog(buildAiActivity(base))
+    setCaseEvents([])
 
     const sourcingDone = base.stages
       .find((s) => s.stage === 'Sourcing')
@@ -1537,6 +1562,11 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       },
       ...prev,
     ])
+    logCase({
+      title: 'Auto Sourcing run completed',
+      detail: 'Overview and Find & Post marked done — Auto Tender is next.',
+      who: 'Auto Sourcing',
+    })
     setAutoOpen(false)
     setStage('Tender')
     setSubStage('Offers & Bids')
@@ -1572,11 +1602,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
 
   const isV2 = view === 'v2'
   const isV3 = view === 'v3'
-  const readinessPct = Math.round((lifeDetail.completedSubs / Math.max(1, lifeDetail.totalSubs)) * 100)
-
   const runCaseAction = (id: CaseActionId) => {
     if (id === 'maxbuy') {
       setV3Tab('overview')
+      logCase({ title: 'Opened max buy', detail: 'Waiting on a hard limit for this load.', status: 'info' })
       window.setTimeout(() => {
         const el = document.getElementById('dd-max-buy-input') as HTMLInputElement | null
         el?.focus()
@@ -1586,6 +1615,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     }
     if (id === 'hook' || id === 'drop') {
       const wantPickup = id === 'hook'
+      const stop = detail.stops.find((s) =>
+        wantPickup ? s.role === 'Hook' || s.kind === 'Pickup' : s.role === 'Drop' || s.kind === 'Delivery'
+      )
       setDetail((d) => ({
         ...d,
         stops: d.stops.map((s) =>
@@ -1594,19 +1626,33 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             : s
         ),
       }))
+      logCase({
+        title: `${wantPickup ? 'Hook' : 'Drop'} appointment added`,
+        detail: stop ? `${stop.facility} · ${stop.when}` : undefined,
+      })
       return
     }
     if (id === 'broker') {
       setDetail((d) => ({ ...d, load: { ...d.load, broker: d.load.broker || d.salesRep } }))
+      logCase({
+        title: 'Owning broker assigned',
+        detail: `${detail.load.broker || detail.salesRep} now owns this load.`,
+      })
       return
     }
     if (id === 'post') {
       setStage('Sourcing')
       setSubStage('Find & Post')
+      logCase({ title: 'Moved to Find & Post', detail: 'Readiness cleared — the load can be posted.' })
       return
     }
     setStage('Tender')
     setSubStage('Offers & Bids')
+    logCase({
+      title: 'Opened Offers & Bids',
+      detail: `${detail.bids.length} offer${detail.bids.length === 1 ? '' : 's'} waiting for review.`,
+      status: 'info',
+    })
   }
 
   return (
@@ -2019,7 +2065,6 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                 />
                 <CaseCenterHeader
                   detail={detail}
-                  readinessPct={readinessPct}
                   tags={tags}
                   onTags={setTags}
                   onAction={runCaseAction}
@@ -2031,7 +2076,20 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                       tags={tags}
                       onTags={setTags}
                       hideReadiness
-                      onPatchDetail={(patch) => setDetail((d) => ({ ...d, ...patch }))}
+                      onPatchDetail={(patch) => {
+                        setDetail((d) => ({ ...d, ...patch }))
+                        if (patch.maxBuy && patch.maxBuy !== detail.maxBuy) {
+                          const cleared = patch.maxBuy === '$0.00'
+                          logCase({
+                            key: 'rates',
+                            title: cleared ? 'Max buy cleared' : 'Max buy set',
+                            detail: cleared
+                              ? 'No hard limit on this load right now.'
+                              : `${patch.maxBuy} hard limit · book now ${patch.bookNowRate}`,
+                            status: cleared ? 'warn' : 'ok',
+                          })
+                        }
+                      }}
                       onPostToSourcing={() => {
                         setStage('Sourcing')
                         setSubStage('Find & Post')
@@ -2097,7 +2155,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             )}
           </div>
 
-          <CaseActivityRail detail={detail} aiLog={aiLog} />
+          <CaseActivityRail events={caseEvents} />
         </div>
       )}
 
@@ -2124,7 +2182,14 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           detail={detail}
           mode={autoMode}
           onClose={() => setAutoOpen(false)}
-          onApplyRates={(patch) => setDetail((d) => ({ ...d, ...patch }))}
+          onApplyRates={(patch) => {
+            setDetail((d) => ({ ...d, ...patch }))
+            logCase({
+              title: 'Rates confirmed in the run',
+              detail: `Max buy ${patch.maxBuy} hard limit · book now ${patch.bookNowRate}`,
+              who: AUTO_MODE_LABEL[autoMode],
+            })
+          }}
           onGoFindPost={() => {
             setAutoOpen(false)
             setStage('Sourcing')

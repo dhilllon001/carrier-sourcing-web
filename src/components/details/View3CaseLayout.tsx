@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
   CalendarClock,
@@ -17,8 +18,6 @@ import {
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { SEED_ACTIVITY, makeActivity, type ActivityEvent } from '@/data/activityLog'
-import type { AiActivityEntry } from '@/data/aiActivity'
 import type { DetailStage, LoadDetail } from '@/data/loadDetail'
 import { TagPopover } from '@/components/report/TagPopover'
 
@@ -275,19 +274,19 @@ export function CaseWorkBar({
 
 export function CaseCenterHeader({
   detail,
-  readinessPct,
   tags,
   onTags,
   onAction,
 }: {
   detail: LoadDetail
-  readinessPct: number
   tags: string[]
   onTags: (tags: string[]) => void
   onAction: (id: CaseActionId) => void
 }) {
   const alerts = readinessAlerts(detail)
   const blocking = alerts.filter((a) => !a.done).length
+  /* readiness tracks the posting checks, so it moves the moment an action lands */
+  const readinessPct = Math.round(((alerts.length - blocking) / alerts.length) * 100)
   const bookNow = rateOrDash(detail.bookNowRate)
   const maxBuy = rateOrDash(detail.maxBuy)
   const rejectAbove = rateOrDash(detail.rejectAbove)
@@ -406,100 +405,48 @@ export function CaseCenterHeader({
   )
 }
 
-type ActivityFilter = 'all' | 'ai' | 'system'
+export type CaseEvent = {
+  id: string
+  /* consecutive entries with the same key collapse into one, so typing a rate logs once */
+  key?: string
+  title: string
+  detail?: string
+  who: string
+  when: string
+  status: 'ok' | 'warn' | 'info'
+}
 
-export function CaseActivityRail({
-  detail,
-  aiLog,
-}: {
-  detail: LoadDetail
-  aiLog: AiActivityEntry[]
-}) {
-  const [filter, setFilter] = useState<ActivityFilter>('all')
-
-  const systemEvents: ActivityEvent[] = useMemo(
-    () => [
-      makeActivity({
-        when: detail.startedAt,
-        who: detail.csr,
-        action: 'other',
-        text: 'Opened Overview for load review',
-        loadId: detail.load.id,
-      }),
-      ...SEED_ACTIVITY.map((e) => ({ ...e, loadId: detail.load.id })),
-    ],
-    [detail]
-  )
-
-  const items = useMemo(() => {
-    const aiItems = aiLog.map((e) => ({
-      id: e.id,
-      kind: 'ai' as const,
-      title: e.title,
-      detail: e.detail,
-      who: e.run,
-      when: e.when,
-      status: e.status,
-    }))
-    const sysItems = systemEvents.map((e) => ({
-      id: e.id,
-      kind: 'system' as const,
-      title: e.text,
-      detail: e.action.replace(/_/g, ' '),
-      who: e.who,
-      when: e.when,
-      status: 'info' as const,
-    }))
-    if (filter === 'ai') return aiItems
-    if (filter === 'system') return sysItems
-    return [...aiItems, ...sysItems]
-  }, [aiLog, filter, systemEvents])
-
+export function CaseActivityRail({ events }: { events: CaseEvent[] }) {
   return (
     <aside className="v3-act">
       <header className="v3-act__head">
-        <strong>
-          Activity
-          <i className="v3-act__live" aria-hidden />
-        </strong>
-        <div className="v3-act__tabs" role="tablist">
-          {(
-            [
-              ['all', 'All'],
-              ['ai', 'AI'],
-              ['system', 'System'],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={filter === id}
-              className={cn(filter === id && 'is-on')}
-              onClick={() => setFilter(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <strong>Activity</strong>
+        {events.length > 0 && <em>{events.length}</em>}
       </header>
 
-      <ol className="v3-act__list">
-        {items.map((item) => (
-          <li key={item.id} className={cn(`is-${item.status}`, item.kind === 'ai' && 'is-ai')}>
-            <i className="v3-act__mark" aria-hidden />
-            <div>
-              <div className="v3-act__top">
-                <strong>{item.title}</strong>
-                <em>{item.when}</em>
+      {events.length === 0 ? (
+        <div className="v3-act__blank">
+          <Activity size={18} />
+          <strong>Nothing yet</strong>
+          <p>Every action you take on this load is logged here as it happens.</p>
+        </div>
+      ) : (
+        <ol className="v3-act__list">
+          {events.map((item) => (
+            <li key={item.id} className={cn(`is-${item.status}`)}>
+              <i className="v3-act__mark" aria-hidden />
+              <div>
+                <div className="v3-act__top">
+                  <strong>{item.title}</strong>
+                  <em>{item.when}</em>
+                </div>
+                {item.detail && <p>{item.detail}</p>}
+                <span>{item.who}</span>
               </div>
-              <p>{item.detail}</p>
-              <span className={cn(item.kind === 'ai' && 'is-ai')}>{item.who}</span>
-            </div>
-          </li>
-        ))}
-        {items.length === 0 && <li className="v3-act__empty">No activity for this filter</li>}
-      </ol>
+            </li>
+          ))}
+        </ol>
+      )}
     </aside>
   )
 }
