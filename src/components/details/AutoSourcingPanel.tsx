@@ -813,10 +813,24 @@ export function AutoSourcingConfirm({
     <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="dd-auto-confirm-title">
       <button type="button" className="dd-modal-backdrop" aria-label="Close" onClick={onNo} />
       <div className="dd-modal dd-auto-confirm">
-        <div className="dd-auto-confirm__icon">
-          <Icon size={22} />
-        </div>
-        <h3 id="dd-auto-confirm-title">Run {label}?</h3>
+        <header className="dd-auto-confirm__head">
+          <div className={cn('dd-auto-confirm__icon', `is-${mode}`)}>
+            <Icon size={18} />
+          </div>
+          <div className="dd-auto-confirm__headtext">
+            <h3 id="dd-auto-confirm-title">Run {label}?</h3>
+            <span>
+              {probill}
+              {mode === 'sourcing'
+                ? missingCount > 0
+                  ? ` · ${missingCount} field${missingCount === 1 ? '' : 's'} to confirm`
+                  : ' · all data present'
+                : ` · ${offerCount} offer${offerCount === 1 ? '' : 's'} to analyze`}
+            </span>
+          </div>
+        </header>
+
+        <div className="dd-auto-confirm__body">
         {mode === 'sourcing' ? (
           <p>
             Auto Sourcing will check missing data points on <strong>{probill}</strong>
@@ -843,16 +857,20 @@ export function AutoSourcingConfirm({
             onboarding and monitoring — and suggest the carrier to award.
           </p>
         )}
-        <div className="dd-auto-confirm__actions">
-          <button type="button" className="dd-btn" onClick={onNo}>
-            No, not now
-          </button>
-          <button type="button" className="dd-btn dd-btn--primary" onClick={onYes}>
-            <Sparkles size={14} />
-            Yes, run {label}
-          </button>
         </div>
-        <span className="dd-auto-confirm__note">Mock workflow · no live sends, tenders or awards</span>
+
+        <footer className="dd-auto-confirm__foot">
+          <span className="dd-auto-confirm__note">Mock workflow · no live sends</span>
+          <div className="dd-auto-confirm__btns">
+            <button type="button" className="dd-btn" onClick={onNo}>
+              No, not now
+            </button>
+            <button type="button" className="dd-btn dd-btn--primary" onClick={onYes}>
+              <Sparkles size={14} />
+              Yes, run {label}
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   )
@@ -1289,7 +1307,11 @@ export function AutoSourcingPanel({
                       >
                         <div className="dd-auto-rule__head">
                           <strong>{r.name}</strong>
-                          <i className="dd-auto-action__tick">{ruleId === r.id && <Check size={12} />}</i>
+                          {ruleId === r.id && (
+                            <span className="dd-auto-rule__on" aria-hidden>
+                              <Check size={11} />
+                            </span>
+                          )}
                         </div>
                         <span>{r.description}</span>
                         <div className="dd-auto-rule__chips">
@@ -1310,7 +1332,11 @@ export function AutoSourcingPanel({
                           <Plus size={13} />
                           Create your own rule
                         </strong>
-                        <i className="dd-auto-action__tick">{ruleId === 'custom' && <Check size={12} />}</i>
+                        {ruleId === 'custom' && (
+                          <span className="dd-auto-rule__on" aria-hidden>
+                            <Check size={11} />
+                          </span>
+                        )}
                       </div>
                       <span>Pick exactly which channels this run uses.</span>
                       {ruleId === 'custom' && (
