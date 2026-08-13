@@ -3,19 +3,18 @@ import {
   ArrowRight,
   CalendarClock,
   Check,
-  ClipboardCheck,
   DollarSign,
   Gauge,
   Layers,
+  Mail,
   Sparkles,
   UserPlus,
   Users,
+  Wand2,
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { DetailStage, LoadDetail } from '@/data/loadDetail'
-import { TagPopover } from '@/components/report/TagPopover'
-
 type StructureSelect = (stage: DetailStage, sub: string) => void
 
 function readinessAlerts(detail: LoadDetail) {
@@ -113,10 +112,22 @@ export function LoadStructureTree({
   )
 }
 
-export type CaseActionId = 'maxbuy' | 'hook' | 'drop' | 'broker' | 'post' | 'offers'
+export type CaseActionId =
+  | 'maxbuy'
+  | 'hook'
+  | 'drop'
+  | 'broker'
+  | 'post'
+  | 'offers'
+  | 'ai-rate'
+  | 'ai-email'
+  | 'ai-score'
 export type CaseTab = 'overview' | 'instructions' | 'documents'
 
 const rateOrDash = (v: string) => (!v || v === '—' || v === '$0.00' ? null : v)
+const toNum = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
+const money = (n: number) =>
+  `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export function CaseWorkBar({
   tab,
@@ -178,13 +189,9 @@ export function CaseWorkBar({
 
 export function CaseCenterHeader({
   detail,
-  tags,
-  onTags,
   onAction,
 }: {
   detail: LoadDetail
-  tags: string[]
-  onTags: (tags: string[]) => void
   onAction: (id: CaseActionId) => void
 }) {
   const alerts = readinessAlerts(detail)
@@ -194,6 +201,8 @@ export function CaseCenterHeader({
   const bookNow = rateOrDash(detail.bookNowRate)
   const maxBuy = rateOrDash(detail.maxBuy)
   const rejectAbove = rateOrDash(detail.rejectAbove)
+  const customerRate = detail.load.fee
+  const margin = maxBuy === null ? null : customerRate - toNum(maxBuy)
 
   /* only surface what the user can actually act on right now */
   const actions: { id: CaseActionId; label: string; icon: typeof Zap; primary?: boolean }[] = []
@@ -236,6 +245,12 @@ export function CaseCenterHeader({
 
       <div className="v3-rates">
         <article>
+          <span>Customer rate</span>
+          <strong>
+            {money(customerRate)} {detail.currency}
+          </strong>
+        </article>
+        <article>
           <span>Book now</span>
           <strong className={cn(!bookNow && 'is-empty')}>{bookNow ?? 'Not set'}</strong>
         </article>
@@ -248,10 +263,14 @@ export function CaseCenterHeader({
           <strong className={cn(!rejectAbove && 'is-empty')}>{rejectAbove ?? 'Not set'}</strong>
         </article>
         <article>
-          <span>Customer rate</span>
-          <strong>
-            {detail.load.fee.toFixed(2)} {detail.currency}
+          <span>Margin at max buy</span>
+          <strong className={cn(margin === null && 'is-empty', margin !== null && (margin >= 0 ? 'is-pos' : 'is-neg'))}>
+            {margin === null ? 'Not set' : `${margin >= 0 ? '+' : '−'}${money(Math.abs(margin))}`}
           </strong>
+        </article>
+        <article>
+          <span>Revenue / mile</span>
+          <strong>${(customerRate / Math.max(1, detail.load.miles)).toFixed(2)}</strong>
         </article>
       </div>
 
@@ -274,27 +293,27 @@ export function CaseCenterHeader({
         </div>
       )}
 
-      <div className="v3-agents">
-        <article>
-          <ClipboardCheck size={14} />
-          <span>Readiness</span>
-          <strong>{readinessPct}%</strong>
-        </article>
-        <article>
-          <Sparkles size={14} />
-          <span>Reach</span>
-          <strong>{blocking === 0 ? 'Ready' : 'Waiting'}</strong>
-        </article>
-        <article>
-          <Gauge size={14} />
-          <span>Offers</span>
-          <strong>{detail.bids.length > 0 ? `${detail.bids.length} bids` : 'None'}</strong>
-        </article>
+      <div className="v3-ai">
+        <span className="v3-ai__label">
+          <Sparkles size={12} />
+          AI assist
+        </span>
+        <div className="v3-ai__row">
+          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-rate')}>
+            <Wand2 size={13} />
+            Suggest max buy
+          </button>
+          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-email')}>
+            <Mail size={13} />
+            Draft carrier blast
+          </button>
+          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-score')}>
+            <Gauge size={13} />
+            Score offers
+          </button>
+        </div>
       </div>
 
-      <div className="v3-case__tags">
-        <TagPopover tags={tags} onChange={onTags} />
-      </div>
     </div>
   )
 }

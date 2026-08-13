@@ -76,6 +76,8 @@ import type { ReportLoad } from '@/data/report'
 
 type TabId = 'summary' | 'instructions' | 'documents' | 'activity'
 
+const toRate = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
+
 type LoadDetailsPageProps = {
   load: ReportLoad
   onBack: () => void
@@ -1646,6 +1648,50 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       logCase({ title: 'Moved to Find & Post', detail: 'Readiness cleared — the load can be posted.' })
       return
     }
+    if (id === 'ai-rate') {
+      /* mock suggestion: 88% of the customer rate as the hard limit */
+      const suggested = detail.load.fee * 0.88
+      setDetail((d) => ({
+        ...d,
+        maxBuy: `$${suggested.toFixed(2)}`,
+        bookNowRate: `$${(suggested * 0.925).toFixed(2)}`,
+        rejectAbove: `$${(suggested * 1.08).toFixed(2)}`,
+      }))
+      logCase({
+        key: 'rates',
+        title: 'AI suggested max buy',
+        detail: `$${suggested.toFixed(2)} hard limit — 88% of the ${detail.currency} customer rate on this lane.`,
+        who: 'AI assist',
+      })
+      return
+    }
+    if (id === 'ai-email') {
+      logCase({
+        title: 'AI drafted carrier blast',
+        detail: `Subject line and load card ready for ${detail.load.origin} → ${detail.load.destination}.`,
+        who: 'AI assist',
+        status: 'info',
+      })
+      return
+    }
+    if (id === 'ai-score') {
+      if (detail.bids.length === 0) {
+        logCase({
+          title: 'Nothing to score yet',
+          detail: 'No offers on this load — run a blast or post to the boards first.',
+          who: 'AI assist',
+          status: 'warn',
+        })
+        return
+      }
+      const best = [...detail.bids].sort((a, b) => toRate(a.allIn ?? a.amount) - toRate(b.allIn ?? b.amount))[0]
+      logCase({
+        title: 'AI scored offers',
+        detail: `${detail.bids.length} offers ranked — ${best.carrier} at ${best.allIn ?? best.amount} scores best.`,
+        who: 'AI assist',
+      })
+      return
+    }
     setStage('Tender')
     setSubStage('Offers & Bids')
     logCase({
@@ -2063,12 +2109,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                     setAutoOpen(true)
                   }}
                 />
-                <CaseCenterHeader
-                  detail={detail}
-                  tags={tags}
-                  onTags={setTags}
-                  onAction={runCaseAction}
-                />
+                {v3Tab === 'overview' && <CaseCenterHeader detail={detail} onAction={runCaseAction} />}
                 <div className="v3-main__content">
                   {v3Tab === 'overview' && (
                     <SummaryTab
