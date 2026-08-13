@@ -809,6 +809,35 @@ export function AutoSourcingConfirm({
 }) {
   const label = AUTO_MODE_LABEL[mode]
   const Icon = mode === 'sourcing' ? Zap : mode === 'tender' ? Gauge : Award
+
+  const lead =
+    mode === 'sourcing'
+      ? 'Runs the whole sourcing sequence from this one screen.'
+      : mode === 'tender'
+        ? 'Sourcing is done — this scores every offer you have received.'
+        : 'Final checks before you commit the load to a carrier.'
+
+  const steps =
+    mode === 'sourcing'
+      ? [
+          missingCount > 0
+            ? `Check missing data points — ${missingCount} found on ${probill}`
+            : `All required data points on ${probill} are already present`,
+          'Confirm book now and the max buy hard limit in one place',
+          'Run your automation rule — carrier blasts and board postings',
+        ]
+      : mode === 'tender'
+        ? [
+            `Score all ${offerCount} offers against your max buy hard limit`,
+            'Weigh carrier rating, Highway data, onboarding and monitoring',
+            'Suggest which offer to accept',
+          ]
+        : [
+            `Re-check all ${offerCount} offers against the hard limit`,
+            'Verify Highway identity, onboarding and monitoring',
+            'Suggest the carrier to award',
+          ]
+
   return (
     <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="dd-auto-confirm-title">
       <button type="button" className="dd-modal-backdrop" aria-label="Close" onClick={onNo} />
@@ -831,32 +860,15 @@ export function AutoSourcingConfirm({
         </header>
 
         <div className="dd-auto-confirm__body">
-        {mode === 'sourcing' ? (
-          <p>
-            Auto Sourcing will check missing data points on <strong>{probill}</strong>
-            {missingCount > 0 ? (
-              <>
-                {' '}
-                (<strong>{missingCount}</strong> found), let you fix them in one place, then run your
-                automation rule — carrier blasts and board postings — from a single screen.
-              </>
-            ) : (
-              <> — all required data is present. Pick an automation rule and run everything from one screen.</>
-            )}
-          </p>
-        ) : mode === 'tender' ? (
-          <p>
-            Sourcing is done on <strong>{probill}</strong>. Auto Tender will analyze all{' '}
-            <strong>{offerCount}</strong> offers — rate vs your max buy hard limit, carrier rating,
-            Highway data, onboarding and monitoring — and suggest which offer to accept.
-          </p>
-        ) : (
-          <p>
-            <strong>{probill}</strong> is at the award stage. Auto Award will run final checks across{' '}
-            <strong>{offerCount}</strong> offers — hard limit, carrier rating, Highway identity,
-            onboarding and monitoring — and suggest the carrier to award.
-          </p>
-        )}
+          <p className="dd-auto-confirm__lead">{lead}</p>
+          <ol className="dd-auto-confirm__steps">
+            {steps.map((text, i) => (
+              <li key={text}>
+                <i aria-hidden>{i + 1}</i>
+                <span>{text}</span>
+              </li>
+            ))}
+          </ol>
         </div>
 
         <footer className="dd-auto-confirm__foot">

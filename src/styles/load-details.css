@@ -8228,7 +8228,7 @@
 /* confirm popup */
 /* ── Confirm dialog: header row, body, footer — matches the result popup ── */
 .dd-auto-confirm {
-  width: 480px;
+  width: 528px;
   max-width: calc(100vw - 48px);
   padding: 0;
   text-align: left;
@@ -8287,12 +8287,52 @@
 }
 
 .dd-auto-confirm__body {
-  padding: 14px 16px;
+  padding: 14px 16px 15px;
 }
 
-.dd-auto-confirm p {
+.dd-auto-confirm__lead {
+  margin: 0 0 11px;
+  font: 500 12.5px/1.45 var(--sr-font-body);
+  color: var(--ink);
+}
+
+/* what the run will do — scannable rows instead of a block of prose */
+.dd-auto-confirm__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
-  font: 400 12.5px/1.6 var(--sr-font-body);
+  padding: 0;
+  list-style: none;
+}
+
+.dd-auto-confirm__steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dd-auto-confirm__steps i {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font: 700 10.5px/1 var(--sr-font-body);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.dd-auto-confirm__steps span {
+  flex: 1;
+  min-width: 0;
+  font: 400 12.5px/1.45 var(--sr-font-body);
   color: var(--ink-2);
 }
 
@@ -8300,20 +8340,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 14px;
+  padding: 11px 16px;
   border-top: 1px solid var(--line);
   background: #f8f9fb;
 }
 
 .dd-auto-confirm__btns {
   display: flex;
+  flex: none;
   gap: 8px;
 }
 
+/* long labels must never wrap inside the buttons */
+.dd-auto-confirm__btns .dd-btn {
+  white-space: nowrap;
+}
+
 .dd-auto-confirm__note {
+  flex: 1;
+  min-width: 0;
   font: 500 11px/1.3 var(--sr-font-body);
   color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* right-side workflow panel */
