@@ -1,14 +1,18 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle,
+  ArrowRight,
+  CalendarClock,
   Check,
   ChevronDown,
   ChevronRight,
   ClipboardCheck,
+  DollarSign,
   FileText,
   Gauge,
   Layers,
   Sparkles,
+  UserPlus,
   Users,
   Zap,
 } from 'lucide-react'
@@ -207,6 +211,10 @@ export function LoadStructureTree({
   )
 }
 
+export type CaseActionId = 'maxbuy' | 'hook' | 'drop' | 'broker' | 'post' | 'offers'
+
+const rateOrDash = (v: string) => (!v || v === '—' || v === '$0.00' ? null : v)
+
 export function CaseCenterHeader({
   detail,
   load,
@@ -217,6 +225,7 @@ export function CaseCenterHeader({
   onTags,
   autoLabel,
   onAuto,
+  onAction,
 }: {
   detail: LoadDetail
   load: ReportLoad
@@ -227,78 +236,109 @@ export function CaseCenterHeader({
   onTags: (tags: string[]) => void
   autoLabel: string | null
   onAuto: () => void
+  onAction: (id: CaseActionId) => void
 }) {
   const alerts = readinessAlerts(detail)
   const blocking = alerts.filter((a) => !a.done).length
+  const bookNow = rateOrDash(detail.bookNowRate)
+  const maxBuy = rateOrDash(detail.maxBuy)
+  const rejectAbove = rateOrDash(detail.rejectAbove)
+
+  /* only surface what the user can actually act on right now */
+  const actions: { id: CaseActionId; label: string; icon: typeof Zap; primary?: boolean }[] = []
+  if (!maxBuy) actions.push({ id: 'maxbuy', label: 'Set max buy', icon: DollarSign, primary: true })
+  if (!alerts.find((a) => a.id === 'hook')?.done)
+    actions.push({ id: 'hook', label: 'Add hook appointment', icon: CalendarClock })
+  if (!alerts.find((a) => a.id === 'drop')?.done)
+    actions.push({ id: 'drop', label: 'Add drop appointment', icon: CalendarClock })
+  if (!detail.load.broker) actions.push({ id: 'broker', label: 'Assign broker', icon: UserPlus })
+  if (blocking === 0) actions.push({ id: 'post', label: 'Post to sourcing', icon: ArrowRight, primary: true })
+  if (detail.bids.length > 0)
+    actions.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
 
   return (
     <div className="v3-case">
-      <div className="v3-case__pills">
-        <span>{load.id}</span>
-        <span>{load.mode}</span>
-        <span>
-          {stage} · {subStage}
-        </span>
-        <span className={cn(load.status === 'NeedCarrier' && 'is-warn')}>{load.status}</span>
-        {blocking > 0 && <em className="is-overdue">{blocking} open</em>}
-      </div>
-
-      <h2>
-        {load.origin} → {load.destination}
-      </h2>
-      <p>
-        {load.customer} · {load.equipment} · {load.miles.toLocaleString()} mi ·{' '}
-        {detail.load.fee.toFixed(2)} {detail.currency}
-      </p>
-
-      <div className="v3-case__ai">
-        <div className="v3-case__ai-top">
-          <strong>AI readiness {readinessPct}%</strong>
+      <div className="v3-case__top">
+        <div className="v3-case__chips">
+          <span className="is-id">{load.id}</span>
+          <span>{load.mode}</span>
           <span>
-            {blocking === 0
-              ? 'All required data points clear — ready to run automation.'
-              : `${blocking} blocking item${blocking === 1 ? '' : 's'} before posting.`}
+            {stage} · {subStage}
           </span>
+          <span className={cn(load.status === 'NeedCarrier' && 'is-warn')}>{load.status}</span>
         </div>
-        <div className="v3-case__bar">
-          <i style={{ width: `${readinessPct}%` }} />
-        </div>
-        <div className="v3-case__ai-foot">
-          <span>
-            Book now {detail.bookNowRate === '—' ? 'not set' : detail.bookNowRate} · Max buy{' '}
-            {detail.maxBuy === '—' || detail.maxBuy === '$0.00' ? 'not set' : detail.maxBuy}
-          </span>
-          {autoLabel && (
-            <button type="button" className="v3-case__cta" onClick={onAuto}>
-              <Zap size={13} />
-              {autoLabel}
-            </button>
-          )}
-        </div>
+        {autoLabel && (
+          <button type="button" className="v3-case__cta" onClick={onAuto}>
+            <Zap size={13} />
+            {autoLabel}
+          </button>
+        )}
       </div>
 
-      <div className="v3-ents">
-        <article className="is-blue">
-          <span>Customer</span>
-          <strong>{load.customer}</strong>
+      <section className="v3-ready">
+        <div className="v3-ready__head">
+          <div>
+            <strong>Readiness</strong>
+            <span>
+              {blocking === 0
+                ? 'All required data points clear — ready to post and run automation.'
+                : `${blocking} blocking item${blocking === 1 ? '' : 's'} before this load can post.`}
+            </span>
+          </div>
+          <em className={cn(blocking === 0 ? 'is-ok' : 'is-warn')}>{readinessPct}%</em>
+        </div>
+        <div className="v3-ready__bar">
+          <i style={{ width: `${readinessPct}%` }} className={blocking === 0 ? 'is-ok' : undefined} />
+        </div>
+        <ul className="v3-ready__checks">
+          {alerts.map((a) => (
+            <li key={a.id} className={cn(a.done && 'is-done')}>
+              <i>{a.done ? <Check size={9} strokeWidth={3.5} /> : null}</i>
+              {a.title}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <div className="v3-rates">
+        <article>
+          <span>Book now</span>
+          <strong className={cn(!bookNow && 'is-empty')}>{bookNow ?? 'Not set'}</strong>
         </article>
-        <article className="is-purple">
-          <span>Equipment</span>
-          <strong>{load.equipment}</strong>
+        <article>
+          <span>Max buy · hard limit</span>
+          <strong className={cn(!maxBuy && 'is-empty')}>{maxBuy ?? 'Not set'}</strong>
         </article>
-        <article className="is-green">
-          <span>Broker</span>
-          <strong>{load.broker || 'Unassigned'}</strong>
+        <article>
+          <span>Reject above</span>
+          <strong className={cn(!rejectAbove && 'is-empty')}>{rejectAbove ?? 'Not set'}</strong>
         </article>
-        <article className="is-amber">
-          <span>Team</span>
-          <strong>{load.team}</strong>
+        <article>
+          <span>Customer rate</span>
+          <strong>
+            {detail.load.fee.toFixed(2)} {detail.currency}
+          </strong>
         </article>
       </div>
 
-      <div className="v3-case__tags">
-        <TagPopover tags={tags} onChange={onTags} />
-      </div>
+      {actions.length > 0 && (
+        <div className="v3-acts">
+          <span className="v3-acts__label">Next actions</span>
+          <div className="v3-acts__row">
+            {actions.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className={cn('v3-acts__btn', a.primary && 'is-primary')}
+                onClick={() => onAction(a.id)}
+              >
+                <a.icon size={13} />
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="v3-agents">
         <article>
@@ -326,6 +366,10 @@ export function CaseCenterHeader({
             </p>
           </div>
         </article>
+      </div>
+
+      <div className="v3-case__tags">
+        <TagPopover tags={tags} onChange={onTags} />
       </div>
     </div>
   )

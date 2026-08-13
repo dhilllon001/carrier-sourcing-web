@@ -48,6 +48,7 @@ import {
   CaseActivityRail,
   CaseCenterHeader,
   LoadStructureTree,
+  type CaseActionId,
 } from '@/components/details/View3CaseLayout'
 import { cn } from '@/lib/cn'
 import {
@@ -194,12 +195,15 @@ function SummaryTab({
   onTags,
   onPostToSourcing,
   onPatchDetail,
+  hideReadiness = false,
 }: {
   detail: LoadDetail
   tags: string[]
   onTags: (t: string[]) => void
   onPostToSourcing: () => void
   onPatchDetail: (patch: Partial<LoadDetail>) => void
+  /* V3 surfaces readiness and next actions in the case header instead */
+  hideReadiness?: boolean
 }) {
   const [activeProbill, setActiveProbill] = useState(detail.commodities[0]?.probill)
   const [commodities, setCommodities] = useState<CommodityLine[]>(detail.commodities)
@@ -369,6 +373,7 @@ function SummaryTab({
 
   return (
     <div className="dd-summary dd-overview">
+      {!hideReadiness && (
       <section className={cn('dd-ready', canPost ? 'is-ready' : 'is-blocked')}>
         <div className="dd-ready__top">
           <div className="dd-ready__status">
@@ -488,6 +493,7 @@ function SummaryTab({
           </div>
         </div>
       </section>
+      )}
 
       <section className="dd-bid-thresh">
         <div className="dd-bid-thresh__head">
@@ -1567,6 +1573,41 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const isV3 = view === 'v3'
   const readinessPct = Math.round((lifeDetail.completedSubs / Math.max(1, lifeDetail.totalSubs)) * 100)
 
+  const runCaseAction = (id: CaseActionId) => {
+    if (id === 'maxbuy') {
+      setV3Tab('overview')
+      window.setTimeout(() => {
+        const el = document.getElementById('dd-max-buy-input') as HTMLInputElement | null
+        el?.focus()
+        el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }, 0)
+      return
+    }
+    if (id === 'hook' || id === 'drop') {
+      const wantPickup = id === 'hook'
+      setDetail((d) => ({
+        ...d,
+        stops: d.stops.map((s) =>
+          (wantPickup ? s.role === 'Hook' || s.kind === 'Pickup' : s.role === 'Drop' || s.kind === 'Delivery')
+            ? { ...s, appointmentRequired: false }
+            : s
+        ),
+      }))
+      return
+    }
+    if (id === 'broker') {
+      setDetail((d) => ({ ...d, load: { ...d.load, broker: d.load.broker || d.salesRep } }))
+      return
+    }
+    if (id === 'post') {
+      setStage('Sourcing')
+      setSubStage('Find & Post')
+      return
+    }
+    setStage('Tender')
+    setSubStage('Offers & Bids')
+  }
+
   return (
     <div className={cn('dd-page', isV2 && 'dd-page--v2', isV3 && 'dd-page--v3')}>
       <header className={cn('dd-top', isV2 && 'dd-top--v2', isV3 && 'dd-top--v3')}>
@@ -1576,14 +1617,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             Back
           </button>
 
-          {isV3 ? (
-            <div className="v3-crumb">
-              <span>Sourcing</span>
-              <ChevronRight size={12} />
-              <strong>{load.id}</strong>
-              <em className="v3-crumb__badge">AI readiness {readinessPct}%</em>
-            </div>
-          ) : isV2 ? (
+          {isV2 ? (
             <div className="dd-v2id">
               <strong>{load.id}</strong>
               <ModeBadge mode={load.mode} />
@@ -1652,7 +1686,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         </div>
       </header>
 
-      {!isV3 && (!isV2 || factsOpen) && (
+      {(!isV2 || factsOpen) && (
       <div className={cn('dd-meta', isV2 && 'dd-meta--v2')}>
         <div className="dd-meta__item">
           <span>Trailer</span>
@@ -1732,7 +1766,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       </div>
       )}
 
-      {!isV3 && isV2 && (
+      {isV2 && (
         <LaneBar
           detail={detail}
           routeOpen={routeOpen}
@@ -1740,7 +1774,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         />
       )}
 
-      {!isV3 && (!isV2 || routeOpen) && (
+      {(!isV2 || routeOpen) && (
       <div className="dd-route dd-route--ov">
         {detail.stops.map((stop, i) => {
           const isLastStop = i === detail.stops.length - 1
@@ -1982,6 +2016,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                     setAutoAsk(false)
                     setAutoOpen(true)
                   }}
+                  onAction={runCaseAction}
                 />
                 <div className="v3-tabs">
                   {(
@@ -2007,6 +2042,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                       detail={detail}
                       tags={tags}
                       onTags={setTags}
+                      hideReadiness
                       onPatchDetail={(patch) => setDetail((d) => ({ ...d, ...patch }))}
                       onPostToSourcing={() => {
                         setStage('Sourcing')
