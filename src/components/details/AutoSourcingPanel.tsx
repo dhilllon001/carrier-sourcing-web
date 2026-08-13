@@ -606,7 +606,23 @@ function EmailLogView({ rows, subject, preview }: { rows: CarrierLog[]; subject:
 }
 
 /* ── WhatsApp blast — chat-style log ── */
-function WhatsAppLogView({ rows, message }: { rows: CarrierLog[]; message: string }) {
+function WhatsAppLogView({
+  rows,
+  message,
+  loadId,
+  lane,
+  equipment,
+  miles,
+  rate,
+}: {
+  rows: CarrierLog[]
+  message: string
+  loadId: string
+  lane: string
+  equipment: string
+  miles: number
+  rate: string
+}) {
   const replies = [
     { who: rows[2]?.name ?? 'Ontario Express', text: 'Interested — what’s the all-in on this one?', time: '12:11 PM' },
     { who: rows[5]?.name ?? 'Twin Ports Express', text: 'Truck empty in Columbus Fri AM. Sending an offer now.', time: '12:14 PM' },
@@ -617,6 +633,30 @@ function WhatsAppLogView({ rows, message }: { rows: CarrierLog[]; message: strin
       <div className="dd-walog__chat">
         <span className="dd-walog__day">Today</span>
         <div className="dd-walog__bubble is-out">
+          {/* the load card that actually goes out with the blast */}
+          <div className="dd-wacard">
+            <div className="dd-wacard__head">
+              <i>
+                <RadioTower size={13} />
+              </i>
+              <strong>Load {loadId}</strong>
+            </div>
+            <div className="dd-wacard__lane">{lane}</div>
+            <div className="dd-wacard__grid">
+              <div>
+                <span>Equipment</span>
+                <strong>{equipment}</strong>
+              </div>
+              <div>
+                <span>Distance</span>
+                <strong>{miles.toLocaleString()} mi</strong>
+              </div>
+              <div>
+                <span>Book now</span>
+                <strong>{rate}</strong>
+              </div>
+            </div>
+          </div>
           <p>{message}</p>
           <span>
             12:08 PM <CheckCheck size={13} className="is-read" />
@@ -838,26 +878,46 @@ function ResultPopup({
     <div className="dd-modal-root dd-auto-result-root" role="dialog" aria-modal="true">
       <button type="button" className="dd-modal-backdrop" aria-label="Close" onClick={onClose} />
       <div className="dd-modal dd-auto-result">
-        <div className={cn('dd-auto-result__icon', tone === 'warn' && 'is-warn')}>
-          {tone === 'warn' ? <AlertTriangle size={22} /> : <CheckCircle2 size={22} />}
-        </div>
-        <h3>{title}</h3>
+        <header className="dd-auto-result__head">
+          <div className={cn('dd-auto-result__icon', tone === 'warn' && 'is-warn')}>
+            {tone === 'warn' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
+          </div>
+          <div className="dd-auto-result__headtext">
+            <h3>{title}</h3>
+            <p>
+              {lines.length} action{lines.length === 1 ? '' : 's'} recorded on this run
+            </p>
+          </div>
+          <button
+            type="button"
+            className="dd-auto-result__x"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            <X size={15} />
+          </button>
+        </header>
+
         <ul>
           {lines.map((l) => (
             <li key={l}>
               <i className="dd-auto-result__dot" aria-hidden />
-              {l}
+              <span>{l}</span>
             </li>
           ))}
         </ul>
-        <div className="dd-auto-confirm__actions">
-          <button type="button" className="dd-btn" onClick={onClose}>
-            Stay here
-          </button>
-          <button type="button" className="dd-btn dd-btn--primary" onClick={onPrimary}>
-            {primaryLabel}
-          </button>
-        </div>
+
+        <footer className="dd-auto-result__foot">
+          <span className="dd-auto-result__note">Mock run · nothing was sent</span>
+          <div className="dd-auto-result__btns">
+            <button type="button" className="dd-btn" onClick={onClose}>
+              Stay here
+            </button>
+            <button type="button" className="dd-btn dd-btn--primary" onClick={onPrimary}>
+              {primaryLabel}
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   )
@@ -1034,13 +1094,9 @@ export function AutoSourcingPanel({
     return list
   }
 
+  /* accordion: rows start collapsed and only one stays open, so the run list reads clean */
   const toggleExpand = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setExpanded((prev) => (prev.has(id) ? new Set<string>() : new Set<string>([id])))
   }
 
   const finishSourcing = () => {
@@ -1072,6 +1128,7 @@ export function AutoSourcingPanel({
       rejectAbove: `$${(maxNum * 1.08).toFixed(2)}`,
     })
     popupShown.current = false
+    setExpanded(new Set())
     setTasks(buildTasks())
     setStep(3)
   }
@@ -1195,6 +1252,7 @@ export function AutoSourcingPanel({
                   >
                     <i>{step > n ? <Check size={12} /> : <StepIcon size={12} />}</i>
                     <span>{label}</span>
+                    {n < 3 && <b className="dd-auto-steps__link" aria-hidden />}
                   </div>
                 ))}
               </div>
@@ -1454,7 +1512,12 @@ export function AutoSourcingPanel({
                               {t.id === 'blast_whatsapp' && (
                                 <WhatsAppLogView
                                   rows={carrierLogs}
-                                  message={`Load ${detail.load.id}: ${lane}, ${detail.load.equipment}, ${detail.load.miles.toLocaleString()} mi. Book now ${rateStr}. Reply YES to grab it.`}
+                                  message="Reply YES to lock this load in, or send your best all-in rate."
+                                  loadId={detail.load.id}
+                                  lane={lane}
+                                  equipment={detail.load.equipment}
+                                  miles={detail.load.miles}
+                                  rate={rateStr}
                                 />
                               )}
                               {t.id === 'highway' && <HighwayLogView rows={carrierLogs} />}
