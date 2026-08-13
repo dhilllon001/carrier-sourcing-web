@@ -1579,7 +1579,10 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       {(!isV2 || routeOpen) && (
       <div className="dd-route dd-route--ov">
         {detail.stops.map((stop, i) => {
-          const role = stop.role ?? (stop.kind === 'Delivery' ? 'Drop' : 'Hook')
+          const isLastStop = i === detail.stops.length - 1
+          /* first stop reads as Pickup, final as Delivery, mid-stops keep their hook/drop role */
+          const role =
+            i === 0 ? 'Pickup' : isLastStop ? 'Delivery' : (stop.role ?? stop.kind)
           const crossBorder =
             /mexico|nuevo|monterrey|guadalajara|mx\b/i.test(`${stop.city} ${stop.address}`) ||
             /mexico|nuevo|monterrey|guadalajara|mx\b/i.test(
@@ -1591,32 +1594,34 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               <article
                 className={cn(
                   'dd-stop-card',
-                  stop.kind === 'Delivery' ? 'is-drop' : 'is-hook',
+                  isLastStop ? 'is-drop' : 'is-hook',
                   (stop.appointmentRequired || showStatusAlert) && 'has-alert'
                 )}
               >
-                <div className="dd-stop-card__top">
+                <div className="dd-stop-card__head">
                   <span className="dd-stop-card__num">{stop.index ?? i + 1}</span>
-                  <div className="dd-stop-card__main">
-                    <div className="dd-stop-card__role">{role}</div>
-                    <strong>{stop.facility}</strong>
-                    <span>{stop.address}</span>
-                  </div>
-                  <div className="dd-stop-card__when">
-                    <em>{stop.when}</em>
-                    {showStatusAlert && (
-                      <span className="dd-stop-card__status is-pending">{stop.status}</span>
-                    )}
-                  </div>
+                  <span className="dd-stop-card__role">{role}</span>
+                  <em className="dd-stop-card__when">{stop.when}</em>
                 </div>
-                {stop.appointmentRequired && (
-                  <div className="dd-stop-card__appt">
-                    <span>Appointment required</span>
+
+                <strong className="dd-stop-card__name" title={stop.facility}>
+                  {stop.facility}
+                </strong>
+
+                <div className="dd-stop-card__foot">
+                  <span className="dd-stop-card__addr" title={stop.address}>
+                    {stop.address}
+                  </span>
+                  <span className={cn('dd-stop-card__status', `is-${stop.statusTone}`)}>
+                    {stop.status}
+                  </span>
+                  {stop.appointmentRequired && (
                     <button type="button" className="dd-stop-card__add">
-                      Add
+                      <Plus size={11} />
+                      Appointment
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </article>
               {i < detail.stops.length - 1 && (
                 <div className="dd-route__bridge" aria-hidden>

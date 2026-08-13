@@ -6991,83 +6991,98 @@
   flex-wrap: wrap;
   gap: 0;
   align-items: stretch;
-  padding: 12px 14px;
+  padding: 9px 14px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
 
+/* every leg gets the same share so the cards are always equal width */
 .dd-route--ov .dd-route__pair {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
   min-width: 0;
-  flex: 1 1 280px;
+  flex: 1 1 0;
 }
 
-.dd-route--ov .dd-route__pair:last-child {
-  flex: 1 1 260px;
-}
-
+/* ── Stop card: three fixed rows → identical height on every card ──
+   row 1  role + date        row 2  facility        row 3  address + status */
 .dd-stop-card {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 3px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 9px 12px;
   box-shadow: var(--sh-1);
-  min-height: 92px;
+  min-height: 0;
 }
 
 .dd-stop-card.has-alert {
   border-color: var(--amber-line);
 }
 
-.dd-stop-card__top {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: start;
-  flex: 1;
+.dd-stop-card__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
 }
 
 .dd-stop-card__num {
-  width: 26px;
-  height: 26px;
+  flex: none;
+  width: 17px;
+  height: 17px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 10px;
+  font-weight: 700;
   font-family: var(--sr-font-body);
   font-variant-numeric: tabular-nums;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent-line);
+  background: var(--amber-soft);
+  color: var(--amber);
+  border: 1px solid var(--amber-line);
 }
 
 .dd-stop-card.is-drop .dd-stop-card__num {
-  background: var(--amber-soft);
-  color: var(--amber);
-  border-color: var(--amber-line);
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: var(--green-line);
 }
 
 .dd-stop-card__role {
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.07em;
+  flex: 1;
+  min-width: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--amber);
+  white-space: nowrap;
 }
 
-.dd-stop-card__main strong {
+.dd-stop-card.is-drop .dd-stop-card__role {
+  color: var(--green);
+}
+
+.dd-stop-card__when {
+  flex: none;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dd-stop-card__name {
   display: block;
-  margin-top: 2px;
-  font-size: 13.5px;
-  font-weight: 650;
+  font-size: 12.5px;
+  font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ink);
   line-height: 1.25;
@@ -7076,73 +7091,61 @@
   text-overflow: ellipsis;
 }
 
-.dd-stop-card__main span {
-  margin-top: 3px;
-  font-size: 11.5px;
-  color: var(--ink-2);
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.dd-stop-card__when {
-  text-align: right;
+.dd-stop-card__foot {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: flex-end;
-  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-.dd-stop-card__when em {
-  font-style: normal;
-  font-size: 11.5px;
-  font-weight: 550;
+.dd-stop-card__addr {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dd-stop-card__status {
-  max-width: 140px;
+  flex: none;
+  max-width: 150px;
   font-size: 10.5px;
-  font-weight: 650;
+  font-weight: 700;
   line-height: 1.25;
   text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-3);
+}
+
+.dd-stop-card__status.is-live {
+  color: var(--green);
 }
 
 .dd-stop-card__status.is-pending {
   color: var(--amber);
 }
 
-.dd-stop-card__appt {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 9px;
-  border-radius: 8px;
-  background: var(--amber-soft);
-  border: 1px solid var(--amber-line);
-  color: var(--amber);
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
+/* compact inline affordance keeps card heights identical */
 .dd-stop-card__add {
-  height: 24px;
-  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  height: 20px;
+  padding: 0 7px;
   border-radius: 6px;
   border: 1px solid var(--amber-line);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 650;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 10.5px;
+  font-weight: 700;
   cursor: pointer;
-  flex-shrink: 0;
 }
 
 .dd-stop-card__add:hover {
@@ -7150,20 +7153,22 @@
   border-color: var(--amber);
 }
 
+/* ── Leg connector: thin rule with the mileage inline ── */
 .dd-route--ov .dd-route__bridge {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 0 6px;
-  flex-shrink: 0;
+  gap: 2px;
+  min-width: 74px;
+  padding: 0 8px;
+  flex: none;
   align-self: center;
 }
 
 .dd-route__note {
-  font-size: 9.5px;
-  font-weight: 650;
+  font-size: 9px;
+  font-weight: 700;
   color: var(--ink-3);
   text-align: center;
   max-width: 88px;
@@ -7171,20 +7176,25 @@
 }
 
 .dd-route--ov .dd-route__miles {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  font-size: 11px;
+  gap: 5px;
+  width: 100%;
+  font-size: 10.5px;
   font-weight: 650;
   font-family: var(--sr-font-body);
   font-variant-numeric: tabular-nums;
   color: var(--ink-2);
   white-space: nowrap;
-  box-shadow: var(--sh-1);
+}
+
+/* thin rule either side of the mileage */
+.dd-route--ov .dd-route__miles::before,
+.dd-route--ov .dd-route__miles::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--sr-border-2);
 }
 
 .dd-meta__item--edit {
