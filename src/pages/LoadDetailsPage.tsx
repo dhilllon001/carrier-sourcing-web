@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -44,6 +44,11 @@ import {
   AutoSourcingPanel,
   type AutoMode,
 } from '@/components/details/AutoSourcingPanel'
+import {
+  CaseActivityRail,
+  CaseCenterHeader,
+  LoadStructureTree,
+} from '@/components/details/View3CaseLayout'
 import { cn } from '@/lib/cn'
 import {
   SEED_ACTIVITY,
@@ -1050,28 +1055,73 @@ function ActivityTab({ detail }: { detail: LoadDetail }) {
 
 /* ══════════════ View 2 (redesign preview) building blocks ══════════════ */
 
-type DetailView = 'v1' | 'v2'
+type DetailView = 'v1' | 'v2' | 'v3'
+
+const VIEW_OPTIONS = [
+  ['v1', 'View 1', 'Current theme'],
+  ['v2', 'View 2', 'Redesign preview'],
+  ['v3', 'View 3', 'Case layout'],
+] as const
+
+const VIEW_STORAGE_KEY = 'cs-detail-view'
+
+function readStoredView(): DetailView {
+  try {
+    const v = localStorage.getItem(VIEW_STORAGE_KEY)
+    if (v === 'v1' || v === 'v2' || v === 'v3') return v
+  } catch {
+    /* ignore */
+  }
+  return 'v1'
+}
 
 function ViewSwitch({ view, onView }: { view: DetailView; onView: (v: DetailView) => void }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const current = VIEW_OPTIONS.find((o) => o[0] === view) ?? VIEW_OPTIONS[0]
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
   return (
-    <div className="dd-viewsw" role="group" aria-label="Layout view">
-      {(
-        [
-          ['v1', 'View 1', 'Current theme'],
-          ['v2', 'View 2', 'Redesign preview'],
-        ] as const
-      ).map(([id, label, hint]) => (
-        <button
-          key={id}
-          type="button"
-          title={hint}
-          aria-pressed={view === id}
-          className={cn(view === id && 'is-active')}
-          onClick={() => onView(id)}
-        >
-          {label}
-        </button>
-      ))}
+    <div className="dd-viewdd" ref={rootRef}>
+      <button
+        type="button"
+        className="dd-viewdd__btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {current[1]}
+        <ChevronDown size={12} />
+      </button>
+      {open && (
+        <ul className="dd-viewdd__menu" role="listbox" aria-label="Layout view">
+          {VIEW_OPTIONS.map(([id, label, hint]) => (
+            <li key={id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={view === id}
+                className={cn(view === id && 'is-active')}
+                onClick={() => {
+                  onView(id)
+                  setOpen(false)
+                }}
+              >
+                <strong>{label}</strong>
+                <span>{hint}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -1403,10 +1453,20 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [offerOpen, setOfferOpen] = useState(false)
   const [autoAsk, setAutoAsk] = useState(false)
   const [autoOpen, setAutoOpen] = useState(false)
-  const [view, setView] = useState<DetailView>('v1')
+  const [view, setView] = useState<DetailView>(() => readStoredView())
   const [factsOpen, setFactsOpen] = useState(false)
   const [routeOpen, setRouteOpen] = useState(false)
   const [aiLog, setAiLog] = useState<AiActivityEntry[]>(() => buildAiActivity(base))
+  const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
+
+  const setDetailView = (next: DetailView) => {
+    setView(next)
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next)
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     setDetail(base)
@@ -1504,17 +1564,26 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     subStage === 'Resources'
 
   const isV2 = view === 'v2'
+  const isV3 = view === 'v3'
+  const readinessPct = Math.round((lifeDetail.completedSubs / Math.max(1, lifeDetail.totalSubs)) * 100)
 
   return (
-    <div className={cn('dd-page', isV2 && 'dd-page--v2')}>
-      <header className={cn('dd-top', isV2 && 'dd-top--v2')}>
+    <div className={cn('dd-page', isV2 && 'dd-page--v2', isV3 && 'dd-page--v3')}>
+      <header className={cn('dd-top', isV2 && 'dd-top--v2', isV3 && 'dd-top--v3')}>
         <div className="dd-top__row">
           <button type="button" className="dd-back" onClick={onBack}>
             <ArrowLeft size={16} />
             Back
           </button>
 
-          {isV2 ? (
+          {isV3 ? (
+            <div className="v3-crumb">
+              <span>Sourcing</span>
+              <ChevronRight size={12} />
+              <strong>{load.id}</strong>
+              <em className="v3-crumb__badge">AI readiness {readinessPct}%</em>
+            </div>
+          ) : isV2 ? (
             <div className="dd-v2id">
               <strong>{load.id}</strong>
               <ModeBadge mode={load.mode} />
@@ -1547,7 +1616,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           )}
 
           <div className="dd-top__right">
-            <ViewSwitch view={view} onView={setView} />
+            <ViewSwitch view={view} onView={setDetailView} />
             {isV2 && (
               <button
                 type="button"
@@ -1583,7 +1652,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         </div>
       </header>
 
-      {(!isV2 || factsOpen) && (
+      {!isV3 && (!isV2 || factsOpen) && (
       <div className={cn('dd-meta', isV2 && 'dd-meta--v2')}>
         <div className="dd-meta__item">
           <span>Trailer</span>
@@ -1663,7 +1732,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       </div>
       )}
 
-      {isV2 && (
+      {!isV3 && isV2 && (
         <LaneBar
           detail={detail}
           routeOpen={routeOpen}
@@ -1671,7 +1740,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         />
       )}
 
-      {(!isV2 || routeOpen) && (
+      {!isV3 && (!isV2 || routeOpen) && (
       <div className="dd-route dd-route--ov">
         {detail.stops.map((stop, i) => {
           const isLastStop = i === detail.stops.length - 1
@@ -1732,6 +1801,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       </div>
       )}
 
+      {!isV3 && (
       <div
         className={cn(
           'dd-body',
@@ -1881,6 +1951,131 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         />
         )}
       </div>
+      )}
+
+      {isV3 && (
+        <div className="v3-body">
+          <LoadStructureTree
+            detail={lifeDetail}
+            stage={stage}
+            subStage={subStage}
+            onSelect={(s, sub) => {
+              setStage(s)
+              setSubStage(sub)
+              setV3Tab('overview')
+            }}
+          />
+
+          <div className="v3-main">
+            {!stageWorkspace && (
+              <>
+                <CaseCenterHeader
+                  detail={detail}
+                  load={load}
+                  stage={stage}
+                  subStage={subStage}
+                  readinessPct={readinessPct}
+                  tags={tags}
+                  onTags={setTags}
+                  autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
+                  onAuto={() => {
+                    setAutoAsk(false)
+                    setAutoOpen(true)
+                  }}
+                />
+                <div className="v3-tabs">
+                  {(
+                    [
+                      ['overview', 'Overview'],
+                      ['instructions', 'Instructions'],
+                      ['documents', `Documents ${detail.documents.length}`],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={cn(v3Tab === id && 'is-on')}
+                      onClick={() => setV3Tab(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="v3-main__content">
+                  {v3Tab === 'overview' && (
+                    <SummaryTab
+                      detail={detail}
+                      tags={tags}
+                      onTags={setTags}
+                      onPatchDetail={(patch) => setDetail((d) => ({ ...d, ...patch }))}
+                      onPostToSourcing={() => {
+                        setStage('Sourcing')
+                        setSubStage('Find & Post')
+                      }}
+                    />
+                  )}
+                  {v3Tab === 'instructions' && (
+                    <InstructionsTab
+                      detail={detail}
+                      onCarrier={(v) => setDetail((d) => ({ ...d, carrierInstructions: v }))}
+                      onInternal={(v) => setDetail((d) => ({ ...d, internalInstructions: v }))}
+                    />
+                  )}
+                  {v3Tab === 'documents' && <DocumentsTab detail={detail} />}
+                </div>
+              </>
+            )}
+
+            {stageWorkspace && (
+              <div className="v3-main__workspace">
+                <div className="v3-main__stagebar">
+                  <strong>
+                    {stage} · {subStage}
+                  </strong>
+                  <button
+                    type="button"
+                    className="dd-btn"
+                    onClick={() => {
+                      setStage('Sourcing')
+                      setSubStage('Overview')
+                      setV3Tab('overview')
+                    }}
+                  >
+                    Back to overview
+                  </button>
+                </div>
+                {isFindPost(subStage) && (
+                  <FindPostView
+                    detail={detail}
+                    onPostLoad={() => setPostOpen(true)}
+                    onAdvanceToOffers={() => {
+                      setStage('Tender')
+                      setSubStage('Offers & Bids')
+                    }}
+                  />
+                )}
+                {subStage === 'Offers & Bids' && (
+                  <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
+                )}
+                {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
+                {subStage === 'CMT' && <CmtValidateView detail={detail} />}
+                {subStage === 'Finalize Carrier Award' && <FinalizeAwardView detail={detail} />}
+                {subStage === 'Create Contract' && <CreateContractView detail={detail} />}
+                {(subStage === 'Send Confirmation' ||
+                  subStage === 'Signed Confirmation' ||
+                  subStage === 'Resources') && (
+                  <BookingStageView
+                    detail={detail}
+                    kind={subStage as 'Send Confirmation' | 'Signed Confirmation' | 'Resources'}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          <CaseActivityRail detail={detail} aiLog={aiLog} />
+        </div>
+      )}
 
       {postOpen && (
         <PostMarketplaceModal detail={detail} onClose={() => setPostOpen(false)} />
