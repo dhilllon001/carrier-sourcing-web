@@ -49,9 +49,20 @@ import {
   CaseCenterHeader,
   CaseWorkBar,
   LoadStructureTree,
+  StageWorkBar,
   type CaseActionId,
   type CaseEvent,
 } from '@/components/details/View3CaseLayout'
+import {
+  AwardWorkspace,
+  BookingWorkspace,
+  SettlementWorkspace,
+  SourcingWorkspace,
+  TenderWorkspace,
+  TransitWorkspace,
+} from '@/components/details/View3StageWorkspaces'
+import { canAutoAward, scoreBids } from '@/data/awardScore'
+import { loadProfiles } from '@/data/automationProfiles'
 import { cn } from '@/lib/cn'
 import {
   SEED_ACTIVITY,
@@ -68,6 +79,7 @@ import {
 import {
   buildLoadDetail,
   isFindPost,
+  type BidOffer,
   type CommodityLine,
   type DetailStage,
   type LoadDetail,
@@ -75,8 +87,6 @@ import {
 import type { ReportLoad } from '@/data/report'
 
 type TabId = 'summary' | 'instructions' | 'documents' | 'activity'
-
-const toRate = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
 
 type LoadDetailsPageProps = {
   load: ReportLoad
@@ -1536,13 +1546,37 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
 
   /* sourcing not done → Auto Sourcing; done (or Tender) → Auto Tender; Award → Auto Award */
   const autoMode: AutoMode | null =
-    stage === 'Award'
-      ? 'award'
-      : stage === 'Tender' || (stage === 'Sourcing' && Boolean(sourcingComplete) && detail.bids.length > 0)
-        ? 'tender'
-        : stage === 'Sourcing'
-          ? 'sourcing'
-          : null
+    stage === 'Booking'
+      ? 'booking'
+      : stage === 'Award'
+        ? 'award'
+        : stage === 'Tender' || (stage === 'Sourcing' && Boolean(sourcingComplete) && detail.bids.length > 0)
+          ? 'tender'
+          : stage === 'Sourcing'
+            ? 'sourcing'
+            : null
+
+  const patchDetail = (fn: (d: LoadDetail) => LoadDetail) => setDetail(fn)
+
+  const withStageDone = (d: LoadDetail, name: DetailStage): LoadDetail => {
+    const stages = d.stages.map((s) =>
+      s.stage === name ? { ...s, items: s.items.map((it) => ({ ...it, done: true })) } : s
+    )
+    const completedSubs = stages.reduce((n, s) => n + s.items.filter((i) => i.done).length, 0)
+    return { ...d, stages, completedSubs }
+  }
+
+  const withAcceptedBid = (d: LoadDetail, bid: BidOffer): LoadDetail => ({
+    ...d,
+    awardedBidId: bid.id,
+    bids: d.bids.map((b) => ({
+      ...b,
+      status: b.id === bid.id ? 'Accepted' : b.status === 'Accepted' ? 'Pending' : b.status,
+      best: b.id === bid.id,
+    })),
+  })
+
+  const markStageDone = (name: DetailStage) => patchDetail((d) => withStageDone(d, name))
 
   const completeSourcingAndAskTender = () => {
     setDetail((d) => {
@@ -1574,6 +1608,47 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setStage('Tender')
     setSubStage('Offers & Bids')
     setAutoAsk(true)
+  }
+
+  const completeTenderAndAskAward = (bid: BidOffer) => {
+    patchDetail((d) => withStageDone(withAcceptedBid(d, bid), 'Tender'))
+    logCase({
+      title: 'Auto Tender accepted',
+      detail: `${bid.carrier} at ${bid.allIn ?? bid.amount} — moving to Award.`,
+      who: 'Auto Tender',
+    })
+    setAutoOpen(false)
+    setStage('Award')
+    setSubStage('CMT')
+    setAutoAsk(true)
+  }
+
+  const completeAwardAndAskBooking = (bid: BidOffer, auto: boolean, reason?: { code: string; note: string }) => {
+    patchDetail((d) => withStageDone({ ...withAcceptedBid(d, bid), cmtCleared: true }, 'Award'))
+    logCase({
+      title: auto ? 'Auto Award completed' : reason ? `Award overridden — ${reason.code}` : 'Carrier awarded',
+      detail: reason?.note
+        ? `${bid.carrier} · ${reason.note}`
+        : `${bid.carrier} at ${bid.allIn ?? bid.amount}. Confirmation to ${bid.email ?? 'dispatch'}.`,
+      who: auto ? 'Auto Award' : 'Broker',
+      status: reason ? 'warn' : 'ok',
+    })
+    setAutoOpen(false)
+    setStage('Booking')
+    setSubStage('Create Contract')
+    setAutoAsk(false)
+  }
+
+  const completeBooking = () => {
+    markStageDone('Booking')
+    logCase({
+      title: 'Auto Booking completed',
+      detail: 'Contract drafted, confirmation sent to the verified email, mock resources assigned.',
+      who: 'Auto Booking',
+    })
+    setAutoOpen(false)
+    setStage('In Transit')
+    setSubStage('Pickup Confirm')
   }
 
   /* lifecycle reflects the position the user is viewing: everything before it shows a check */
@@ -1685,12 +1760,59 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         })
         return
       }
-      const best = [...detail.bids].sort((a, b) => toRate(a.allIn ?? a.amount) - toRate(b.allIn ?? b.amount))[0]
+      const ranked = scoreBids(detail.bids, detail.maxBuy, loadProfiles().tender[1]?.weights)
+      const best = ranked.find((s) => s.suggested) ?? ranked[0]
       logCase({
         title: 'AI scored offers',
-        detail: `${detail.bids.length} offers ranked — ${best.carrier} at ${best.allIn ?? best.amount} scores best.`,
+        detail: `${detail.bids.length} offers ranked — ${best.bid.carrier} at ${best.bid.allIn ?? best.bid.amount} scores ${best.score}.`,
         who: 'AI assist',
       })
+      return
+    }
+    if (id === 'ai-counter') {
+      logCase({
+        title: 'AI drafted a counter',
+        detail: 'Suggested $2,500 all-in against the current best offer.',
+        who: 'AI assist',
+        status: 'info',
+      })
+      return
+    }
+    if (id === 'ai-explain') {
+      const ranked = scoreBids(detail.bids, detail.maxBuy, loadProfiles().award[0]?.weights)
+      const best = ranked.find((s) => s.suggested)
+      logCase({
+        title: 'Why this carrier',
+        detail: best ? best.reasons.join(' · ') : 'No recommended carrier yet.',
+        who: 'AI assist',
+        status: 'info',
+      })
+      return
+    }
+    if (id === 'finalize') {
+      const accepted = detail.bids.find((b) => b.status === 'Accepted')
+      if (accepted) completeTenderAndAskAward(accepted)
+      return
+    }
+    if (id === 'cmt') {
+      setDetail((d) => ({ ...d, cmtCleared: true }))
+      logCase({ title: 'CMT checks ran', detail: '6 of 6 validation checks passed.', who: 'CMT' })
+      return
+    }
+    if (id === 'award') {
+      const gate = canAutoAward({ ...detail, cmtCleared: true }, loadProfiles().award[0])
+      if (gate.top) completeAwardAndAskBooking(gate.top.bid, gate.ok)
+      return
+    }
+    if (id === 'override') {
+      setStage('Award')
+      setSubStage('Finalize Carrier Award')
+      logCase({ title: 'Override path opened', detail: 'Pick a carrier and enter a reason code.', status: 'warn' })
+      return
+    }
+    if (id === 'contract' || id === 'confirm') {
+      setStage('Booking')
+      setSubStage(id === 'contract' ? 'Create Contract' : 'Send Confirmation')
       return
     }
     setStage('Tender')
@@ -2095,7 +2217,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
           />
 
           <div className="v3-main">
-            {!stageWorkspace && (
+            {stage === 'Sourcing' ? (
               <>
                 <CaseWorkBar
                   tab={v3Tab}
@@ -2110,31 +2232,17 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                     setAutoOpen(true)
                   }}
                 />
-                {v3Tab === 'overview' && <CaseCenterHeader detail={detail} onAction={runCaseAction} />}
+                {v3Tab === 'overview' && (
+                  <CaseCenterHeader detail={detail} stage={stage} onAction={runCaseAction} />
+                )}
                 <div className="v3-main__content">
                   {v3Tab === 'overview' && (
-                    <SummaryTab
+                    <SourcingWorkspace
                       detail={detail}
-                      tags={tags}
-                      onTags={setTags}
-                      hideReadiness
-                      onPatchDetail={(patch) => {
-                        setDetail((d) => ({ ...d, ...patch }))
-                        if (patch.maxBuy && patch.maxBuy !== detail.maxBuy) {
-                          const cleared = patch.maxBuy === '$0.00'
-                          logCase({
-                            key: 'rates',
-                            title: cleared ? 'Max buy cleared' : 'Max buy set',
-                            detail: cleared
-                              ? 'No hard limit on this load right now.'
-                              : `${patch.maxBuy} hard limit · book now ${patch.bookNowRate}`,
-                            status: cleared ? 'warn' : 'ok',
-                          })
-                        }
-                      }}
-                      onPostToSourcing={() => {
-                        setStage('Sourcing')
-                        setSubStage('Find & Post')
+                      onPostLoad={() => setPostOpen(true)}
+                      onAdvanceToOffers={() => {
+                        setStage('Tender')
+                        setSubStage('Offers & Bids')
                       }}
                     />
                   )}
@@ -2148,53 +2256,84 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                   {v3Tab === 'documents' && <DocumentsTab detail={detail} />}
                 </div>
               </>
-            )}
-
-            {stageWorkspace && (
-              <div className="v3-main__workspace">
-                <div className="v3-main__stagebar">
-                  <strong>
-                    {stage} · {subStage}
-                  </strong>
-                  <button
-                    type="button"
-                    className="dd-btn"
-                    onClick={() => {
-                      setStage('Sourcing')
-                      setSubStage('Overview')
-                      setV3Tab('overview')
-                    }}
-                  >
-                    Back to overview
-                  </button>
+            ) : (
+              <>
+                <StageWorkBar
+                  stage={stage}
+                  chip={
+                    stage === 'Tender'
+                      ? `Offers ${detail.bids.length} · ${detail.bids.filter((b) => b.status === 'Accepted').length} accepted`
+                      : stage === 'Award'
+                        ? detail.cmtCleared
+                          ? 'CMT 6/6'
+                          : 'CMT pending'
+                        : stage === 'Booking'
+                          ? 'Contract draft'
+                          : stage === 'In Transit'
+                            ? '1 / 6 events'
+                            : 'Invoice open'
+                  }
+                  status={load.status}
+                  autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
+                  autoDisabled={
+                    autoMode === 'award' &&
+                    !canAutoAward(detail, loadProfiles().award[0]).ok
+                  }
+                  autoHint={
+                    autoMode === 'award' && !canAutoAward(detail, loadProfiles().award[0]).ok
+                      ? canAutoAward(detail, loadProfiles().award[0])
+                          .items.filter((i) => !i.ok)
+                          .map((i) => i.label)
+                          .join(' · ')
+                      : undefined
+                  }
+                  onAuto={() => {
+                    setAutoAsk(false)
+                    setAutoOpen(true)
+                  }}
+                  onBack={() => {
+                    setStage('Sourcing')
+                    setSubStage('Overview')
+                    setV3Tab('overview')
+                  }}
+                />
+                {(stage === 'Tender' || stage === 'Award' || stage === 'Booking') && (
+                  <CaseCenterHeader detail={detail} stage={stage} onAction={runCaseAction} />
+                )}
+                <div className="v3-main__workspace">
+                  {stage === 'Tender' && (
+                    <TenderWorkspace
+                      detail={detail}
+                      onAccept={completeTenderAndAskAward}
+                      onAddOffer={() => setOfferOpen(true)}
+                    />
+                  )}
+                  {stage === 'Award' && (
+                    <AwardWorkspace
+                      detail={detail}
+                      onRunCmt={() => {
+                        setDetail((d) => ({ ...d, cmtCleared: true }))
+                        logCase({ title: 'CMT checks ran', detail: '6 of 6 validation checks passed.', who: 'CMT' })
+                      }}
+                      onAward={(bid, reason) => completeAwardAndAskBooking(bid, !reason, reason)}
+                    />
+                  )}
+                  {stage === 'Booking' && <BookingWorkspace detail={detail} onAutoBook={completeBooking} />}
+                  {stage === 'In Transit' && (
+                    <TransitWorkspace
+                      onLog={(title, dtl) => logCase({ title, detail: dtl, who: 'Tracking' })}
+                    />
+                  )}
+                  {stage === 'Settlement' && (
+                    <SettlementWorkspace
+                      onCloseFile={() => {
+                        markStageDone('Settlement')
+                        logCase({ title: 'File closed', detail: 'Invoice, pay and bill marked complete.' })
+                      }}
+                    />
+                  )}
                 </div>
-                {isFindPost(subStage) && (
-                  <FindPostView
-                    detail={detail}
-                    variant="cards"
-                    onPostLoad={() => setPostOpen(true)}
-                    onAdvanceToOffers={() => {
-                      setStage('Tender')
-                      setSubStage('Offers & Bids')
-                    }}
-                  />
-                )}
-                {subStage === 'Offers & Bids' && (
-                  <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
-                )}
-                {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
-                {subStage === 'CMT' && <CmtValidateView detail={detail} />}
-                {subStage === 'Finalize Carrier Award' && <FinalizeAwardView detail={detail} />}
-                {subStage === 'Create Contract' && <CreateContractView detail={detail} />}
-                {(subStage === 'Send Confirmation' ||
-                  subStage === 'Signed Confirmation' ||
-                  subStage === 'Resources') && (
-                  <BookingStageView
-                    detail={detail}
-                    kind={subStage as 'Send Confirmation' | 'Signed Confirmation' | 'Resources'}
-                  />
-                )}
-              </div>
+              </>
             )}
           </div>
 
@@ -2243,6 +2382,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             setSubStage('Find & Post')
           }}
           onSourcingComplete={completeSourcingAndAskTender}
+          onTenderComplete={completeTenderAndAskAward}
+          onAwardComplete={(bid, auto) => completeAwardAndAskBooking(bid, auto)}
+          onBookingComplete={completeBooking}
         />
       )}
     </div>

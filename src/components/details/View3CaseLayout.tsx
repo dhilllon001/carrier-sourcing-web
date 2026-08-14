@@ -41,7 +41,7 @@ function readinessAlerts(detail: LoadDetail) {
 export function LoadStructureTree({
   detail,
   stage,
-  subStage,
+  subStage: _subStage,
   onSelect,
 }: {
   detail: LoadDetail
@@ -87,24 +87,7 @@ export function LoadStructureTree({
                 </em>
               </button>
               {active && (
-                <ul className="v3-struct__subs">
-                  {block.items.map((item) => (
-                    <li key={item.label}>
-                      <button
-                        type="button"
-                        className={cn(
-                          'v3-struct__sub',
-                          item.done && 'is-done',
-                          subStage === item.label && 'is-current'
-                        )}
-                        onClick={() => onSelect(block.stage, item.label)}
-                      >
-                        <i>{item.done ? <Check size={9} strokeWidth={3} /> : null}</i>
-                        <span>{item.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <div className="v3-struct__chip">{block.items.filter((i) => i.done).length === block.items.length && block.items.length > 0 ? 'Complete' : `${doneCount} of ${block.items.length} done`}</div>
               )}
             </div>
           )
@@ -121,9 +104,17 @@ export type CaseActionId =
   | 'broker'
   | 'post'
   | 'offers'
+  | 'finalize'
+  | 'cmt'
+  | 'award'
+  | 'override'
+  | 'contract'
+  | 'confirm'
   | 'ai-rate'
   | 'ai-email'
   | 'ai-score'
+  | 'ai-counter'
+  | 'ai-explain'
 export type CaseTab = 'overview' | 'instructions' | 'documents'
 
 const rateOrDash = (v: string) => (!v || v === '—' || v === '$0.00' ? null : v)
@@ -191,9 +182,11 @@ export function CaseWorkBar({
 
 export function CaseCenterHeader({
   detail,
+  stage,
   onAction,
 }: {
   detail: LoadDetail
+  stage: DetailStage
   onAction: (id: CaseActionId) => void
 }) {
   const alerts = readinessAlerts(detail)
@@ -206,35 +199,66 @@ export function CaseCenterHeader({
   const customerRate = detail.load.fee
   const margin = maxBuy === null ? null : customerRate - toNum(maxBuy)
 
-  /* only surface what the user can actually act on right now */
+  const accepted = detail.bids.find((b) => b.status === 'Accepted')
   const actions: { id: CaseActionId; label: string; icon: typeof Zap; primary?: boolean }[] = []
-  if (!maxBuy) actions.push({ id: 'maxbuy', label: 'Set max buy', icon: DollarSign, primary: true })
-  if (!alerts.find((a) => a.id === 'hook')?.done)
-    actions.push({ id: 'hook', label: 'Add hook appointment', icon: CalendarClock })
-  if (!alerts.find((a) => a.id === 'drop')?.done)
-    actions.push({ id: 'drop', label: 'Add drop appointment', icon: CalendarClock })
-  if (!detail.load.broker) actions.push({ id: 'broker', label: 'Assign broker', icon: UserPlus })
-  if (blocking === 0) actions.push({ id: 'post', label: 'Post to sourcing', icon: ArrowRight, primary: true })
-  if (detail.bids.length > 0)
-    actions.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
+  if (stage === 'Sourcing') {
+    if (!maxBuy) actions.push({ id: 'maxbuy', label: 'Set max buy', icon: DollarSign, primary: true })
+    if (!alerts.find((a) => a.id === 'hook')?.done)
+      actions.push({ id: 'hook', label: 'Add hook appointment', icon: CalendarClock })
+    if (!alerts.find((a) => a.id === 'drop')?.done)
+      actions.push({ id: 'drop', label: 'Add drop appointment', icon: CalendarClock })
+    if (!detail.load.broker) actions.push({ id: 'broker', label: 'Assign broker', icon: UserPlus })
+    if (blocking === 0) actions.push({ id: 'post', label: 'Post to sourcing', icon: ArrowRight, primary: true })
+    if (detail.bids.length > 0) actions.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
+  } else if (stage === 'Tender') {
+    actions.push({ id: 'ai-score', label: 'Score offers', icon: Gauge, primary: true })
+    if (accepted) actions.push({ id: 'finalize', label: `Confirm ${accepted.carrier}`, icon: Check })
+    else actions.push({ id: 'offers', label: 'Accept selected offer', icon: Users })
+  } else if (stage === 'Award') {
+    if (!detail.cmtCleared) actions.push({ id: 'cmt', label: 'Run CMT', icon: Check, primary: true })
+    actions.push({ id: 'award', label: 'Award recommended', icon: Zap, primary: detail.cmtCleared })
+    actions.push({ id: 'override', label: 'Award another carrier', icon: Users })
+  } else if (stage === 'Booking') {
+    actions.push({ id: 'contract', label: 'Open contract', icon: ArrowRight, primary: true })
+    actions.push({ id: 'confirm', label: 'Send confirmation', icon: Mail })
+  }
 
   return (
     <div className="v3-case">
       <section className="v3-ready">
         <div className="v3-ready__head">
           <div>
-            <strong>Readiness</strong>
+            <strong>
+              {stage === 'Tender' ? 'Offers' : stage === 'Award' ? 'Award readiness' : stage === 'Booking' ? 'Booking' : 'Readiness'}
+            </strong>
             <span>
-              {blocking === 0
-                ? 'All required data points clear — ready to post and run automation.'
-                : `${blocking} blocking item${blocking === 1 ? '' : 's'} before this load can post.`}
+              {stage === 'Tender'
+                ? `${detail.bids.length} offers in · ${accepted ? `1 accepted (${accepted.carrier})` : 'none accepted yet'}.`
+                : stage === 'Award'
+                  ? detail.cmtCleared
+                    ? 'CMT clear — award the recommended carrier or override with a reason.'
+                    : 'Run CMT before this load can auto-award.'
+                  : stage === 'Booking'
+                    ? 'Contract, confirmation, resources and dispatch live on one screen.'
+                    : blocking === 0
+                      ? 'All required data points clear — ready to post and run automation.'
+                      : `${blocking} blocking item${blocking === 1 ? '' : 's'} before this load can post.`}
             </span>
           </div>
-          <em className={cn(blocking === 0 ? 'is-ok' : 'is-warn')}>{readinessPct}%</em>
+          <em className={cn(blocking === 0 ? 'is-ok' : 'is-warn')}>
+            {stage === 'Tender'
+              ? `${detail.bids.length}`
+              : stage === 'Award'
+                ? detail.cmtCleared
+                  ? 'Ready'
+                  : 'Hold'
+                : `${readinessPct}%`}
+          </em>
         </div>
         <div className="v3-ready__bar">
           <i style={{ width: `${readinessPct}%` }} className={blocking === 0 ? 'is-ok' : undefined} />
         </div>
+        {stage === 'Sourcing' && (
         <ul className="v3-ready__checks">
           {alerts.map((a) => (
             <li key={a.id} className={cn(a.done && 'is-done')}>
@@ -243,6 +267,7 @@ export function CaseCenterHeader({
             </li>
           ))}
         </ul>
+        )}
       </section>
 
       <div className="v3-rates">
@@ -295,27 +320,102 @@ export function CaseCenterHeader({
         </div>
       )}
 
+      {(stage === 'Sourcing' || stage === 'Tender' || stage === 'Award') && (
       <div className="v3-ai">
         <span className="v3-ai__label">
           <Sparkles size={12} />
           AI assist
         </span>
         <div className="v3-ai__row">
-          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-rate')}>
-            <Wand2 size={13} />
-            Suggest max buy
-          </button>
-          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-email')}>
-            <Mail size={13} />
-            Draft carrier blast
-          </button>
-          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-score')}>
-            <Gauge size={13} />
-            Score offers
-          </button>
+          {stage === 'Sourcing' && (
+            <>
+              <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-rate')}>
+                <Wand2 size={13} />
+                Suggest max buy
+              </button>
+              <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-email')}>
+                <Mail size={13} />
+                Draft carrier blast
+              </button>
+            </>
+          )}
+          {stage === 'Tender' && (
+            <>
+              <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-score')}>
+                <Gauge size={13} />
+                Score offers
+              </button>
+              <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-counter')}>
+                <Mail size={13} />
+                Draft counter
+              </button>
+            </>
+          )}
+          {stage === 'Award' && (
+            <>
+              <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-score')}>
+                <Gauge size={13} />
+                Re-score
+              </button>
+              <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-explain')}>
+                <Sparkles size={13} />
+                Explain recommendation
+              </button>
+            </>
+          )}
         </div>
       </div>
+      )}
 
+    </div>
+  )
+}
+
+export function StageWorkBar({
+  stage,
+  chip,
+  status,
+  autoLabel,
+  autoDisabled,
+  autoHint,
+  onAuto,
+  onBack,
+}: {
+  stage: string
+  chip: string
+  status: string
+  autoLabel: string | null
+  autoDisabled?: boolean
+  autoHint?: string
+  onAuto: () => void
+  onBack?: () => void
+}) {
+  return (
+    <div className="v3-bar">
+      <div className="v3-bar__tabs">
+        <strong className="v3-bar__stage">{stage}</strong>
+        <span className="v3-bar__chip">{chip}</span>
+      </div>
+      <div className="v3-bar__right">
+        <span className={cn('v3-bar__status', status === 'NeedCarrier' && 'is-warn')}>{status}</span>
+        {autoLabel && (
+          <button
+            type="button"
+            className="v3-case__cta"
+            disabled={autoDisabled}
+            title={autoHint}
+            onClick={onAuto}
+          >
+            <Zap size={13} />
+            {autoLabel}
+          </button>
+        )}
+        {onBack && (
+          <button type="button" className="dd-btn" onClick={onBack}>
+            Back
+          </button>
+        )}
+      </div>
     </div>
   )
 }

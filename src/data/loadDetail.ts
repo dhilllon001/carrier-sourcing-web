@@ -95,6 +95,13 @@ export type BidOffer = {
   email?: string
   channel?: 'Email' | 'WhatsApp' | 'Phone' | 'DAT'
   sentAt?: string
+  highwayOnboarded?: boolean
+  highwayVerifiedEmail?: boolean
+  highwayWatchlist?: boolean
+  tmsOnTime?: number
+  tmsClaims?: number
+  genlogsAlerts?: number
+  internalRating?: number
 }
 
 export type DocFile = {
@@ -155,6 +162,9 @@ export type LoadDetail = {
   documents: DocFile[]
   carrierInstructions: string
   internalInstructions: string
+  autoEligible: { board: boolean; customer: boolean; lane: boolean }
+  cmtCleared: boolean
+  awardedBidId?: string
 }
 
 const STAGE_TEMPLATE: DetailStageBlock[] = [
@@ -477,6 +487,13 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'rohan@testcarrier.example',
     channel: 'WhatsApp',
     sentAt: 'Today · 12:34 PM',
+    highwayOnboarded: true,
+    highwayVerifiedEmail: true,
+    highwayWatchlist: false,
+    tmsOnTime: 94,
+    tmsClaims: 0,
+    genlogsAlerts: 0,
+    internalRating: 4,
   },
   {
     id: 'b2',
@@ -499,6 +516,13 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'dispatch@midwestpower.example',
     channel: 'Email',
     sentAt: 'Today · 10:08 AM',
+    highwayOnboarded: true,
+    highwayVerifiedEmail: false,
+    highwayWatchlist: false,
+    tmsOnTime: 88,
+    tmsClaims: 1,
+    genlogsAlerts: 0,
+    internalRating: 3,
   },
   {
     id: 'b3',
@@ -521,6 +545,13 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'desk@ontarioexpress.example',
     channel: 'Email',
     sentAt: 'Today · 11:52 AM',
+    highwayOnboarded: true,
+    highwayVerifiedEmail: true,
+    highwayWatchlist: false,
+    tmsOnTime: 97,
+    tmsClaims: 0,
+    genlogsAlerts: 0,
+    internalRating: 5,
   },
   {
     id: 'b4',
@@ -543,6 +574,13 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'ops@borderbridge.example',
     channel: 'DAT',
     sentAt: 'Yesterday · 4:20 PM',
+    highwayOnboarded: false,
+    highwayVerifiedEmail: false,
+    highwayWatchlist: true,
+    tmsOnTime: 81,
+    tmsClaims: 2,
+    genlogsAlerts: 1,
+    internalRating: 2,
   },
 ]
 
@@ -793,6 +831,12 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
     totalSubs,
     carriers: CARRIERS,
     bids: SAMPLE_BIDS,
+    autoEligible: {
+      board: h % 5 !== 0,
+      customer: h % 7 !== 0,
+      lane: h % 4 !== 0,
+    },
+    cmtCleared: false,
     documents: [
       {
         id: 'd1',
