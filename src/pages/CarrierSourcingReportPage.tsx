@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { SrDataTable, TagPopover, type SrColumn } from '@/components/report'
-import { LifecycleRail } from '@/components/report/LifecycleRail'
+import { LifecycleRail, type RailTab } from '@/components/report/LifecycleRail'
+import {
+  AutoWorkflowsPanel,
+  type ConfigView,
+} from '@/components/config/AutoWorkflowsPanel'
+import { RUNS, WORKFLOWS } from '@/data/autoWorkflows'
 import {
   colFiltersApplied,
   searchApplied,
@@ -100,6 +105,8 @@ export function CarrierSourcingReportPage({
   const [filters, setFilters] = useState<ReportFilters>({ ...DEFAULT_FILTERS })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
+  const [railTab, setRailTab] = useState<RailTab>('lifecycle')
+  const [configView, setConfigView] = useState<ConfigView>('workflows')
   const [board, setBoard] = useState<string>('ALL')
   const [boardQuery, setBoardQuery] = useState('')
   const [rowTags, setRowTags] = useState<Record<string, string[]>>({
@@ -360,6 +367,8 @@ export function CarrierSourcingReportPage({
 
   return (
     <div className="sr-page">
+      {railTab === 'lifecycle' && (
+      <>
       <div
         className={cn(
           'sr-boards',
@@ -476,6 +485,8 @@ export function CarrierSourcingReportPage({
           </button>
         )}
       </div>
+      </>
+      )}
 
       <div className={cn('sr-page__split', lifeCollapsed && 'is-life-collapsed')}>
         <LifecycleRail
@@ -486,8 +497,28 @@ export function CarrierSourcingReportPage({
           onSelectAll={() => patch({ stage: 'ALL', subStage: 'ALL' })}
           onSelectStage={(stage) => patch({ stage, subStage: 'ALL' })}
           onSelectSubStage={(stage, sub) => patch({ stage, subStage: sub })}
+          tab={railTab}
+          onTabChange={setRailTab}
+          configView={configView}
+          onConfigView={(view) => {
+            setRailTab('config')
+            setConfigView(view)
+          }}
+          workflowCount={WORKFLOWS.length}
+          enabledCount={WORKFLOWS.filter((w) => w.enabled).length}
+          runsLive={RUNS.length}
+          needsYou={RUNS.filter((r) => r.state === 'needs-you').length}
         />
 
+        {railTab === 'config' ? (
+          <AutoWorkflowsPanel
+            view={configView}
+            onViewChange={setConfigView}
+            onOpenLoad={(probill) => {
+              if (reportLoads.some((r) => r.id === probill)) onOpenLoad(probill)
+            }}
+          />
+        ) : (
         <section className="sr-card sr-card--table" style={{ padding: 0, overflow: 'hidden' }}>
           {viewMode === 'table' ? (
             <SrDataTable
@@ -570,6 +601,7 @@ export function CarrierSourcingReportPage({
             </div>
           )}
         </section>
+        )}
       </div>
     </div>
   )
