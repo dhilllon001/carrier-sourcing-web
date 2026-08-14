@@ -81,7 +81,7 @@ export function LifecycleRail({
                     else onSelectStage(block.stage)
                   }}
                 >
-                  <i className="sr-tl-stage__mark">{block.number}</i>
+                  <i className="sr-tl-stage__mark">{Number(block.number)}</i>
                   <span className="sr-tl-stage__name">{block.stage}</span>
                   <em className="sr-tl-stage__count">{block.count.toLocaleString()}</em>
                 </button>

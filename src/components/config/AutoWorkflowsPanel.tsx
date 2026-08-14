@@ -63,7 +63,7 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
   return (
     <div className="cfg">
       <header className="cfg__bar">
-        <div className="cfg__tabs" role="tablist" aria-label="Configuration section">
+        <div className="cfg__tabs" role="tablist" aria-label="Auto sourcing configuration">
           <button
             type="button"
             role="tab"

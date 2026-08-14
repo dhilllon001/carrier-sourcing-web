@@ -1,4 +1,13 @@
-import { ArrowUpRight, Check, Clock, Loader2, ShieldAlert, Users, Zap } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Check,
+  Clock,
+  Handshake,
+  Loader2,
+  ShieldAlert,
+  Users,
+  Zap,
+} from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { Run } from '@/data/autoWorkflows'
 import { ConfigCard, Metric, money, plain } from './parts'
@@ -36,27 +45,13 @@ function RunCard({
     <button type="button" className={cn('cfg-run', active && 'is-on')} onClick={onSelect}>
       <span className="cfg-run__top">
         <i className={cn('cfg-dot', STATE_DOT[run.state])} aria-hidden />
-        <strong>{run.workflow}</strong>
+        <strong>{run.probill}</strong>
         <em>{run.clock}</em>
       </span>
-      <span className="cfg-run__load">
-        <b>{run.probill}</b>
-        {run.customer}
-      </span>
       <span className="cfg-run__lane">
-        {run.origin}
+        <span>{run.origin}</span>
         <i aria-hidden />
-        {run.destination}
-        <em>{run.miles.toLocaleString()} mi</em>
-      </span>
-      <span className="cfg-run__bars" aria-hidden>
-        {run.bars.map((b, i) => (
-          <i key={i} className={`is-${b}`} />
-        ))}
-      </span>
-      <span className="cfg-run__foot">
-        {run.footLabel}
-        <em className={cn(run.state === 'needs-you' && 'is-alert')}>{run.footValue}</em>
+        <span>{run.destination}</span>
       </span>
     </button>
   )
@@ -291,42 +286,77 @@ export function RunsView({
 
             <ConfigCard
               title="Offers & bids"
-              hint={`${active.bids.length} live · thresholds enforced automatically`}
+              hint={`${active.bids.filter((b) => b.outcome === 'live' || b.outcome === 'held').length} live · thresholds enforced automatically`}
             >
               <div className="cfg-rule">
                 <ShieldAlert size={13} strokeWidth={2} />
-                {active.awardRule}
+                <span>
+                  <b>Auto sourcing configuration:</b> {active.awardRule}
+                </span>
               </div>
 
               <ul className="cfg-bids">
-                {active.bids.map((b) => (
-                  <li key={b.carrier} className={`is-${b.outcome}`}>
-                    <div className="cfg-bids__who">
-                      <strong>{b.carrier}</strong>
-                      <span>
-                        MC {b.mc} · DOT {b.dot} · received {b.at}
-                      </span>
-                    </div>
-                    <div className="cfg-bids__amt">
-                      <strong>
-                        {plain(b.amount)} <em>{active.currency}</em>
-                      </strong>
-                      <span className={b.delta > 0 ? 'is-neg' : 'is-pos'}>
-                        {b.delta > 0 ? '+' : ''}
-                        {plain(b.delta)} vs Max Buy
-                      </span>
-                    </div>
-                    <span className={cn('cfg-outcome', `is-${b.outcome}`)}>
-                      {b.outcome === 'awarded'
-                        ? 'Awarded'
-                        : b.outcome === 'rejected'
-                          ? 'Auto-rejected'
-                          : b.outcome === 'live'
-                            ? 'Live'
-                            : 'Held'}
-                    </span>
-                  </li>
-                ))}
+                {active.bids.map((b) => {
+                  const actionable = b.outcome === 'live' || b.outcome === 'held'
+                  const isBest =
+                    actionable &&
+                    b.amount ===
+                      Math.min(
+                        ...active.bids
+                          .filter((x) => x.outcome === 'live' || x.outcome === 'held')
+                          .map((x) => x.amount),
+                      )
+                  return (
+                    <li
+                      key={b.carrier}
+                      className={cn(
+                        `is-${b.outcome}`,
+                        isBest && 'is-best',
+                        actionable && 'has-acts',
+                      )}
+                    >
+                      <div className="cfg-bids__top">
+                        <div className="cfg-bids__who">
+                          <strong>
+                            {b.carrier}
+                            {isBest && <em className="cfg-bids__best">BEST</em>}
+                          </strong>
+                          <span>
+                            MC# {b.mc} · DOT {b.dot} · Received {b.at}
+                          </span>
+                        </div>
+                        <div className="cfg-bids__amt">
+                          <strong>
+                            {plain(b.amount)} <em>{active.currency}</em>
+                          </strong>
+                          <span className={b.delta > 0 ? 'is-neg' : 'is-pos'}>
+                            {b.delta > 0 ? '+' : ''}
+                            {plain(b.delta)} vs Max Buy
+                          </span>
+                        </div>
+                      </div>
+
+                      {actionable ? (
+                        <div className="cfg-bids__acts">
+                          <button type="button" className="cfg-btn is-run">
+                            <Handshake size={13} strokeWidth={2.2} />
+                            Award to this carrier
+                          </button>
+                          <button type="button" className="cfg-btn">
+                            Counter at Book Now
+                          </button>
+                          <button type="button" className="cfg-btn is-danger">
+                            Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <span className={cn('cfg-outcome', `is-${b.outcome}`)}>
+                          {b.outcome === 'awarded' ? 'Awarded' : 'Auto-rejected'}
+                        </span>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             </ConfigCard>
           </div>

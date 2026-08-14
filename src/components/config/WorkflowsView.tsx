@@ -58,21 +58,6 @@ export function WorkflowsView({
                 <i className={cn('cfg-dot', wf.enabled ? 'is-live' : 'is-off')} aria-hidden />
                 <strong>{wf.name}</strong>
               </span>
-              <span className="cfg-wf__blurb">{wf.blurb}</span>
-              <span className="cfg-wf__stats">
-                <em>
-                  Runs today <b>{wf.stats.runsToday}</b>
-                </em>
-                <em>
-                  Cover <b>{wf.stats.cover}</b>
-                </em>
-                <em>
-                  Auto <b>{wf.stats.auto}</b>
-                </em>
-                <em>
-                  In flight <b>{wf.stats.inFlight}</b>
-                </em>
-              </span>
             </button>
           ))}
         </div>

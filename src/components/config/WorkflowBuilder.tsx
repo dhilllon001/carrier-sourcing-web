@@ -598,7 +598,7 @@ export function WorkflowBuilder({ workflows, onCancel, onSave }: WorkflowBuilder
               />
             </Field>
 
-            <Field label="Auto-award rule" wide>
+            <Field label="Auto sourcing configuration" wide>
               <p className="cfg-note">
                 Any bid at or below <b>Book Now</b> ({plain(priced.bookNow)} {currency}) is awarded
                 without a human. Between Book Now and <b>Max Buy</b> the bid is held for review.

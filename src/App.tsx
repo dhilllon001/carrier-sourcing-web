@@ -32,7 +32,7 @@ import { cn } from '@/lib/cn'
 
 const NAV = [
   { id: 'sourcing', label: 'Sourcing', icon: Truck },
-  { id: 'configuration', label: 'Configuration', icon: SlidersHorizontal },
+  { id: 'configuration', label: 'Auto sourcing configuration', icon: SlidersHorizontal },
   { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },

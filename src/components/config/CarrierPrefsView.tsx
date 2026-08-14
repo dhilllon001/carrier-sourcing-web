@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowUp, Mail, Phone, Plus, Search, Sparkles, Star, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
@@ -106,6 +106,21 @@ export function CarrierPrefsView({
 }: CarrierPrefsViewProps) {
   const [q, setQ] = useState('')
   const [lane, setLane] = useState('')
+  const [section, setSection] = useState(0)
+  const sectionRefs = useRef<(HTMLElement | null)[]>([])
+
+  const prefSections = [
+    'Contacts',
+    'Communication',
+    'Tender & booking',
+    'Lanes & capacity',
+    'Restrictions',
+  ]
+
+  const goToSection = (index: number) => {
+    setSection(index)
+    sectionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -181,7 +196,7 @@ export function CarrierPrefsView({
 
       {active && (
         <section className="cfg-detail cfg-detail--prefs">
-          <div className="cfg-detail__body">
+          <div className="cfg-prefs__top">
             <header className="cfg-prefs__head">
               <h2>{active.name}</h2>
               <p>
@@ -220,7 +235,9 @@ export function CarrierPrefsView({
                 tone={active.stats.insurance.startsWith('Expired') ? 'neg' : undefined}
               />
             </div>
+          </div>
 
+          <div className="cfg-detail__body">
             <p className="cfg-summary">
               <Sparkles size={13} strokeWidth={2.2} />
               <span>
@@ -239,10 +256,30 @@ export function CarrierPrefsView({
               </span>
             </p>
 
+            <div className="cfg-prefs__workspace">
+              <nav className="cfg-prefs__nav" aria-label="Carrier preference sections">
+                <span className="cfg-prefs__navlabel">Preferences</span>
+                {prefSections.map((label, index) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className={cn('cfg-prefs__navitem', section === index && 'is-on')}
+                    onClick={() => goToSection(index)}
+                  >
+                    <i aria-hidden>{index + 1}</i>
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </nav>
+
+              <div className="cfg-prefs__sections">
             <NumCard
               n={1}
               title="Contacts"
               hint="Star the favourite — that's who the automation talks to first"
+              cardRef={(el) => {
+                sectionRefs.current[0] = el
+              }}
               right={
                 <span className="cfg-card__aside">
                   {active.contacts.length} on file · {tenderCount} get tenders
@@ -347,6 +384,9 @@ export function CarrierPrefsView({
               n={2}
               title="Preferred mode of communication"
               hint="Tried in this order, falling through when nobody replies"
+              cardRef={(el) => {
+                sectionRefs.current[1] = el
+              }}
               right={<span className="cfg-card__aside">{active.channels.join(' → ')}</span>}
             >
               <ol className="cfg-order">
@@ -468,6 +508,9 @@ export function CarrierPrefsView({
               n={3}
               title="Tender & booking"
               hint="How this carrier accepts work and paperwork"
+              cardRef={(el) => {
+                sectionRefs.current[2] = el
+              }}
               right={
                 <span className="cfg-card__aside">
                   {active.rateCon} · {active.paymentTerms}
@@ -535,6 +578,9 @@ export function CarrierPrefsView({
               n={4}
               title="Lanes & capacity"
               hint="Used to rank this carrier inside the waterfall"
+              cardRef={(el) => {
+                sectionRefs.current[3] = el
+              }}
               right={
                 <span className="cfg-card__aside">
                   {active.lanes.length} lane{active.lanes.length === 1 ? '' : 's'} ·{' '}
@@ -616,6 +662,9 @@ export function CarrierPrefsView({
               n={5}
               title="Restrictions"
               hint="Take this carrier out of automated sourcing"
+              cardRef={(el) => {
+                sectionRefs.current[4] = el
+              }}
               right={
                 <span className={cn('cfg-card__aside', active.doNotUse && 'is-neg')}>
                   {active.doNotUse ? 'excluded' : 'no restrictions'}
@@ -633,6 +682,8 @@ export function CarrierPrefsView({
                 />
               </PrefRow>
             </NumCard>
+              </div>
+            </div>
           </div>
 
           <footer className="cfg-savebar">

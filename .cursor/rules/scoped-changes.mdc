@@ -1,0 +1,38 @@
+---
+description: Keep changes scoped and fast — match effort to the size of the request
+alwaysApply: true
+---
+
+# Scope the work to what was asked
+
+This is a UI prototype. Most requests are small, targeted edits to one section.
+Treat them that way.
+
+- Change only the section named. Don't refactor neighbours, rename things, or
+  "improve" nearby code that wasn't mentioned.
+- Don't add features, sections, or mock data that weren't asked for. If
+  something adjacent looks wrong, mention it in one sentence instead of fixing it.
+- Only plan out loud (todo lists, multi-step breakdowns) when the request really
+  spans several files. A one-section change needs none of that.
+
+# Match verification to the size of the change
+
+The default is minimal. The user prefers to look at the result themselves.
+
+For a small change — styling, wording, spacing, one component:
+
+- Make the edit and report back. That's it.
+- No production build, no headless browser screenshots, no clicking through
+  unrelated tabs.
+
+For a large change — a new page, many files, new data model:
+
+- Type-check and check lints before reporting.
+- Screenshot only if it genuinely helps show what changed.
+
+# Never deploy unless asked
+
+Do not build, commit, push, or deploy to Vercel on your own. Wait for the user to
+say "upload", "live link", or similar. When they do ask, push and share
+https://carrier-sourcing-web.vercel.app — and don't sit waiting on the deploy to
+verify unless they ask you to confirm it.

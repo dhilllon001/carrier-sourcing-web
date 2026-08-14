@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   Check,
+  CheckCheck,
   CloudUpload,
   Mail,
   MessageCircle,
@@ -176,81 +177,89 @@ export function FindPostView({
             </div>
           </div>
 
-          <ul className="fp__list">
-            {rows.map((c) => {
-              const idLine = [c.mc ? `MC ${c.mc}` : null, c.dot ? `DOT ${c.dot}` : null]
-                .filter(Boolean)
-                .join(' · ')
-              const touched =
-                c.lastContacted && c.lastContacted !== 'Never'
-                  ? `Contacted ${c.lastContacted}${c.lastContactChannel ? ` · ${c.lastContactChannel}` : ''}`
-                  : 'Never contacted'
-              return (
-                <li key={c.id} className={cn('fp-row', selected.has(c.id) && 'is-selected')}>
-                  <input
-                    type="checkbox"
-                    className="fp-row__pick"
-                    checked={selected.has(c.id)}
-                    onChange={() => toggle(c.id)}
-                    aria-label={`Select ${c.name}`}
-                  />
-                  <div className="fp-row__body">
-                    <div className="fp-row__head">
-                      {c.favorite && <Star size={11} className="is-star" />}
-                      <strong>{c.name}</strong>
-                      <span className={cn('fp-src', `is-${c.source.toLowerCase()}`)}>{c.source}</span>
-                      {c.recommended && <span className="fp-rec">Match {c.recommendScore}</span>}
-                    </div>
-                    <div className="fp-row__meta">
-                      <span className="mono">{idLine || 'No MC on file'}</span>
-                      <span>Last used {c.lastUsedRel}</span>
-                      <span className={cn(c.contactedRecently && 'is-touched')}>{touched}</span>
-                    </div>
-                    <div className="fp-row__stats">
-                      <div>
-                        <span>DH-P</span>
-                        <strong>{c.dhP} mi</strong>
-                      </div>
-                      <div>
-                        <span>DH-D</span>
-                        <strong>{c.dhD} mi</strong>
-                      </div>
-                      <div>
-                        <span>Last rate</span>
-                        <strong>{c.lastRate}</strong>
-                      </div>
-                      <div>
-                        <span>Loads</span>
-                        <strong>{c.loads}</strong>
-                      </div>
-                      <div>
-                        <span>Config rate</span>
-                        <strong>{c.configRate ?? '—'}</strong>
-                      </div>
-                      <div>
-                        <span>Offer</span>
-                        <strong className={cn(c.offer === 'Sent' && 'is-sent')}>
-                          {c.offer ?? 'Not sent'}
-                        </strong>
-                      </div>
-                    </div>
+          <div className="fp-tbl" role="table">
+            <div className="fp-tbl__head" role="row">
+              <span className="fp-tbl__pick">
+                <input
+                  type="checkbox"
+                  checked={rows.length > 0 && selected.size === rows.length}
+                  onChange={toggleAll}
+                  aria-label="Select all carriers"
+                />
+              </span>
+              <span role="columnheader">Carrier</span>
+              <span role="columnheader">Last rate</span>
+              <span role="columnheader">Deadhead</span>
+              <span role="columnheader">Loads</span>
+              <span role="columnheader">Offer</span>
+              <span className="fp-tbl__reach" role="columnheader">
+                Reach
+              </span>
+            </div>
+
+            <div className="fp-tbl__body">
+              {rows.map((c) => {
+                const idLine = [c.mc ? `MC ${c.mc}` : null, c.dot ? `DOT ${c.dot}` : null]
+                  .filter(Boolean)
+                  .join(' · ')
+                const touched =
+                  c.lastContacted && c.lastContacted !== 'Never'
+                    ? `Contacted ${c.lastContacted}`
+                    : 'Never contacted'
+                return (
+                  <div
+                    key={c.id}
+                    role="row"
+                    className={cn('fp-tr', selected.has(c.id) && 'is-on')}
+                  >
+                    <span className="fp-tbl__pick">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(c.id)}
+                        onChange={() => toggle(c.id)}
+                        aria-label={`Select ${c.name}`}
+                      />
+                    </span>
+
+                    <span className="fp-tr__who">
+                      <span className="fp-tr__name">
+                        {c.favorite && <Star size={11} className="is-star" />}
+                        <strong>{c.name}</strong>
+                        <em className={cn('fp-src', `is-${c.source.toLowerCase()}`)}>{c.source}</em>
+                        {c.recommended && <em className="fp-rec">Match {c.recommendScore}</em>}
+                      </span>
+                      <span className="fp-tr__meta">
+                        {idLine || 'No MC on file'} · Last used {c.lastUsedRel} ·{' '}
+                        <i className={cn(c.contactedRecently && 'is-touched')}>{touched}</i>
+                      </span>
+                    </span>
+
+                    <span className="fp-tr__num is-strong">{c.lastRate}</span>
+                    <span className="fp-tr__num">
+                      {c.dhP} / {c.dhD} mi
+                    </span>
+                    <span className="fp-tr__num">{c.loads}</span>
+                    <span className={cn('fp-tr__offer', c.offer === 'Sent' && 'is-sent')}>
+                      {c.offer ?? 'Not sent'}
+                    </span>
+
+                    <span className="fp-tr__reach">
+                      {c.phone && (
+                        <a className="fp-ico" href={`tel:${c.phone}`} title={c.phone}>
+                          <Phone size={13} />
+                        </a>
+                      )}
+                      {c.email && (
+                        <a className="fp-ico" href={`mailto:${c.email}`} title={c.email}>
+                          <Mail size={13} />
+                        </a>
+                      )}
+                    </span>
                   </div>
-                  <div className="fp-row__contact">
-                    {c.phone && (
-                      <a className="fp-ico" href={`tel:${c.phone}`} title={c.phone}>
-                        <Phone size={13} />
-                      </a>
-                    )}
-                    {c.email && (
-                      <a className="fp-ico" href={`mailto:${c.email}`} title={c.email}>
-                        <Mail size={13} />
-                      </a>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+                )
+              })}
+            </div>
+          </div>
 
           {rows.length === 0 && (
             <p className="fp__blank">No carriers match this search — clear the filters to widen the pool.</p>
@@ -509,37 +518,36 @@ export function OffersBidsView({
 
   return (
     <div className="dd-stage dd-offers">
-      <StageActionBar
-        label="Offers · Bids"
-        actions={
-          <>
-            <button type="button" className="dd-pill-btn" aria-label="Refresh">
-              <RefreshCw size={14} />
-            </button>
-            <button type="button" className="dd-pill-btn">
-              <Mail size={14} />
-              Re-send Offers
-            </button>
-            <button type="button" className="dd-pill-btn">
-              <Check size={14} />
-              Mark reviewed
-            </button>
-            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis" onClick={onAddOffer}>
-              <Plus size={14} />
-              Add Offer
-            </button>
-          </>
-        }
-      />
+      <div className="dd-acts">
+        <span className="dd-acts__label">Next actions</span>
+        <div className="dd-acts__row">
+          <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
+            <Check size={14} />
+            {bestBid ? `Accept ${bestBid.carrier}` : 'Accept best bid'}
+          </button>
+          <button type="button" className="dd-pill-btn">
+            <Mail size={14} />
+            Re-send offers
+          </button>
+          <button type="button" className="dd-pill-btn" onClick={onAddOffer}>
+            <Plus size={14} />
+            Add offer
+          </button>
+          <button type="button" className="dd-pill-btn">
+            <RefreshCw size={14} />
+            Refresh
+          </button>
+        </div>
+      </div>
 
       <div className="dd-offers__grid">
         <aside className="dd-bids-panel">
           <div className="dd-bids-list__head">
             <div>
-              <strong>Carrier Bids</strong>
+              <strong>Carrier bids</strong>
               <div className="dd-muted">{detail.bids.length} offers on this load</div>
             </div>
-            <span className="dd-best-pill">Best {bestBid?.amount ?? '—'}</span>
+            <span className="dd-best-pill">Best {bestBid?.allIn ?? bestBid?.amount ?? '—'}</span>
           </div>
           <label className="dd-search dd-search--sm dd-search--fixed">
             <Search size={13} />
@@ -557,88 +565,49 @@ export function OffersBidsView({
               </button>
             ))}
           </div>
-          <div className="dd-bid-cards">
-            {filtered.map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                className={cn('dd-bid-card', selected === b.id && 'is-selected', b.best && 'is-best')}
-                onClick={() => setSelected(b.id)}
-              >
-                <div className="dd-bid-card__top">
-                  <div className="dd-bid-card__identity">
-                    <strong>{b.carrier}</strong>
-                    <span className="dd-bid-card__meta">
-                      MC# {b.mc}
-                      {b.dot ? ` · DOT ${b.dot}` : ''}
+          <div className="dd-offer-list">
+            {filtered.map((b) => {
+              const under = b.vsTarget.trim().startsWith('-')
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  className={cn('dd-offer', selected === b.id && 'is-on', b.best && 'is-best')}
+                  onClick={() => setSelected(b.id)}
+                >
+                  <span className="dd-offer__head">
+                    <span className="dd-offer__who">
+                      <strong>{b.carrier}</strong>
+                      <em>
+                        MC# {b.mc}
+                        {b.dot ? ` · DOT ${b.dot}` : ''}
+                      </em>
                     </span>
-                  </div>
-                  <div className="dd-bid-card__tags">
-                    {b.best && <span className="dd-tag-best">Best</span>}
-                    <span
-                      className={cn(
-                        'dd-tag-status',
-                        b.status === 'Accepted' && 'is-accepted',
-                        b.status === 'Pending' && 'is-pending',
-                        b.status === 'Sent' && 'is-sent',
-                        b.status === 'Rejected' && 'is-rejected'
-                      )}
-                    >
+                    {b.best && <span className="dd-offer__best">Best</span>}
+                  </span>
+
+                  <span className="dd-offer__rate">
+                    <b>{b.allIn ?? b.amount}</b>
+                    <i className={cn(under && 'is-pos')}>
+                      {b.vsTarget.replace(' vs Target', '')} vs target
+                    </i>
+                  </span>
+
+                  <span className="dd-offer__sub">
+                    {[b.amount ? `${b.amount}/mi` : null, b.equipment, b.source]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+
+                  <span className="dd-offer__foot">
+                    <span className={cn('dd-offer__state', `is-${b.status.toLowerCase()}`)}>
                       {b.status}
                     </span>
-                  </div>
-                </div>
-
-                <div className="dd-bid-card__stats" aria-label="Bid metrics">
-                  <div>
-                    <span>Bid / mi</span>
-                    <strong>{b.amount}</strong>
-                  </div>
-                  <div>
-                    <span>All-in</span>
-                    <strong>{b.allIn ?? '—'}</strong>
-                  </div>
-                  <div>
-                    <span>vs target</span>
-                    <strong className={cn(b.vsTarget.startsWith('-') && 'is-pos')}>
-                      {b.vsTarget.replace(' vs Target', '')}
-                    </strong>
-                  </div>
-                </div>
-
-                <dl className="dd-bid-card__facts">
-                  <div>
-                    <dt>Equip</dt>
-                    <dd>{b.equipment ?? '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Source</dt>
-                    <dd>{b.source ?? '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>DH-P</dt>
-                    <dd>{b.dhP ?? '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>DH-D</dt>
-                    <dd>{b.dhD ?? '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Loads</dt>
-                    <dd>{b.loads ?? '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Via</dt>
-                    <dd>{b.channel ?? '—'}</dd>
-                  </div>
-                </dl>
-
-                <div className="dd-bid-card__foot">
-                  <span>{b.contact ?? 'Dispatch'}</span>
-                  <span>{b.updated ?? b.sentAt ?? '—'}</span>
-                </div>
-              </button>
-            ))}
+                    <em>{b.updated ?? b.sentAt ?? '—'}</em>
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </aside>
 
@@ -646,25 +615,26 @@ export function OffersBidsView({
           {bid ? (
             <>
               <div className="dd-wa__head">
-                <div>
+                <span className="dd-wa__avatar" aria-hidden>
+                  {bid.carrier
+                    .split(' ')
+                    .slice(0, 2)
+                    .map((w) => w[0])
+                    .join('')}
+                </span>
+                <div className="dd-wa__who">
                   <strong>{bid.carrier}</strong>
-                  <div className="dd-muted">
-                    MC# {bid.mc}
-                    {bid.contact ? ` · ${bid.contact}` : ''}
-                    {bid.phone ? ` · ${bid.phone}` : ''}
-                  </div>
-                </div>
-                <div className="dd-wa__head-right">
-                  <span
-                    className={cn(
-                      'dd-tag-status',
-                      bid.status === 'Accepted' && 'is-accepted',
-                      bid.status === 'Pending' && 'is-pending'
-                    )}
-                  >
-                    {bid.status}
+                  <span>
+                    {[bid.contact, bid.phone, bid.channel ?? 'Chat'].filter(Boolean).join(' · ')}
                   </span>
-                  <span className="dd-wa__channel">{bid.channel ?? 'Chat'}</span>
+                </div>
+                <div className="dd-wa__head-acts">
+                  <button type="button" aria-label="Call carrier">
+                    <Phone size={14} />
+                  </button>
+                  <button type="button" aria-label="Email carrier">
+                    <Mail size={14} />
+                  </button>
                 </div>
               </div>
 
@@ -739,7 +709,10 @@ export function OffersBidsView({
                     )}
                   >
                     <p>{m.text}</p>
-                    <span className="dd-wa-time">{m.time}</span>
+                    <span className="dd-wa-time">
+                      {m.time}
+                      {m.from === 'me' && <CheckCheck size={13} strokeWidth={2.4} />}
+                    </span>
                   </div>
                 ))}
               </div>

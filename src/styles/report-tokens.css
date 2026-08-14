@@ -3,7 +3,7 @@
 
 :root {
   /* ── Canonical Fleet Ops ── */
-  --bg: #f3f4f6;
+  --bg: #f1f3f4;
   --surface: #ffffff;
   --surface-2: #fafbfc;
   --line: #e2e5ea;
@@ -42,9 +42,9 @@
   --slow: 300ms;
 
   /* ── Typography ── */
-  --sr-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --sr-font-heading: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --sr-font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sr-font-body: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --sr-font-heading: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --sr-font-display: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --sr-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --sr-text-display: 24px;

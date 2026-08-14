@@ -1,42 +1,43 @@
+import { useState, type ReactNode } from 'react'
 import {
   Activity,
+  AlertTriangle,
   ArrowRight,
   CalendarClock,
   Check,
+  ChevronDown,
   DollarSign,
-  Gauge,
   Layers,
+  Lock,
   Mail,
+  MessageSquare,
   PanelRightClose,
   PanelRightOpen,
   Search,
-  Sparkles,
+  ShieldCheck,
+  Truck,
   UserPlus,
   Users,
-  Wand2,
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { DetailStage, LoadDetail } from '@/data/loadDetail'
+import { buildCaseAlerts, openAlerts, type CaseAlert } from '@/lib/details/caseAlerts'
 type StructureSelect = (stage: DetailStage, sub: string) => void
 
-function readinessAlerts(detail: LoadDetail) {
-  const alerts: { id: string; title: string; done: boolean }[] = []
-  const maxUnset = !detail.maxBuy || detail.maxBuy === '—' || detail.maxBuy === '$0.00'
-  const bookUnset = !detail.bookNowRate || detail.bookNowRate === '—'
-  const hookMissing = detail.stops.some(
-    (s) => (s.role === 'Hook' || s.kind === 'Pickup') && s.appointmentRequired
-  )
-  const dropMissing = detail.stops.some(
-    (s) => (s.role === 'Drop' || s.kind === 'Delivery') && s.appointmentRequired
-  )
-
-  alerts.push({ id: 'maxbuy', title: 'Max buy set', done: !maxUnset })
-  alerts.push({ id: 'book', title: 'Book now set', done: !bookUnset })
-  alerts.push({ id: 'hook', title: 'Hook appointment', done: !hookMissing })
-  alerts.push({ id: 'drop', title: 'Drop appointment', done: !dropMissing })
-  alerts.push({ id: 'broker', title: 'Owning broker assigned', done: Boolean(detail.load.broker) })
-  return alerts
+const ALERT_ICON: Partial<Record<CaseActionId, typeof Zap>> = {
+  hook: CalendarClock,
+  drop: CalendarClock,
+  equipment: Truck,
+  maxbuy: DollarSign,
+  booknow: DollarSign,
+  reject: DollarSign,
+  broker: UserPlus,
+  network: Users,
+  contact: UserPlus,
+  channel: MessageSquare,
+  insurance: ShieldCheck,
+  cmt: Layers,
 }
 
 export function LoadStructureTree({
@@ -83,9 +84,15 @@ export function LoadStructureTree({
                   {stageDone ? <Check size={10} strokeWidth={3} /> : null}
                 </i>
                 <span>{block.stage}</span>
-                <em>
-                  {doneCount}/{block.items.length}
-                </em>
+                {stageDone ? (
+                  <em className="is-done" aria-label="Stage complete">
+                    <Check size={11} strokeWidth={3.2} />
+                  </em>
+                ) : (
+                  <em>
+                    {doneCount}/{block.items.length}
+                  </em>
+                )}
               </button>
               {active && (
                 <ul className="v3-struct__subs">
@@ -118,9 +125,18 @@ export function LoadStructureTree({
 export type CaseActionId =
   | 'maxbuy'
   | 'booknow'
+  | 'reject'
   | 'hook'
   | 'drop'
   | 'broker'
+  | 'equipment'
+  | 'network'
+  | 'contact'
+  | 'channel'
+  | 'insurance'
+  | 'cmt'
+  | 'boards'
+  | 'shortlist'
   | 'post'
   | 'findpost'
   | 'blast'
@@ -195,59 +211,209 @@ export function CaseWorkBar({
   )
 }
 
+/** One open alert as a list row. Most buttons apply the fix; rates ask for the amount. */
+function AlertRow({
+  alert,
+  onAction,
+  onResolve,
+  onAmount,
+}: {
+  alert: CaseAlert
+  onAction: (id: CaseActionId) => void
+  onResolve: (id: CaseActionId, value: string) => void
+  onAmount: (alert: CaseAlert) => void
+}) {
+  const Icon = ALERT_ICON[alert.id] ?? AlertTriangle
+  const auto = alert.auto
+
+  const run = () => {
+    if (!auto) return onAction(alert.id)
+    if (auto.amount) return onAmount(alert)
+    onResolve(alert.id, auto.value)
+  }
+
+  return (
+    <li className={cn('v3-todo__row', `is-${alert.level}`)}>
+      <i className="v3-todo__icon" aria-hidden>
+        <Icon size={13} />
+      </i>
+      <span className="v3-todo__main">
+        <strong>{alert.title}</strong>
+        <em>{alert.detail}</em>
+      </span>
+      <button type="button" className="v3-todo__btn" onClick={run}>
+        {auto ? auto.label : 'Open'}
+      </button>
+    </li>
+  )
+}
+
+/** Small centred dialog for the rate items — the only place a number is typed. */
+function AmountDialog({
+  alert,
+  onClose,
+  onSave,
+}: {
+  alert: CaseAlert
+  onClose: () => void
+  onSave: (value: string) => void
+}) {
+  const suggested = (alert.auto?.value ?? '').replace(/[^0-9.]/g, '')
+  const [draft, setDraft] = useState(suggested)
+
+  const save = () => {
+    const clean = draft.replace(/[^0-9.]/g, '')
+    if (!clean || Number(clean) <= 0) return
+    onSave(clean)
+  }
+
+  return (
+    <div
+      className="v3-amt"
+      role="dialog"
+      aria-modal="true"
+      aria-label={alert.title}
+      onClick={onClose}
+    >
+      <div className="v3-amt__sheet" onClick={(e) => e.stopPropagation()}>
+        <strong>{alert.title}</strong>
+        <span>{alert.detail}</span>
+        <label className="v3-amt__field">
+          <i>$</i>
+          <input
+            autoFocus
+            value={draft}
+            inputMode="decimal"
+            placeholder="0.00"
+            onChange={(e) => setDraft(e.target.value.replace(/[^0-9.]/g, ''))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') save()
+              if (e.key === 'Escape') onClose()
+            }}
+          />
+        </label>
+        {suggested && (
+          <button
+            type="button"
+            className="v3-amt__suggest"
+            onClick={() => setDraft(suggested)}
+          >
+            Use suggested ${suggested}
+          </button>
+        )}
+        <div className="v3-amt__foot">
+          <button type="button" className="v3-amt__cancel" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="v3-amt__save" onClick={save}>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Numbered, collapsible stage card — the Overview workspace is built from these. */
+export function CaseStep({
+  n,
+  title,
+  hint,
+  badge,
+  badgeTone = 'neutral',
+  open,
+  onToggle,
+  summary,
+  locked,
+  bodyRef,
+  children,
+}: {
+  n: number
+  title: string
+  hint?: string
+  badge?: string
+  badgeTone?: 'neutral' | 'ok' | 'warn' | 'blocker'
+  open: boolean
+  onToggle: () => void
+  /** Shown in place of the body once the step is collapsed. */
+  summary?: ReactNode
+  /** Reason the step cannot be opened yet. */
+  locked?: string
+  bodyRef?: (el: HTMLElement | null) => void
+  children: ReactNode
+}) {
+  const isOpen = open && !locked
+
+  return (
+    <section
+      className={cn('v3-step', isOpen && 'is-open', locked && 'is-locked')}
+      ref={bodyRef}
+    >
+      <button
+        type="button"
+        className="v3-step__head"
+        onClick={onToggle}
+        disabled={Boolean(locked)}
+        aria-expanded={isOpen}
+      >
+        <i className="v3-step__n" aria-hidden>
+          {locked ? <Lock size={11} strokeWidth={2.6} /> : n}
+        </i>
+        <span className="v3-step__title">
+          <strong>{title}</strong>
+          {(locked || hint) && <em>{locked ?? hint}</em>}
+        </span>
+        {badge && <span className={cn('v3-step__badge', `is-${badgeTone}`)}>{badge}</span>}
+        {!locked && <ChevronDown size={15} className="v3-step__caret" />}
+      </button>
+
+      {isOpen && <div className="v3-step__body">{children}</div>}
+      {!isOpen && !locked && summary && <div className="v3-step__summary">{summary}</div>}
+    </section>
+  )
+}
+
 export function CaseCenterHeader({
   detail,
   onAction,
+  onResolve,
 }: {
   detail: LoadDetail
   onAction: (id: CaseActionId) => void
+  onResolve: (id: CaseActionId, value: string) => void
 }) {
-  const alerts = readinessAlerts(detail)
-  const blocking = alerts.filter((a) => !a.done).length
+  const [showAll, setShowAll] = useState(false)
+  const [amountFor, setAmountFor] = useState<CaseAlert | null>(null)
+  const alerts = buildCaseAlerts(detail)
+  const open = openAlerts(alerts)
+  const loadScope = alerts.filter((a) => a.scope === 'load')
+  const blocking = open.filter((a) => a.level === 'blocker').length
   /* readiness tracks the posting checks, so it moves the moment an action lands */
-  const readinessPct = Math.round(((alerts.length - blocking) / alerts.length) * 100)
+  const cleared = loadScope.filter((a) => a.level === 'ok').length
+  const readinessPct = Math.round((cleared / loadScope.length) * 100)
   const bookNow = rateOrDash(detail.bookNowRate)
   const maxBuy = rateOrDash(detail.maxBuy)
   const rejectAbove = rateOrDash(detail.rejectAbove)
   const customerRate = detail.load.fee
   const margin = maxBuy === null ? null : customerRate - toNum(maxBuy)
 
-  /* Next actions: only unblockers + find/sourcing steps, max 4, one primary */
+  /* Flow steps sit after the alerts in the same row */
   type Act = { id: CaseActionId; label: string; icon: typeof Zap; primary?: boolean }
-  const blockers: Act[] = []
-  if (!maxBuy) blockers.push({ id: 'maxbuy', label: 'Set max buy', icon: DollarSign })
-  else if (!bookNow) blockers.push({ id: 'booknow', label: 'Set book now', icon: DollarSign })
-  if (!alerts.find((a) => a.id === 'hook')?.done)
-    blockers.push({ id: 'hook', label: 'Add hook appointment', icon: CalendarClock })
-  if (!alerts.find((a) => a.id === 'drop')?.done)
-    blockers.push({ id: 'drop', label: 'Add drop appointment', icon: CalendarClock })
-  if (!detail.load.broker) blockers.push({ id: 'broker', label: 'Assign broker', icon: UserPlus })
-
-  const find: Act[] = []
+  const flow: Act[] = []
   if (maxBuy && bookNow) {
     if (blocking === 0)
-      find.push({ id: 'post', label: 'Post to sourcing', icon: ArrowRight })
-    else find.push({ id: 'findpost', label: 'Open Find & Post', icon: Search })
-    find.push({ id: 'blast', label: 'Blast carriers', icon: Mail })
+      flow.push({ id: 'findpost', label: 'Go to Find & Post', icon: ArrowRight, primary: true })
+    else flow.push({ id: 'findpost', label: 'Find & Post', icon: Search })
+    flow.push({ id: 'blast', label: 'Blast carriers', icon: Mail })
   }
   if (detail.bids.length > 0)
-    find.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
+    flow.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
 
-  const actions: Act[] = []
-  for (const a of [...blockers, ...find]) {
-    if (actions.length >= 4) break
-    if (!actions.some((x) => x.id === a.id)) actions.push(a)
-  }
-  if (actions.length > 0) actions[0] = { ...actions[0], primary: true }
-
-  /* AI assist: context only — hide noise when it can't help */
-  const ai: { id: CaseActionId; label: string; icon: typeof Wand2 }[] = []
-  if (!maxBuy) ai.push({ id: 'ai-rate', label: 'Suggest max buy', icon: Wand2 })
-  else if (!bookNow) ai.push({ id: 'ai-book', label: 'Suggest book now', icon: Wand2 })
-  if (maxBuy) ai.push({ id: 'ai-email', label: 'Draft carrier blast', icon: Mail })
-  if (detail.bids.length > 0) ai.push({ id: 'ai-score', label: 'Score offers', icon: Gauge })
-  if (blocking > 0 && ai.length < 3)
-    ai.push({ id: 'ai-explain', label: 'Explain readiness', icon: Sparkles })
+  /* keep the list short: blockers first, advisories only when there is nothing blocking */
+  const blockersOnly = open.filter((a) => a.level === 'blocker')
+  const preview = blockersOnly.length > 0 ? blockersOnly.slice(0, 3) : open.slice(0, 2)
+  const shown = showAll ? open : preview
+  const hidden = open.length - shown.length
 
   return (
     <div className="v3-case">
@@ -256,9 +422,9 @@ export function CaseCenterHeader({
           <div>
             <strong>Readiness</strong>
             <span>
-              {blocking === 0
+              {open.length === 0
                 ? 'All required data points clear — ready to post and run automation.'
-                : `${blocking} blocking item${blocking === 1 ? '' : 's'} before this load can post.`}
+                : `${blocking} blocking · ${open.length} open alert${open.length === 1 ? '' : 's'} — each Next action below applies the fix in one click.`}
             </span>
           </div>
           <em className={cn(blocking === 0 ? 'is-ok' : 'is-warn')}>{readinessPct}%</em>
@@ -266,14 +432,6 @@ export function CaseCenterHeader({
         <div className="v3-ready__bar">
           <i style={{ width: `${readinessPct}%` }} className={blocking === 0 ? 'is-ok' : undefined} />
         </div>
-        <ul className="v3-ready__checks">
-          {alerts.map((a) => (
-            <li key={a.id} className={cn(a.done && 'is-done')}>
-              <i>{a.done ? <Check size={9} strokeWidth={3.5} /> : null}</i>
-              {a.title}
-            </li>
-          ))}
-        </ul>
       </section>
 
       <div className="v3-rates">
@@ -307,45 +465,67 @@ export function CaseCenterHeader({
         </article>
       </div>
 
-      {actions.length > 0 && (
+      {(open.length > 0 || flow.length > 0) && (
         <div className="v3-acts">
-          <span className="v3-acts__label">Next actions</span>
-          <div className="v3-acts__row">
-            {actions.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                className={cn('v3-acts__btn', a.primary && 'is-primary')}
-                onClick={() => onAction(a.id)}
-              >
-                <a.icon size={13} />
-                {a.label}
-              </button>
-            ))}
+          <div className="v3-acts__top">
+            <span className="v3-acts__label">Next actions</span>
+            {open.length > 0 && (
+              <em className="v3-acts__count">
+                {blocking > 0 && <b>{blocking} blocking</b>}
+                {blocking > 0 && open.length > blocking ? ' · ' : ''}
+                {open.length > blocking ? `${open.length - blocking} advisory` : ''}
+              </em>
+            )}
           </div>
+
+          {shown.length > 0 && (
+            <ul className="v3-todo">
+              {shown.map((a) => (
+                <AlertRow
+                  key={a.id}
+                  alert={a}
+                  onAction={onAction}
+                  onResolve={onResolve}
+                  onAmount={setAmountFor}
+                />
+              ))}
+            </ul>
+          )}
+
+          {hidden > 0 && (
+            <button type="button" className="v3-todo__more" onClick={() => setShowAll((v) => !v)}>
+              {showAll ? 'Show fewer' : `Show ${hidden} more`}
+              <ChevronDown size={12} className={cn(showAll && 'is-up')} />
+            </button>
+          )}
+
+          {flow.length > 0 && (
+            <div className="v3-acts__row">
+              {flow.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className={cn('v3-acts__btn', a.primary ? 'is-primary' : 'is-flow')}
+                  onClick={() => onAction(a.id)}
+                >
+                  <a.icon size={13} />
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {ai.length > 0 && (
-        <div className="v3-ai">
-          <span className="v3-ai__label">
-            <Sparkles size={12} />
-            AI assist
-          </span>
-          <div className="v3-ai__row">
-            {ai.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                className="v3-ai__btn"
-                onClick={() => onAction(a.id)}
-              >
-                <a.icon size={13} />
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {amountFor && (
+        <AmountDialog
+          alert={amountFor}
+          onClose={() => setAmountFor(null)}
+          onSave={(value) => {
+            onResolve(amountFor.id, value)
+            setAmountFor(null)
+          }}
+        />
       )}
     </div>
   )

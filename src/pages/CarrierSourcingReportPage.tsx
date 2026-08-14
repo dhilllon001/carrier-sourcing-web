@@ -527,7 +527,7 @@ export function CarrierSourcingReportPage({
                 return (
                   <section key={block.stage} className="sr-cards-col">
                     <div className="sr-cards-col__head">
-                      <span className="sr-cards-col__num">{block.number}</span>
+                      <span className="sr-cards-col__num">{Number(block.number)}</span>
                       <strong>{block.stage}</strong>
                       <span className="sr-cards-col__count">{display.toLocaleString()}</span>
                     </div>

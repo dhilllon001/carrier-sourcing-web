@@ -47,11 +47,15 @@ export type CommodityLine = {
   stackable?: boolean
 }
 
+export type InsuranceState = 'Active' | 'Expiring' | 'Expired'
+
 export type CarrierRow = {
   id: string
   name: string
   mc?: string
   dot?: string
+  insurance?: InsuranceState
+  insuranceExpiry?: string
   source: 'PAST' | 'DAT' | 'NEW'
   lastUsed: string
   lastUsedRel: string
@@ -95,6 +99,10 @@ export type BidOffer = {
   email?: string
   channel?: 'Email' | 'WhatsApp' | 'Phone' | 'DAT'
   sentAt?: string
+  insurance?: InsuranceState
+  insuranceExpiry?: string
+  /** Open CMT validation findings carried over from the Award review. */
+  cmtFlags?: string[]
 }
 
 export type DocFile = {
@@ -454,6 +462,18 @@ const CARRIERS: CarrierRow[] = [
   },
 ]
 
+/** Insurance state per carrier — everything not listed is active and in good standing. */
+const CARRIER_COMPLIANCE: Record<string, { insurance: InsuranceState; insuranceExpiry: string }> = {
+  c4: { insurance: 'Expired', insuranceExpiry: 'Jul 28, 2026' },
+  c9: { insurance: 'Expiring', insuranceExpiry: 'Aug 21, 2026' },
+  c10: { insurance: 'Expired', insuranceExpiry: 'Jun 30, 2026' },
+}
+
+const withCompliance = (c: CarrierRow): CarrierRow => ({
+  ...c,
+  ...(CARRIER_COMPLIANCE[c.id] ?? { insurance: 'Active', insuranceExpiry: 'Mar 31, 2027' }),
+})
+
 export const SAMPLE_BIDS: BidOffer[] = [
   {
     id: 'b1',
@@ -477,6 +497,9 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'rohan@testcarrier.example',
     channel: 'WhatsApp',
     sentAt: 'Today · 12:34 PM',
+    insurance: 'Expiring',
+    insuranceExpiry: 'Aug 22, 2026',
+    cmtFlags: ['Cargo limit $100k under the $250k required for this commodity'],
   },
   {
     id: 'b2',
@@ -791,7 +814,7 @@ export function buildLoadDetail(load: ReportLoad): LoadDetail {
     stages,
     completedSubs,
     totalSubs,
-    carriers: CARRIERS,
+    carriers: CARRIERS.map(withCompliance),
     bids: SAMPLE_BIDS,
     documents: [
       {

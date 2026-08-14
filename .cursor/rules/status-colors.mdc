@@ -1,0 +1,27 @@
+---
+description: Use the shared app status/tag color system for badges, rings, fills, and status UI
+alwaysApply: true
+---
+
+# Status & tag colors
+
+Source of truth: `src/data/statusColors.ts` (event, transit, leg, driver assignment, PO, trailer, truck, equipment, tags).
+
+When building status chips, badges, rings, filled dots, tags, or similar state UI:
+
+1. Look up the type in the matching array (`eventColors`, `transitStatusColors`, `legStatusColors`, `tagColors`, etc.) via `getColorByType`.
+2. Use that entry’s `hex` / `badge` / `ring` / `filled` / `text` — do not invent new status colors.
+3. Semantic shortcuts from the palette:
+   - Action / assigned / primary CTA → blue `#3B82F6`
+   - Success / completed / confirmed / done → emerald `#10B981` or green `#22C55E`
+   - Pending / waiting → yellow `#EAB308`
+   - Warning / hold / contingency → amber/orange (`#F59E0B`, `#F97316`)
+   - Error / delayed / rejected / critical → red `#EF4444` (darker reds for cancel/critical)
+   - Neutral / unassigned / available → slate `#94A3B8` / `#64748B`
+4. Do not replace brand chrome (`--accent` / `--sr-action` for nav & primary buttons) unless the UI is a status/tag surface.
+
+```ts
+import { getColorByType, transitStatusColors } from '@/data/statusColors'
+const c = getColorByType(transitStatusColors, 'Completed')
+// use c.hex, c.badge, etc.
+```

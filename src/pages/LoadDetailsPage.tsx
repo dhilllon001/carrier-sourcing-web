@@ -47,11 +47,13 @@ import {
 import {
   CaseActivityRail,
   CaseCenterHeader,
+  CaseStep,
   CaseWorkBar,
   LoadStructureTree,
   type CaseActionId,
   type CaseEvent,
 } from '@/components/details/View3CaseLayout'
+import { buildCaseAlerts, openAlerts } from '@/lib/details/caseAlerts'
 import { cn } from '@/lib/cn'
 import {
   SEED_ACTIVITY,
@@ -68,9 +70,11 @@ import {
 import {
   buildLoadDetail,
   isFindPost,
+  type BidOffer,
   type CommodityLine,
   type DetailStage,
   type LoadDetail,
+  type RouteStop,
 } from '@/data/loadDetail'
 import type { ReportLoad } from '@/data/report'
 
@@ -1450,6 +1454,13 @@ function ContextRail({
   )
 }
 
+/* where a stage/sub pair sits in the lifecycle, as indices */
+function lifecyclePos(stages: LoadDetail['stages'], stage: string, sub: string) {
+  const s = Math.max(0, stages.findIndex((b) => b.stage === stage))
+  const u = Math.max(0, (stages[s]?.items ?? []).findIndex((it) => it.label === sub))
+  return { stage: s, sub: u }
+}
+
 export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const base = useMemo(() => buildLoadDetail(load), [load])
   const [detail, setDetail] = useState(base)
@@ -1470,6 +1481,14 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
   const [caseEvents, setCaseEvents] = useState<CaseEvent[]>([])
   const [actCollapsed, setActCollapsed] = useState(false)
+  /* Overview is one workspace with two steps: setup, then Find & Post */
+  const [setupOpen, setSetupOpen] = useState(true)
+  const [findOpen, setFindOpen] = useState(false)
+  const findStepRef = useRef<HTMLElement | null>(null)
+  /* furthest point reached — browsing back to review history must not un-check a stage */
+  const [reached, setReached] = useState(() =>
+    lifecyclePos(base.stages, load.stage, load.subStage)
+  )
 
   const logCase = (e: {
     key?: string
@@ -1510,6 +1529,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setAutoOpen(false)
     setAiLog(buildAiActivity(base))
     setCaseEvents([])
+    setReached(lifecyclePos(base.stages, load.stage, load.subStage))
+    setSetupOpen(true)
+    setFindOpen(false)
 
     const sourcingDone = base.stages
       .find((s) => s.stage === 'Sourcing')
@@ -1576,24 +1598,30 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
     setAutoAsk(true)
   }
 
-  /* lifecycle reflects the position the user is viewing: everything before it shows a check */
+  /* progress only ever moves forward, so clicking back into a finished stage keeps its check */
+  useEffect(() => {
+    const pos = lifecyclePos(detail.stages, stage, subStage)
+    setReached((r) =>
+      pos.stage > r.stage || (pos.stage === r.stage && pos.sub > r.sub) ? pos : r
+    )
+  }, [detail.stages, stage, subStage])
+
+  /* lifecycle reflects the furthest point reached, not where the user is currently looking */
   const lifeDetail = useMemo(() => {
-    const curIdx = detail.stages.findIndex((s) => s.stage === stage)
     const stages = detail.stages.map((s, i) => {
-      if (i > curIdx) return s
-      if (i < curIdx) return { ...s, items: s.items.map((it) => ({ ...it, done: true })) }
-      const subIdx = s.items.findIndex((it) => it.label === subStage)
+      if (i > reached.stage) return s
+      if (i < reached.stage) return { ...s, items: s.items.map((it) => ({ ...it, done: true })) }
       return {
         ...s,
-        items: s.items.map((it, j) => ({ ...it, done: it.done || (subIdx > 0 && j < subIdx) })),
+        items: s.items.map((it, j) => ({ ...it, done: it.done || j < reached.sub })),
       }
     })
     const completedSubs = stages.reduce((n, s) => n + s.items.filter((i) => i.done).length, 0)
     return { ...detail, stages, completedSubs }
-  }, [detail, stage, subStage])
+  }, [detail, reached])
 
+  /* Find & Post is no longer its own workspace — it is step 2 of the Overview */
   const stageWorkspace =
-    isFindPost(subStage) ||
     subStage === 'Offers & Bids' ||
     subStage === 'Finalize Tender' ||
     subStage === 'CMT' ||
@@ -1605,6 +1633,106 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
 
   const isV2 = view === 'v2'
   const isV3 = view === 'v3'
+
+  const caseAlerts = useMemo(() => buildCaseAlerts(detail), [detail])
+  const caseBlockers = openAlerts(caseAlerts).filter((a) => a.level === 'blocker').length
+  const setupReady = caseBlockers === 0
+
+  /* once nothing is blocking, setup folds away and Find & Post takes the space */
+  useEffect(() => {
+    if (!setupReady) return
+    setSetupOpen(false)
+    setFindOpen(true)
+  }, [setupReady])
+
+  /* picking Find & Post in the rail scrolls to step 2 instead of leaving the Overview */
+  useEffect(() => {
+    if (!isV3 || !isFindPost(subStage)) return
+    setSetupOpen(false)
+    setFindOpen(true)
+    const id = window.setTimeout(
+      () => findStepRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      0
+    )
+    return () => window.clearTimeout(id)
+  }, [isV3, subStage])
+  /* Alerts that carry an input resolve straight from the Next actions popover. */
+  const resolveCaseAlert = (id: CaseActionId, value: string) => {
+    const asMoney = () => {
+      const n = Number(value.replace(/[^0-9.]/g, ''))
+      return n > 0 ? `$${n.toFixed(2)}` : ''
+    }
+
+    if (id === 'hook' || id === 'drop') {
+      const wantPickup = id === 'hook'
+      const match = (s: RouteStop) =>
+        wantPickup ? s.role === 'Hook' || s.kind === 'Pickup' : s.role === 'Drop' || s.kind === 'Delivery'
+      setDetail((d) => ({
+        ...d,
+        stops: d.stops.map((s) =>
+          match(s)
+            ? {
+                ...s,
+                appointmentRequired: false,
+                when: /\d{1,2}:\d{2}/.test(s.when)
+                  ? s.when.replace(/\d{1,2}:\d{2}/, value)
+                  : `${s.when} · ${value}`,
+                status: 'Live Appointment',
+                statusTone: 'live',
+              }
+            : s
+        ),
+      }))
+      logCase({
+        title: `${wantPickup ? 'Pickup' : 'Delivery'} appointment booked`,
+        detail: `Time set to ${value}.`,
+      })
+      return
+    }
+    if (id === 'maxbuy' || id === 'booknow' || id === 'reject') {
+      const money = asMoney()
+      if (!money) return
+      const field = id === 'maxbuy' ? 'maxBuy' : id === 'booknow' ? 'bookNowRate' : 'rejectAbove'
+      setDetail((d) => ({ ...d, [field]: money }))
+      logCase({
+        key: 'rates',
+        title:
+          id === 'maxbuy' ? 'Max buy set' : id === 'booknow' ? 'Book now set' : 'Reject above set',
+        detail: `${money} on this load.`,
+      })
+      return
+    }
+    if (id === 'equipment') {
+      setDetail((d) => ({ ...d, load: { ...d.load, equipment: value } }))
+      logCase({ title: 'Equipment type set', detail: value })
+      return
+    }
+    if (id === 'broker') {
+      setDetail((d) => ({ ...d, load: { ...d.load, broker: value } }))
+      logCase({ title: 'Owning broker assigned', detail: `${value} now owns this load.` })
+      return
+    }
+    if (id === 'contact' || id === 'channel') {
+      const isChannel = id === 'channel'
+      setDetail((d) => ({
+        ...d,
+        bids: d.bids.map((b) =>
+          b.status === 'Accepted'
+            ? isChannel
+              ? { ...b, channel: value as BidOffer['channel'] }
+              : { ...b, ...(value.includes('@') ? { email: value } : { phone: value }) }
+            : b
+        ),
+      }))
+      logCase({
+        title: isChannel ? 'Preferred channel set' : 'Carrier contact added',
+        detail: value,
+      })
+      return
+    }
+    runCaseAction(id)
+  }
+
   const runCaseAction = (id: CaseActionId) => {
     if (id === 'maxbuy') {
       setV3Tab('overview')
@@ -1643,6 +1771,18 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       }
       return
     }
+    if (id === 'reject') {
+      const ceiling = toRate(detail.maxBuy)
+      if (ceiling > 0) {
+        const reject = ceiling * 1.08
+        setDetail((d) => ({ ...d, rejectAbove: `$${reject.toFixed(2)}` }))
+        logCase({
+          title: 'Reject above set',
+          detail: `$${reject.toFixed(2)} — 8% above the ${detail.maxBuy} hard limit.`,
+        })
+      }
+      return
+    }
     if (id === 'hook' || id === 'drop') {
       const wantPickup = id === 'hook'
       const stop = detail.stops.find((s) =>
@@ -1667,6 +1807,59 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       logCase({
         title: 'Owning broker assigned',
         detail: `${detail.load.broker || detail.salesRep} now owns this load.`,
+      })
+      return
+    }
+    if (id === 'equipment') {
+      logCase({
+        title: 'Equipment type needs setting',
+        detail: 'Set the equipment type on the order so carriers can be matched.',
+        status: 'warn',
+      })
+      return
+    }
+    if (id === 'network') {
+      setStage('Sourcing')
+      setSubStage('Find & Post')
+      const expired = detail.carriers.filter((c) => c.insurance === 'Expired').length
+      logCase({
+        title: 'Opened managed carrier network',
+        detail:
+          expired > 0
+            ? `${detail.carriers.length} carriers on this lane — ${expired} blocked on expired insurance.`
+            : `${detail.carriers.length} carriers on this lane, all compliant.`,
+        status: expired > 0 ? 'warn' : 'info',
+      })
+      return
+    }
+    if (id === 'contact' || id === 'channel' || id === 'insurance' || id === 'cmt') {
+      const awarded = detail.bids.find((b) => b.status === 'Accepted')
+      setStage('Award')
+      setSubStage(id === 'cmt' ? 'CMT' : 'Finalize Carrier Award')
+      logCase({
+        title:
+          id === 'contact'
+            ? 'Opened carrier contacts'
+            : id === 'channel'
+              ? 'Opened communication preferences'
+              : id === 'insurance'
+                ? 'Requested insurance certificate'
+                : 'Opened CMT validation',
+        detail: awarded ? `${awarded.carrier} · MC# ${awarded.mc}` : undefined,
+        status: 'info',
+      })
+      return
+    }
+    if (id === 'boards' || id === 'shortlist') {
+      setStage('Sourcing')
+      setSubStage('Find & Post')
+      logCase({
+        title: id === 'boards' ? 'Opened posting boards' : 'Opened carrier shortlist',
+        detail:
+          id === 'boards'
+            ? 'Choose DAT, Loadlink, or keep this load internal.'
+            : `Review preferred and past carriers for ${detail.load.origin} → ${detail.load.destination}.`,
+        status: 'info',
       })
       return
     }
@@ -1976,7 +2169,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               <article
                 className={cn(
                   'dd-stop-card',
-                  isLastStop ? 'is-drop' : 'is-hook',
+                  i === 0 ? 'is-pickup' : isLastStop ? 'is-drop' : 'is-hook',
                   (stop.appointmentRequired || showStatusAlert) && 'has-alert'
                 )}
               >
@@ -2200,33 +2393,96 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                     setAutoOpen(true)
                   }}
                 />
-                {v3Tab === 'overview' && <CaseCenterHeader detail={detail} onAction={runCaseAction} />}
                 <div className="v3-main__content">
                   {v3Tab === 'overview' && (
-                    <SummaryTab
-                      detail={detail}
-                      tags={tags}
-                      onTags={setTags}
-                      hideReadiness
-                      onPatchDetail={(patch) => {
-                        setDetail((d) => ({ ...d, ...patch }))
-                        if (patch.maxBuy && patch.maxBuy !== detail.maxBuy) {
-                          const cleared = patch.maxBuy === '$0.00'
-                          logCase({
-                            key: 'rates',
-                            title: cleared ? 'Max buy cleared' : 'Max buy set',
-                            detail: cleared
-                              ? 'No hard limit on this load right now.'
-                              : `${patch.maxBuy} hard limit · book now ${patch.bookNowRate}`,
-                            status: cleared ? 'warn' : 'ok',
-                          })
+                    <div className="v3-steps">
+                      <CaseStep
+                        n={1}
+                        title="Load setup"
+                        hint="Appointments, equipment and bidding thresholds"
+                        badge={
+                          setupReady
+                            ? 'Ready'
+                            : `${caseBlockers} blocking item${caseBlockers === 1 ? '' : 's'}`
                         }
-                      }}
-                      onPostToSourcing={() => {
-                        setStage('Sourcing')
-                        setSubStage('Find & Post')
-                      }}
-                    />
+                        badgeTone={setupReady ? 'ok' : 'blocker'}
+                        open={setupOpen}
+                        onToggle={() => setSetupOpen((v) => !v)}
+                        summary={
+                          <>
+                            <span>
+                              Max buy <b>{detail.maxBuy}</b>
+                            </span>
+                            <span>
+                              Book now <b>{detail.bookNowRate}</b>
+                            </span>
+                            <span>
+                              Reject above <b>{detail.rejectAbove}</b>
+                            </span>
+                            <span>
+                              Equipment <b>{detail.load.equipment}</b>
+                            </span>
+                          </>
+                        }
+                      >
+                        <CaseCenterHeader
+                          detail={detail}
+                          onAction={runCaseAction}
+                          onResolve={resolveCaseAlert}
+                        />
+                        <SummaryTab
+                          detail={detail}
+                          tags={tags}
+                          onTags={setTags}
+                          hideReadiness
+                          onPatchDetail={(patch) => {
+                            setDetail((d) => ({ ...d, ...patch }))
+                            if (patch.maxBuy && patch.maxBuy !== detail.maxBuy) {
+                              const cleared = patch.maxBuy === '$0.00'
+                              logCase({
+                                key: 'rates',
+                                title: cleared ? 'Max buy cleared' : 'Max buy set',
+                                detail: cleared
+                                  ? 'No hard limit on this load right now.'
+                                  : `${patch.maxBuy} hard limit · book now ${patch.bookNowRate}`,
+                                status: cleared ? 'warn' : 'ok',
+                              })
+                            }
+                          }}
+                          onPostToSourcing={() => {
+                            setStage('Sourcing')
+                            setSubStage('Find & Post')
+                          }}
+                        />
+                      </CaseStep>
+
+                      <CaseStep
+                        n={2}
+                        title="Find & Post"
+                        hint="Shortlist carriers, blast them, post to the boards"
+                        badge={`${detail.carriers.length} carriers`}
+                        open={findOpen}
+                        onToggle={() => setFindOpen((v) => !v)}
+                        locked={
+                          setupReady
+                            ? undefined
+                            : `Clear ${caseBlockers} blocking item${caseBlockers === 1 ? '' : 's'} in step 1 to post`
+                        }
+                        bodyRef={(el) => {
+                          findStepRef.current = el
+                        }}
+                      >
+                        <FindPostView
+                          detail={detail}
+                          variant="cards"
+                          onPostLoad={() => setPostOpen(true)}
+                          onAdvanceToOffers={() => {
+                            setStage('Tender')
+                            setSubStage('Offers & Bids')
+                          }}
+                        />
+                      </CaseStep>
+                    </div>
                   )}
                   {v3Tab === 'instructions' && (
                     <InstructionsTab
@@ -2242,33 +2498,6 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
 
             {stageWorkspace && (
               <div className="v3-main__workspace">
-                <div className="v3-main__stagebar">
-                  <strong>
-                    {stage} · {subStage}
-                  </strong>
-                  <button
-                    type="button"
-                    className="dd-btn"
-                    onClick={() => {
-                      setStage('Sourcing')
-                      setSubStage('Overview')
-                      setV3Tab('overview')
-                    }}
-                  >
-                    Back to overview
-                  </button>
-                </div>
-                {isFindPost(subStage) && (
-                  <FindPostView
-                    detail={detail}
-                    variant="cards"
-                    onPostLoad={() => setPostOpen(true)}
-                    onAdvanceToOffers={() => {
-                      setStage('Tender')
-                      setSubStage('Offers & Bids')
-                    }}
-                  />
-                )}
                 {subStage === 'Offers & Bids' && (
                   <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
                 )}
