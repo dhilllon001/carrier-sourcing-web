@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, Clock, Loader2, ShieldAlert } from 'lucide-react'
+import { ArrowUpRight, Check, Clock, Loader2, ShieldAlert, Users, Zap } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { Run } from '@/data/autoWorkflows'
 import { ConfigCard, Metric, money, plain } from './parts'
@@ -8,6 +8,19 @@ type RunsViewProps = {
   selectedId: string
   onSelect: (id: string) => void
   onOpenLoad: (probill: string) => void
+  onCarrierPrefs: () => void
+}
+
+const STATE_DOT: Record<Run['state'], string> = {
+  'needs-you': 'is-alert',
+  running: 'is-busy',
+  covered: 'is-live',
+}
+
+const STATE_LABEL: Record<Run['state'], string> = {
+  'needs-you': 'Needs you',
+  running: 'Running',
+  covered: 'Covered',
 }
 
 function RunCard({
@@ -22,10 +35,7 @@ function RunCard({
   return (
     <button type="button" className={cn('cfg-run', active && 'is-on')} onClick={onSelect}>
       <span className="cfg-run__top">
-        <i
-          className={cn('cfg-dot', run.state === 'needs-you' ? 'is-alert' : 'is-live')}
-          aria-hidden
-        />
+        <i className={cn('cfg-dot', STATE_DOT[run.state])} aria-hidden />
         <strong>{run.workflow}</strong>
         <em>{run.clock}</em>
       </span>
@@ -52,9 +62,16 @@ function RunCard({
   )
 }
 
-export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewProps) {
+export function RunsView({
+  runs,
+  selectedId,
+  onSelect,
+  onOpenLoad,
+  onCarrierPrefs,
+}: RunsViewProps) {
   const active = runs.find((r) => r.id === selectedId) ?? runs[0]
   const needsYou = runs.filter((r) => r.state === 'needs-you')
+  const running = runs.filter((r) => r.state === 'running')
   const covered = runs.filter((r) => r.state === 'covered')
 
   return (
@@ -62,7 +79,7 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
       <aside className="cfg-list">
         <header className="cfg-list__head">
           <span className="cfg-eyebrow">Runs in flight</span>
-          <em>{needsYou.length} live</em>
+          <em>{needsYou.length + running.length} live</em>
         </header>
 
         <div className="cfg-list__body">
@@ -74,6 +91,22 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
               Needs you <b>{needsYou.length}</b>
             </span>
             {needsYou.map((run) => (
+              <RunCard
+                key={run.id}
+                run={run}
+                active={run.id === active?.id}
+                onSelect={() => onSelect(run.id)}
+              />
+            ))}
+          </div>
+          )}
+
+          {running.length > 0 && (
+          <div className="cfg-group">
+            <span className="cfg-group__label is-busy">
+              Running <b>{running.length}</b>
+            </span>
+            {running.map((run) => (
               <RunCard
                 key={run.id}
                 run={run}
@@ -110,35 +143,40 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
 
       {active && (
         <section className="cfg-detail">
-          <header className="cfg-detail__head">
-            <div className="cfg-detail__title">
-              <i
-                className={cn(
-                  'cfg-dot',
-                  active.state === 'needs-you' ? 'is-alert' : 'is-live'
-                )}
-                aria-hidden
-              />
-              <h2>{active.workflow}</h2>
-              <span
-                className={cn('cfg-badge', active.state === 'needs-you' ? 'is-neg' : 'is-pos')}
-              >
-                {active.state === 'needs-you' ? 'Needs you' : 'Covered'}
-              </span>
+          <header className="cfg-detail__head is-dark">
+            <div className="cfg-detail__topline">
+              <div className="cfg-detail__title">
+                <Zap size={14} strokeWidth={2.2} aria-hidden />
+                <h2>{active.workflow}</h2>
+                <span
+                  className={cn(
+                    'cfg-badge',
+                    active.state === 'needs-you'
+                      ? 'is-neg'
+                      : active.state === 'running'
+                        ? 'is-busy'
+                        : 'is-pos'
+                  )}
+                >
+                  {STATE_LABEL[active.state]}
+                </span>
+              </div>
+              <div className="cfg-detail__acts">
+                <button type="button" className="cfg-btn is-ghost" onClick={onCarrierPrefs}>
+                  <Users size={13} strokeWidth={2} />
+                  Carrier preferences
+                </button>
+                <button
+                  type="button"
+                  className="cfg-btn is-ghost"
+                  onClick={() => onOpenLoad(active.probill)}
+                >
+                  Open in Sourcing
+                  <ArrowUpRight size={13} strokeWidth={2.2} />
+                </button>
+              </div>
             </div>
-            <div className="cfg-detail__acts">
-              <button
-                type="button"
-                className="cfg-btn is-primary"
-                onClick={() => onOpenLoad(active.probill)}
-              >
-                Open in Sourcing
-                <ArrowUpRight size={13} strokeWidth={2.2} />
-              </button>
-            </div>
-          </header>
 
-          <div className="cfg-detail__body">
             <div className="cfg-meta">
               <span>
                 Run <b>{active.runNo}</b>
@@ -155,11 +193,19 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
               <span>{active.customer}</span>
               <span>{active.equipment}</span>
               <span>{active.currency}</span>
-              <span className="cfg-meta__lane">
-                {active.origin} → {active.destination} · {active.miles.toLocaleString()} mi
-              </span>
             </div>
 
+            <div className="cfg-meta cfg-meta--lane">
+              <span className="cfg-meta__lane">
+                {active.origin}
+                <i aria-hidden />
+                {active.destination}
+              </span>
+              <em>{active.miles.toLocaleString()} mi</em>
+            </div>
+          </header>
+
+          <div className="cfg-detail__body">
             <div className="cfg-metrics">
               <Metric
                 label="Max buy"

@@ -29,6 +29,62 @@ export function ConfigCard({
   )
 }
 
+export function NumCard({
+  n,
+  title,
+  hint,
+  right,
+  children,
+  cardRef,
+}: {
+  n: number
+  title: string
+  hint?: string
+  right?: ReactNode
+  children: ReactNode
+  cardRef?: (el: HTMLElement | null) => void
+}) {
+  return (
+    <section className="cfg-card cfg-card--num" ref={cardRef}>
+      <header className="cfg-card__head">
+        <div className="cfg-card__lead">
+          <span className="cfg-card__n" aria-hidden>
+            {n}
+          </span>
+          <div>
+            <h3>{title}</h3>
+            {hint && <p>{hint}</p>}
+          </div>
+        </div>
+        {right}
+      </header>
+      <div className="cfg-card__body">{children}</div>
+    </section>
+  )
+}
+
+export function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  label: string
+}) {
+  return (
+    <label className={cn('cfg-switch', checked && 'is-on')}>
+      <input
+        type="checkbox"
+        checked={checked}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <i aria-hidden />
+    </label>
+  )
+}
+
 export function Field({
   label,
   hint,

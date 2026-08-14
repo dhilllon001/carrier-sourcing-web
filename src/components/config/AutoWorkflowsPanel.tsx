@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { RUNS, WORKFLOWS, type Workflow } from '@/data/autoWorkflows'
+import { CARRIER_PREFS, RUNS, WORKFLOWS, type CarrierPref, type Workflow } from '@/data/autoWorkflows'
 import { WorkflowsView } from './WorkflowsView'
 import { RunsView } from './RunsView'
+import { CarrierPrefsView } from './CarrierPrefsView'
 import { WorkflowBuilder } from './WorkflowBuilder'
 
-export type ConfigView = 'workflows' | 'runs' | 'new'
+export type ConfigView = 'workflows' | 'runs' | 'carriers' | 'new'
 
 type AutoWorkflowsPanelProps = {
   search?: string
@@ -18,9 +19,14 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
   const [workflows, setWorkflows] = useState<Workflow[]>(WORKFLOWS)
   const [selectedWorkflow, setSelectedWorkflow] = useState(WORKFLOWS[0].id)
   const [selectedRun, setSelectedRun] = useState(RUNS[0].id)
+  const [carriers, setCarriers] = useState<CarrierPref[]>(CARRIER_PREFS)
+  const [savedCarriers, setSavedCarriers] = useState<CarrierPref[]>(CARRIER_PREFS)
+  const [selectedCarrier, setSelectedCarrier] = useState(CARRIER_PREFS[0].id)
   const [toast, setToast] = useState<string | null>(null)
 
   const needsYou = RUNS.filter((r) => r.state === 'needs-you').length
+  const inFlight = RUNS.filter((r) => r.state !== 'covered').length
+  const carriersDirty = carriers.some((c, i) => c !== savedCarriers[i])
   const q = search.trim().toLowerCase()
 
   const shownWorkflows = useMemo(
@@ -46,20 +52,18 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
     [q]
   )
 
+  const shownCarriers = useMemo(
+    () =>
+      q
+        ? carriers.filter((c) => [c.name, c.mc, c.city].join(' ').toLowerCase().includes(q))
+        : carriers,
+    [carriers, q]
+  )
+
   return (
     <div className="cfg">
       <header className="cfg__bar">
         <div className="cfg__tabs" role="tablist" aria-label="Configuration section">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === 'workflows'}
-            className={cn(view === 'workflows' && 'is-on')}
-            onClick={() => setView('workflows')}
-          >
-            Workflows
-            <i>{shownWorkflows.length}</i>
-          </button>
           <button
             type="button"
             role="tab"
@@ -68,7 +72,24 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
             onClick={() => setView('runs')}
           >
             Live runs
-            <i className={cn(needsYou > 0 && 'is-alert')}>{shownRuns.length}</i>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'workflows'}
+            className={cn(view === 'workflows' && 'is-on')}
+            onClick={() => setView('workflows')}
+          >
+            Workflows
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'carriers'}
+            className={cn(view === 'carriers' && 'is-on')}
+            onClick={() => setView('carriers')}
+          >
+            Carrier prefs
           </button>
           {view === 'new' && (
             <button type="button" role="tab" aria-selected className="is-on">
@@ -77,26 +98,23 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
           )}
         </div>
 
+        <button type="button" className="cfg__pulse" onClick={() => setView('runs')}>
+          <i aria-hidden />
+          {inFlight} runs in flight
+          {needsYou > 0 && <em>· {needsYou} need you</em>}
+        </button>
+
         <div className="cfg__bar-right">
-          <span className="cfg-health">
-            <i aria-hidden />
-            Engine healthy · 1s tick
-          </span>
-          {needsYou > 0 && (
-            <button
-              type="button"
-              className="cfg-health is-alert"
-              onClick={() => setView('runs')}
-            >
-              {needsYou} need you
-            </button>
-          )}
           {view !== 'new' && (
             <button type="button" className="cfg-btn is-primary" onClick={() => setView('new')}>
               <Plus size={13} strokeWidth={2.4} />
               New workflow
             </button>
           )}
+          <span className="cfg-health">
+            <i aria-hidden />
+            Engine healthy · 1s tick
+          </span>
         </div>
       </header>
 
@@ -132,11 +150,35 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
             selectedId={selectedRun}
             onSelect={setSelectedRun}
             onOpenLoad={onOpenLoad}
+            onCarrierPrefs={() => setView('carriers')}
+          />
+        )}
+
+        {view === 'carriers' && (
+          <CarrierPrefsView
+            carriers={shownCarriers}
+            total={carriers.length}
+            selectedId={selectedCarrier}
+            onSelect={setSelectedCarrier}
+            onChange={(next) =>
+              setCarriers((list) => list.map((c) => (c.id === next.id ? next : c)))
+            }
+            onReset={(id) =>
+              setCarriers((list) =>
+                list.map((c, i) => (c.id === id ? savedCarriers[i] : c))
+              )
+            }
+            dirty={carriersDirty}
+            onSave={() => {
+              setSavedCarriers(carriers)
+              setToast('Carrier preferences saved — every future sourcing run uses them.')
+            }}
           />
         )}
 
         {view === 'new' && (
           <WorkflowBuilder
+            workflows={workflows}
             onCancel={() => setView('workflows')}
             onSave={(draft) => {
               setWorkflows((list) => [draft, ...list])

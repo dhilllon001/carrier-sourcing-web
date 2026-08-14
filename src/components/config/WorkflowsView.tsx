@@ -1,4 +1,4 @@
-import { Check, Copy, Plus, SlidersHorizontal } from 'lucide-react'
+import { Check, Copy, Plus, SlidersHorizontal, Zap } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { Workflow } from '@/data/autoWorkflows'
 import { ConfigCard } from './parts'
@@ -86,28 +86,32 @@ export function WorkflowsView({
 
       {active && (
         <section className="cfg-detail">
-          <header className="cfg-detail__head">
-            <div className="cfg-detail__title">
-              <i className={cn('cfg-dot', active.enabled ? 'is-live' : 'is-off')} aria-hidden />
-              <h2>{active.name}</h2>
-              <span className={cn('cfg-badge', active.enabled ? 'is-pos' : 'is-muted')}>
-                {active.enabled ? 'Enabled' : 'Paused'}
-              </span>
+          <header className="cfg-detail__head is-dark">
+            <div className="cfg-detail__topline">
+              <div className="cfg-detail__title">
+                <Zap size={14} strokeWidth={2.2} aria-hidden />
+                <h2>{active.name}</h2>
+                <span className={cn('cfg-badge', active.enabled ? 'is-pos' : 'is-muted')}>
+                  {active.enabled ? 'Enabled' : 'Paused'}
+                </span>
+              </div>
+              <div className="cfg-detail__acts">
+                <button
+                  type="button"
+                  className="cfg-btn is-ghost"
+                  onClick={() => onEdit(active.id)}
+                >
+                  <SlidersHorizontal size={13} strokeWidth={2} />
+                  Edit workflow
+                </button>
+                <button type="button" className="cfg-btn is-ghost" onClick={onNew}>
+                  <Copy size={13} strokeWidth={2} />
+                  Duplicate
+                </button>
+              </div>
             </div>
-            <div className="cfg-detail__acts">
-              <button type="button" className="cfg-btn" onClick={() => onEdit(active.id)}>
-                <SlidersHorizontal size={13} strokeWidth={2} />
-                Edit workflow
-              </button>
-              <button type="button" className="cfg-btn" onClick={onNew}>
-                <Copy size={13} strokeWidth={2} />
-                Duplicate
-              </button>
-            </div>
-          </header>
 
-          <div className="cfg-detail__body">
-            <div className="cfg-statstrip">
+            <div className="cfg-meta">
               <span>
                 Runs today <b>{active.stats.runsToday}</b>
               </span>
@@ -124,7 +128,9 @@ export function WorkflowsView({
                 In flight <b>{active.stats.inFlight}</b>
               </span>
             </div>
+          </header>
 
+          <div className="cfg-detail__body">
             <ConfigCard
               title="When it runs"
               hint={active.summary}

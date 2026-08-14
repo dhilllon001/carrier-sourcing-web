@@ -271,7 +271,7 @@ export const WORKFLOWS: Workflow[] = [
 
 /* ── Live runs ─────────────────────────────────────────────── */
 
-export type RunState = 'needs-you' | 'covered'
+export type RunState = 'needs-you' | 'running' | 'covered'
 export type TraceState = 'done' | 'live' | 'todo'
 
 export type RunBid = {
@@ -324,6 +324,84 @@ export type Run = {
 }
 
 export const RUNS: Run[] = [
+  {
+    id: 'run-4474',
+    runNo: 'R-4474',
+    workflow: 'Cross-border · Managed Capacity',
+    state: 'running',
+    clock: '00:27',
+    probill: '11440520',
+    customer: 'Nova Chemicals',
+    order: '11319044',
+    po: '944120880',
+    origin: 'Sarnia, ON',
+    destination: 'Houston, TX',
+    miles: 1818,
+    equipment: 'FLATBED',
+    currency: 'USD',
+    bars: ['done', 'done', 'todo', 'todo'],
+    footLabel: 'Offers & bids',
+    footValue: 'wave 2 in 00:11',
+    metrics: {
+      maxBuy: 4320,
+      maxBuyNote: 'last paid + 8%',
+      bookNow: 4104,
+      bookNowNote: 'human award required',
+      bestBid: 4290,
+      bestBidNote: '1 live bid',
+      elapsed: '00:27',
+      elapsedNote: 'avg cover 58 min',
+      reached: 3,
+      reachedNote: '1 of 2 waves',
+      saved: 30,
+      savedNote: 'against Max Buy',
+    },
+    stagesDone: '3/7 stages',
+    trace: [
+      {
+        title: 'Bidding thresholds',
+        at: '+00:03',
+        detail: 'Max Buy 4,320.00 USD · Book Now 4,104.00 · Reject Above 4,968.00',
+        state: 'done',
+      },
+      {
+        title: 'Posted to Sourcing',
+        at: '+00:06',
+        detail: 'Managed capacity list only — no public marketplace',
+        state: 'done',
+      },
+      {
+        title: 'Broadcast to carriers',
+        at: '+00:09',
+        detail: '1 of 2 waves sent · 3 bonded carriers via Email + WhatsApp',
+        state: 'done',
+      },
+      {
+        title: 'Offers & bids',
+        at: 'live',
+        detail: '1 bid in · wave 2 widens to 6 carriers in 00:11',
+        state: 'live',
+      },
+      { title: 'Award', at: '—', detail: 'Human award on every cross-border run', state: 'todo' },
+      { title: 'Booking', at: '—', detail: 'Runs after the award is placed', state: 'todo' },
+    ],
+    waves: [
+      { title: 'Wave 1 · top 3 bonded', note: '', state: 'sent', at: 'sent +00:09' },
+      { title: 'Wave 2 · top 6 bonded', note: '', state: 'pending', at: 'in 00:11' },
+    ],
+    awardRule: 'Human award required on every cross-border run',
+    bids: [
+      {
+        carrier: 'Manney Cross-Border SA',
+        mc: 'MC-1941466',
+        dot: '2884511',
+        at: '+00:21',
+        amount: 4290,
+        delta: -30,
+        outcome: 'live',
+      },
+    ],
+  },
   {
     id: 'run-4471',
     runNo: 'R-4471',
@@ -979,3 +1057,416 @@ export const PREVIEW_LANES: PreviewLane[] = [
 ]
 
 export const MATCHES_TODAY_TOTAL = 12
+
+/** Optional narrowing beyond equipment, lane and category. */
+export const EXTRA_CONDITIONS = [
+  'Customer is',
+  'Weight over',
+  'Hazmat',
+  'Team required',
+  'Drop trailer',
+  'Appointment required',
+  'Temperature controlled',
+  'Min miles',
+  'Max miles',
+  'Border crossing',
+  'Dedicated capacity',
+] as const
+
+export const BUILDER_STEPS = [
+  'Basics',
+  'When it runs',
+  'Pricing',
+  'Posting',
+  'Broadcast',
+  'Award',
+] as const
+
+/* ── Carrier preferences ───────────────────────────────────
+   Per-carrier overrides the waterfall obeys instead of the
+   workflow defaults: who to talk to, on which channel, how
+   paperwork moves, and where they actually want to run. */
+
+export const CAPABILITIES = [
+  'Tenders',
+  'Rate con',
+  'Appointments',
+  'Tracking',
+  'Invoices',
+] as const
+export type Capability = (typeof CAPABILITIES)[number]
+
+export const CHANNELS = ['WhatsApp', 'Email', 'Phone', 'EDI 204'] as const
+export type PrefChannel = (typeof CHANNELS)[number]
+
+export const CHANNEL_NOTE: Record<PrefChannel, string> = {
+  WhatsApp: 'fastest reply on this account',
+  Email: 'goes to every contact set to receive tenders',
+  Phone: 'dispatcher calls manually — no automated call',
+  'EDI 204': 'machine tender into their TMS',
+}
+
+export const RATE_CON_MODES = ['Email PDF', 'Carrier portal', 'EDI 204 / 990', 'API webhook'] as const
+export const PAYMENT_TERMS = ['Net 15', 'Net 30', 'Net 45', 'Quick pay 2%'] as const
+export const LANGUAGES = ['English', 'Spanish', 'Punjabi', 'French'] as const
+export const QUIET_FROM = ['20:00', '21:00', '22:00'] as const
+export const QUIET_TO = ['05:00', '06:00', '07:00'] as const
+
+export type PrefContact = {
+  id: string
+  name: string
+  role: string
+  email: string
+  phone: string
+  tz: string
+  caps: Capability[]
+  /** Overrides the carrier-level channel order for this one person. */
+  channel?: 'WhatsApp' | 'Email'
+}
+
+export type CarrierPref = {
+  id: string
+  name: string
+  mc: string
+  dot: string
+  city: string
+  contacts: PrefContact[]
+  favouriteId: string
+  channels: PrefChannel[]
+  fallThrough: number
+  quietOn: boolean
+  quietFrom: string
+  quietTo: string
+  language: string
+  rateCon: string
+  autoTender: boolean
+  signedRateCon: boolean
+  whatsappConfirm: boolean
+  paymentTerms: string
+  lanes: string[]
+  loadsPerWeek: number
+  equipment: string[]
+  doNotUse: boolean
+  stats: {
+    loadsBooked: number
+    lastBooked: string
+    onTime: string
+    onTimeNote: string
+    avgResponse: string
+    avgResponseNote: string
+    insurance: string
+    insuranceNote: string
+  }
+}
+
+export const CARRIER_PREFS: CarrierPref[] = [
+  {
+    id: 'dgs',
+    name: 'DGS Logistics',
+    mc: 'MC-771204',
+    dot: '771204',
+    city: 'Brampton, ON',
+    contacts: [
+      {
+        id: 'ravi',
+        name: 'Ravi Sandhu',
+        role: 'Dispatch',
+        email: 'ravi@dgslogistics.ca',
+        phone: '+1 905 555 0142',
+        tz: 'ET',
+        caps: ['Tenders', 'Rate con', 'Appointments'],
+      },
+      {
+        id: 'night',
+        name: 'Night desk',
+        role: 'After hours',
+        email: 'nights@dgslogistics.ca',
+        phone: '+1 905 555 0188',
+        tz: 'ET',
+        caps: ['Tenders', 'Tracking'],
+      },
+      {
+        id: 'simran',
+        name: 'Simran Kaur',
+        role: 'Billing',
+        email: 'ap@dgslogistics.ca',
+        phone: '+1 905 555 0170',
+        tz: 'ET',
+        caps: ['Invoices'],
+      },
+    ],
+    favouriteId: 'ravi',
+    channels: ['WhatsApp', 'Email', 'Phone'],
+    fallThrough: 15,
+    quietOn: true,
+    quietFrom: '21:00',
+    quietTo: '06:00',
+    language: 'English',
+    rateCon: 'Email PDF',
+    autoTender: true,
+    signedRateCon: true,
+    whatsappConfirm: false,
+    paymentTerms: 'Net 30',
+    lanes: ['Brampton → Chicago', 'Toronto → Detroit'],
+    loadsPerWeek: 14,
+    equipment: ['DRY-VAN', 'TRI-AXLE'],
+    doNotUse: false,
+    stats: {
+      loadsBooked: 42,
+      lastBooked: 'last on Aug 11',
+      onTime: '96%',
+      onTimeNote: 'rolling 90 days',
+      avgResponse: '14 min',
+      avgResponseNote: 'to a tender',
+      insurance: 'Nov 30, 2026',
+      insuranceNote: 'Satisfactory · Approved · C-TPAT · PIP',
+    },
+  },
+  {
+    id: 'smart-choice',
+    name: 'Smart Choice Transport Ltd',
+    mc: 'MC-4483133',
+    dot: '4483133',
+    city: 'Mississauga, ON',
+    contacts: [
+      {
+        id: 'harjot',
+        name: 'Harjot Singh',
+        role: 'Dispatch',
+        email: 'harjot@smartchoice.ca',
+        phone: '+1 416 555 0110',
+        tz: 'ET',
+        caps: ['Tenders', 'Rate con', 'Tracking'],
+      },
+      {
+        id: 'sct-ap',
+        name: 'Accounts',
+        role: 'Billing',
+        email: 'ap@smartchoice.ca',
+        phone: '+1 416 555 0119',
+        tz: 'ET',
+        caps: ['Invoices'],
+      },
+    ],
+    favouriteId: 'harjot',
+    channels: ['Email', 'WhatsApp', 'Phone'],
+    fallThrough: 20,
+    quietOn: true,
+    quietFrom: '22:00',
+    quietTo: '06:00',
+    language: 'English',
+    rateCon: 'Carrier portal',
+    autoTender: true,
+    signedRateCon: true,
+    whatsappConfirm: false,
+    paymentTerms: 'Net 30',
+    lanes: ['Mississauga → Columbus', 'Toronto → Buffalo'],
+    loadsPerWeek: 9,
+    equipment: ['DRY-VAN'],
+    doNotUse: false,
+    stats: {
+      loadsBooked: 28,
+      lastBooked: 'last on Aug 12',
+      onTime: '91%',
+      onTimeNote: 'rolling 90 days',
+      avgResponse: '22 min',
+      avgResponseNote: 'to a tender',
+      insurance: 'Mar 14, 2027',
+      insuranceNote: 'Satisfactory · Approved',
+    },
+  },
+  {
+    id: 'mangat',
+    name: 'Mangat Transhaul Inc',
+    mc: 'MC-4544786',
+    dot: '3521884',
+    city: 'Surrey, BC',
+    contacts: [
+      {
+        id: 'gurpreet',
+        name: 'Gurpreet Mangat',
+        role: 'Owner',
+        email: 'gurpreet@mangattranshaul.ca',
+        phone: '+1 604 555 0133',
+        tz: 'PT',
+        caps: ['Tenders', 'Rate con', 'Appointments', 'Invoices'],
+      },
+    ],
+    favouriteId: 'gurpreet',
+    channels: ['WhatsApp', 'Phone', 'Email'],
+    fallThrough: 10,
+    quietOn: false,
+    quietFrom: '21:00',
+    quietTo: '06:00',
+    language: 'Punjabi',
+    rateCon: 'Email PDF',
+    autoTender: false,
+    signedRateCon: true,
+    whatsappConfirm: true,
+    paymentTerms: 'Quick pay 2%',
+    lanes: ['Surrey → Seattle', 'Vancouver → Calgary'],
+    loadsPerWeek: 6,
+    equipment: ['DRY-VAN', 'REEFER'],
+    doNotUse: false,
+    stats: {
+      loadsBooked: 17,
+      lastBooked: 'last on Aug 9',
+      onTime: '99%',
+      onTimeNote: 'rolling 90 days',
+      avgResponse: '6 min',
+      avgResponseNote: 'to a tender',
+      insurance: 'Jan 22, 2027',
+      insuranceNote: 'Satisfactory · Approved',
+    },
+  },
+  {
+    id: 'roadlink',
+    name: 'Roadlink Carriers',
+    mc: 'MC-4212038',
+    dot: '2884120',
+    city: 'Woodstock, ON',
+    contacts: [
+      {
+        id: 'tanya',
+        name: 'Tanya Bell',
+        role: 'Dispatch',
+        email: 'tanya@roadlink.ca',
+        phone: '+1 519 555 0164',
+        tz: 'ET',
+        caps: ['Tenders', 'Rate con'],
+      },
+      {
+        id: 'rl-track',
+        name: 'Track & trace',
+        role: 'Operations',
+        email: 'ops@roadlink.ca',
+        phone: '+1 519 555 0165',
+        tz: 'ET',
+        caps: ['Tracking', 'Appointments'],
+      },
+    ],
+    favouriteId: 'tanya',
+    channels: ['Email', 'Phone'],
+    fallThrough: 30,
+    quietOn: true,
+    quietFrom: '20:00',
+    quietTo: '07:00',
+    language: 'English',
+    rateCon: 'EDI 204 / 990',
+    autoTender: true,
+    signedRateCon: false,
+    whatsappConfirm: false,
+    paymentTerms: 'Net 45',
+    lanes: ['Woodstock → London', 'Woodstock → Detroit'],
+    loadsPerWeek: 11,
+    equipment: ['DRY-VAN', 'FLATBED'],
+    doNotUse: false,
+    stats: {
+      loadsBooked: 33,
+      lastBooked: 'last on Aug 13',
+      onTime: '88%',
+      onTimeNote: 'rolling 90 days',
+      avgResponse: '41 min',
+      avgResponseNote: 'to a tender',
+      insurance: 'Sep 02, 2026',
+      insuranceNote: 'Satisfactory · renewal due',
+    },
+  },
+  {
+    id: 'manney',
+    name: 'Manney Cross-Border SA',
+    mc: 'MC-1941466',
+    dot: '2884511',
+    city: 'Nuevo Laredo, TAM',
+    contacts: [
+      {
+        id: 'miguel',
+        name: 'Miguel Torres',
+        role: 'Dispatch',
+        email: 'miguel@manneycb.mx',
+        phone: '+52 867 555 0102',
+        tz: 'CT',
+        caps: ['Tenders', 'Rate con', 'Tracking'],
+      },
+      {
+        id: 'mx-customs',
+        name: 'Customs desk',
+        role: 'Compliance',
+        email: 'aduana@manneycb.mx',
+        phone: '+52 867 555 0108',
+        tz: 'CT',
+        caps: ['Appointments'],
+      },
+    ],
+    favouriteId: 'miguel',
+    channels: ['WhatsApp', 'Email'],
+    fallThrough: 25,
+    quietOn: false,
+    quietFrom: '21:00',
+    quietTo: '06:00',
+    language: 'Spanish',
+    rateCon: 'Email PDF',
+    autoTender: false,
+    signedRateCon: true,
+    whatsappConfirm: true,
+    paymentTerms: 'Net 30',
+    lanes: ['Laredo → Monterrey', 'Monterrey → Houston'],
+    loadsPerWeek: 8,
+    equipment: ['DRY-VAN'],
+    doNotUse: false,
+    stats: {
+      loadsBooked: 21,
+      lastBooked: 'last on Aug 10',
+      onTime: '93%',
+      onTimeNote: 'rolling 90 days',
+      avgResponse: '18 min',
+      avgResponseNote: 'to a tender',
+      insurance: 'Jun 18, 2027',
+      insuranceNote: 'Satisfactory · C-TPAT bonded',
+    },
+  },
+  {
+    id: 'edo',
+    name: 'E&D Ontario Freight',
+    mc: 'MC-508122',
+    dot: '1998231',
+    city: 'London, ON',
+    contacts: [
+      {
+        id: 'dave',
+        name: 'Dave Elliott',
+        role: 'Owner',
+        email: 'dave@edontario.ca',
+        phone: '+1 519 555 0177',
+        tz: 'ET',
+        caps: ['Tenders'],
+      },
+    ],
+    favouriteId: 'dave',
+    channels: ['Phone', 'Email'],
+    fallThrough: 45,
+    quietOn: true,
+    quietFrom: '20:00',
+    quietTo: '07:00',
+    language: 'English',
+    rateCon: 'Email PDF',
+    autoTender: false,
+    signedRateCon: true,
+    whatsappConfirm: false,
+    paymentTerms: 'Net 30',
+    lanes: ['London → Toronto'],
+    loadsPerWeek: 3,
+    equipment: ['DRY-VAN'],
+    doNotUse: true,
+    stats: {
+      loadsBooked: 4,
+      lastBooked: 'last on Jun 28',
+      onTime: '61%',
+      onTimeNote: 'rolling 90 days',
+      avgResponse: '2 hr',
+      avgResponseNote: 'to a tender',
+      insurance: 'Expired Jul 31, 2026',
+      insuranceNote: 'Certificate needs renewing',
+    },
+  },
+]

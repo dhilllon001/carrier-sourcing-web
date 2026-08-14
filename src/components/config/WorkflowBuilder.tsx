@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react'
-import { AlertTriangle, Check, Plus, ShieldCheck, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { AlertTriangle, Check, Plus, ShieldCheck, Shuffle, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import {
   BOARD_OPTIONS,
+  BUILDER_STEPS,
   CATEGORY_OPTIONS,
   CHANNEL_OPTIONS,
   EQUIPMENT_OPTIONS,
+  EXTRA_CONDITIONS,
   LANE_OPTIONS,
   MATCHES_TODAY_TOTAL,
   PREVIEW_LANES,
@@ -15,11 +17,12 @@ import {
   type Currency,
   type Workflow,
 } from '@/data/autoWorkflows'
-import { Chip, ConfigCard, Field, Stepper, plain } from './parts'
+import { Chip, Field, NumCard, Stepper, plain } from './parts'
 
 type Wave = { id: number; size: string; at: number }
 
 type WorkflowBuilderProps = {
+  workflows: Workflow[]
   onCancel: () => void
   onSave: (workflow: Workflow) => void
 }
@@ -32,14 +35,26 @@ function roundUp5(n: number) {
   return Math.ceil(n / 5) * 5
 }
 
-export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
+export function WorkflowBuilder({ workflows, onCancel, onSave }: WorkflowBuilderProps) {
   const [nameTouched, setNameTouched] = useState(false)
   const [typedName, setTypedName] = useState('')
   const [currency, setCurrency] = useState<Currency>('USD')
+  const [priority, setPriority] = useState(5)
 
   const [equipment, setEquipment] = useState<string[]>(['DRY-VAN'])
   const [lanes, setLanes] = useState<string[]>(['US → US'])
   const [categories, setCategories] = useState<string[]>(['Spot'])
+  const [extras, setExtras] = useState<string[]>([])
+  const [refineOpen, setRefineOpen] = useState(false)
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const stepRefs = useRef<(HTMLElement | null)[]>([])
+  const [step, setStep] = useState(0)
+
+  const goToStep = (i: number) => {
+    setStep(i)
+    stepRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const [reference, setReference] = useState<string>('dat')
   const [margin, setMargin] = useState(5)
@@ -88,6 +103,19 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
   }, [lane, margin, bookNowPct, rejectPct])
 
   const postsPublicly = boards.length > 0 && !boards.includes("Don't post publicly")
+
+  const overlaps = useMemo(
+    () =>
+      workflows.filter(
+        (w) =>
+          w.enabled &&
+          equipment.some((e) => w.matches.includes(`Equipment ${e}`)) &&
+          lanes.some((l) => w.matches.includes(l))
+      ),
+    [workflows, equipment, lanes]
+  )
+
+  const matchSummary = [...equipment, ...lanes, ...categories].join(' · ') || 'nothing yet'
 
   const problems = useMemo(() => {
     const out: string[] = []
@@ -213,7 +241,7 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
 
   return (
     <div className="cfg-builder">
-      <div className="cfg-builder__scroll">
+      <div className="cfg-builder__scroll" ref={scrollRef}>
         <div className="cfg-builder__form">
           <header className="cfg-builder__intro">
             <h2>New auto-sourcing workflow</h2>
@@ -224,9 +252,30 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
             </p>
           </header>
 
-          <ConfigCard
-            title="Name & currency"
+          <nav className="cfg-stepnav" aria-label="Workflow sections">
+            <div className="cfg-stepnav__list">
+              {BUILDER_STEPS.map((label, i) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={cn('cfg-stepnav__item', i === step && 'is-on')}
+                  onClick={() => goToStep(i)}
+                >
+                  <i aria-hidden>{i + 1}</i>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span className="cfg-stepnav__count">{lane.matches.length} matching legs</span>
+          </nav>
+
+          <NumCard
+            n={1}
+            title="Basics"
             hint="The name writes itself from your rules — override it if you want"
+            cardRef={(el) => {
+              stepRefs.current[0] = el
+            }}
           >
             <div className="cfg-grid cfg-grid--name">
               <Field label="Workflow name" hint="Suggested from your selections. Type to take control.">
@@ -251,12 +300,23 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
                   ))}
                 </div>
               </Field>
+              <Field
+                label="Priority"
+                hint="Priority decides which workflow claims a leg when more than one matches. 1 runs first."
+              >
+                <Stepper value={priority} onChange={setPriority} step={1} min={1} max={9} unit="" />
+              </Field>
             </div>
-          </ConfigCard>
+          </NumCard>
 
-          <ConfigCard
+          <NumCard
+            n={2}
             title="When it runs"
             hint={`${lane.matches.length} legs on today's board match these conditions`}
+            right={<span className="cfg-card__aside">{matchSummary}</span>}
+            cardRef={(el) => {
+              stepRefs.current[1] = el
+            }}
           >
             <div className="cfg-grid cfg-grid--3">
               <Field label="Equipment">
@@ -297,6 +357,39 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
               </Field>
             </div>
 
+            <Field label="Refine further" wide>
+              <div className="cfg-chips">
+                {extras.map((x) => (
+                  <span key={x} className="cfg-chip is-on">
+                    {x}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${x}`}
+                      onClick={() => setExtras((v) => v.filter((e) => e !== x))}
+                    >
+                      <X size={10} strokeWidth={2.6} />
+                    </button>
+                  </span>
+                ))}
+                <button
+                  type="button"
+                  className="cfg-add"
+                  aria-expanded={refineOpen}
+                  onClick={() => setRefineOpen((v) => !v)}
+                >
+                  <Plus size={12} strokeWidth={2.4} />
+                  Add condition ({EXTRA_CONDITIONS.length - extras.length})
+                </button>
+              </div>
+              {refineOpen && (
+                <div className="cfg-chips cfg-chips--drawer">
+                  {EXTRA_CONDITIONS.filter((c) => !extras.includes(c)).map((c) => (
+                    <Chip key={c} label={c} onClick={() => setExtras((v) => [...v, c])} />
+                  ))}
+                </div>
+              )}
+            </Field>
+
             <Field
               label="Always required"
               hint="These can't be switched off — they're what makes a leg sourceable at all."
@@ -307,11 +400,20 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
                 <Chip locked label="No carrier already awarded" />
               </div>
             </Field>
-          </ConfigCard>
+          </NumCard>
 
-          <ConfigCard
-            title="Pricing policy"
+          <NumCard
+            n={3}
+            title="Pricing"
             hint="One reference rate plus a margin — Book Now and Reject Above follow from it"
+            right={
+              <span className="cfg-card__aside">
+                {plain(priced.maxBuy)} {currency} max buy
+              </span>
+            }
+            cardRef={(el) => {
+              stepRefs.current[2] = el
+            }}
           >
             <Field label="Max buy reference" wide>
               <div className="cfg-chips">
@@ -340,9 +442,21 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
                 <Stepper value={rejectPct} onChange={setRejectPct} step={5} max={100} />
               </Field>
             </div>
-          </ConfigCard>
+          </NumCard>
 
-          <ConfigCard title="Where to post" hint="Public marketplaces, or nothing at all">
+          <NumCard
+            n={4}
+            title="Posting"
+            hint="Public marketplaces, or nothing at all"
+            right={
+              <span className="cfg-card__aside">
+                {postsPublicly ? `${boards.join(' + ')} · every ${refresh}` : 'private only'}
+              </span>
+            }
+            cardRef={(el) => {
+              stepRefs.current[3] = el
+            }}
+          >
             <div className="cfg-grid cfg-grid--2">
               <Field label="Load boards">
                 <div className="cfg-chips">
@@ -377,11 +491,15 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
                 </div>
               </Field>
             </div>
-          </ConfigCard>
+          </NumCard>
 
-          <ConfigCard
-            title="Broadcast waterfall"
+          <NumCard
+            n={5}
+            title="Broadcast"
             hint="Widens on a timer until someone bids"
+            cardRef={(el) => {
+              stepRefs.current[4] = el
+            }}
             right={
               <button
                 type="button"
@@ -439,30 +557,56 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
               ))}
             </ul>
 
-            <div className="cfg-grid cfg-grid--2">
-              <Field label="Channels">
-                <div className="cfg-chips">
-                  {CHANNEL_OPTIONS.map((c) => (
-                    <Chip
-                      key={c}
-                      label={c}
-                      active={channels.includes(c)}
-                      onClick={() => setChannels((v) => toggle(v, c))}
-                    />
-                  ))}
-                </div>
-              </Field>
-              <Field label="Human approval above" hint="Automation never books over this ceiling">
-                <Stepper
-                  value={approvalAbove}
-                  unit={currency}
-                  step={250}
-                  max={50000}
-                  onChange={setApprovalAbove}
-                />
-              </Field>
-            </div>
-          </ConfigCard>
+            <Field label="Channels" wide>
+              <div className="cfg-chips">
+                {CHANNEL_OPTIONS.map((c) => (
+                  <Chip
+                    key={c}
+                    label={c}
+                    active={channels.includes(c)}
+                    onClick={() => setChannels((v) => toggle(v, c))}
+                  />
+                ))}
+              </div>
+            </Field>
+          </NumCard>
+
+          <NumCard
+            n={6}
+            title="Award"
+            hint="Where the automation stops and a person takes over"
+            right={
+              <span className="cfg-card__aside">
+                auto up to {plain(approvalAbove)} {currency}
+              </span>
+            }
+            cardRef={(el) => {
+              stepRefs.current[5] = el
+            }}
+          >
+            <Field
+              label="Human approval above"
+              hint="Automation never books over this ceiling — anything dearer waits for a person."
+              wide
+            >
+              <Stepper
+                value={approvalAbove}
+                unit={currency}
+                step={250}
+                max={50000}
+                onChange={setApprovalAbove}
+              />
+            </Field>
+
+            <Field label="Auto-award rule" wide>
+              <p className="cfg-note">
+                Any bid at or below <b>Book Now</b> ({plain(priced.bookNow)} {currency}) is awarded
+                without a human. Between Book Now and <b>Max Buy</b> the bid is held for review.
+                Above <b>Reject Above</b> ({plain(priced.reject)}) it is auto-rejected and the
+                waterfall carries on.
+              </p>
+            </Field>
+          </NumCard>
         </div>
 
         <aside className="cfg-preview">
@@ -555,6 +699,25 @@ export function WorkflowBuilder({ onCancel, onSave }: WorkflowBuilderProps) {
               ))}
             </ul>
           </section>
+
+          {overlaps.length > 0 && (
+            <section className="cfg-preview__block">
+              <span className="cfg-eyebrow is-warn">Overlaps another workflow</span>
+              <ul className="cfg-overlap">
+                {overlaps.map((w) => (
+                  <li key={w.id}>
+                    <Shuffle size={12} strokeWidth={2.2} />
+                    <span>
+                      <b>{w.name}</b> also matches {lane.matches.length} of these legs.
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="cfg-preview__prose">
+                Priority {priority} decides who claims the leg — the lower number wins.
+              </p>
+            </section>
+          )}
 
           <section className="cfg-preview__block">
             <span className="cfg-eyebrow">Checks</span>
