@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
-import { BatchAutoBar } from '@/components/details/View3StageWorkspaces'
 import { SrDataTable, TagPopover, type SrColumn } from '@/components/report'
 import { LifecycleRail } from '@/components/report/LifecycleRail'
 import {
@@ -100,8 +99,6 @@ export function CarrierSourcingReportPage({
 }: CarrierSourcingReportPageProps) {
   const [filters, setFilters] = useState<ReportFilters>({ ...DEFAULT_FILTERS })
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [picked, setPicked] = useState<Set<string>>(new Set())
-  const [batchNote, setBatchNote] = useState<string | null>(null)
   const [lifeCollapsed, setLifeCollapsed] = useState(false)
   const [board, setBoard] = useState<string>('ALL')
   const [boardQuery, setBoardQuery] = useState('')
@@ -210,28 +207,6 @@ export function CarrierSourcingReportPage({
 
   const columns: SrColumn<ReportLoad>[] = useMemo(
     () => [
-      {
-        key: 'pick',
-        header: '',
-        width: 36,
-        minWidth: 36,
-        cell: (row) => (
-          <input
-            type="checkbox"
-            checked={picked.has(row.id)}
-            onClick={(e) => e.stopPropagation()}
-            onChange={() => {
-              setPicked((prev) => {
-                const next = new Set(prev)
-                if (next.has(row.id)) next.delete(row.id)
-                else next.add(row.id)
-                return next
-              })
-            }}
-            aria-label={`Select ${row.id}`}
-          />
-        ),
-      },
       {
         key: 'mode',
         header: 'Mode',
@@ -380,7 +355,7 @@ export function CarrierSourcingReportPage({
         cell: (row) => <span className="sr-team">{row.team}</span>,
       },
     ],
-    [rowTags, setTagsFor, picked]
+    [rowTags, setTagsFor]
   )
 
   return (
@@ -514,25 +489,6 @@ export function CarrierSourcingReportPage({
         />
 
         <section className="sr-card sr-card--table" style={{ padding: 0, overflow: 'hidden' }}>
-          <BatchAutoBar
-            selected={filtered.filter((r) => picked.has(r.id)).map((r) => ({ id: r.id, stage: r.stage }))}
-            onRun={(mode) => {
-              const n = picked.size
-              setBatchNote(
-                `Mock Auto ${mode === 'sourcing' ? 'Sourcing' : mode === 'tender' ? 'Tender' : 'Award'} queued on ${n} load${n === 1 ? '' : 's'}. One profile per stage — open a load to review the run.`
-              )
-              setPicked(new Set())
-            }}
-            onClear={() => setPicked(new Set())}
-          />
-          {batchNote && (
-            <div className="sr-batch">
-              <span>{batchNote}</span>
-              <button type="button" className="sr-batch__clear" onClick={() => setBatchNote(null)}>
-                Dismiss
-              </button>
-            </div>
-          )}
           {viewMode === 'table' ? (
             <SrDataTable
               rows={filtered}

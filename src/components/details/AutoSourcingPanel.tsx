@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  FileText,
   Gauge,
   Layers,
   Loader2,
@@ -26,16 +25,13 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { BidOffer, CarrierRow, LoadDetail } from '@/data/loadDetail'
-import { loadProfiles, saveSourcingProfile, type SourcingProfile } from '@/data/automationProfiles'
-import { canAutoAward } from '@/data/awardScore'
 
-export type AutoMode = 'sourcing' | 'tender' | 'award' | 'booking'
+export type AutoMode = 'sourcing' | 'tender' | 'award'
 
 export const AUTO_MODE_LABEL: Record<AutoMode, string> = {
   sourcing: 'Auto Sourcing',
   tender: 'Auto Tender',
   award: 'Auto Award',
-  booking: 'Auto Booking',
 }
 
 /* ── Mock outreach counts ── */
@@ -55,7 +51,34 @@ const CHANNEL_META: Record<ChannelId, { label: string; hint: string; icon: typeo
   loadlink: { label: 'Post to Loadlink', hint: 'Load board posting', icon: RadioTower },
 }
 
-type SourcingRule = SourcingProfile & { custom?: boolean }
+type SourcingRule = {
+  id: string
+  name: string
+  description: string
+  channels: ChannelId[]
+  custom?: boolean
+}
+
+const PRESET_RULES: SourcingRule[] = [
+  {
+    id: 'internal-only',
+    name: 'Internal carriers only',
+    description: 'Blast email + WhatsApp to our approved carrier base. No public boards.',
+    channels: ['internal', 'email', 'whatsapp'],
+  },
+  {
+    id: 'internal-dat',
+    name: 'Internal + DAT',
+    description: 'Blast the internal base and post to DAT only.',
+    channels: ['internal', 'email', 'dat'],
+  },
+  {
+    id: 'max-reach',
+    name: 'Maximum reach',
+    description: 'Internal base, Highway-sourced carriers, DAT and Loadlink — everything.',
+    channels: ['internal', 'highway', 'email', 'whatsapp', 'dat', 'loadlink'],
+  },
+]
 
 /* ── Carrier intelligence (deterministic mock) ── */
 function seedOf(s: string) {
@@ -785,16 +808,14 @@ export function AutoSourcingConfirm({
   onNo: () => void
 }) {
   const label = AUTO_MODE_LABEL[mode]
-  const Icon = mode === 'sourcing' ? Zap : mode === 'tender' ? Gauge : mode === 'award' ? Award : FileText
+  const Icon = mode === 'sourcing' ? Zap : mode === 'tender' ? Gauge : Award
 
   const lead =
     mode === 'sourcing'
       ? 'Runs the whole sourcing sequence from this one screen.'
       : mode === 'tender'
         ? 'Sourcing is done — this scores every offer you have received.'
-        : mode === 'award'
-          ? 'Final checks before you commit the load to a carrier.'
-          : 'Builds the contract, sends confirmation, and assigns mock resources.'
+        : 'Final checks before you commit the load to a carrier.'
 
   const steps =
     mode === 'sourcing'
@@ -803,7 +824,7 @@ export function AutoSourcingConfirm({
             ? `Check missing data points — ${missingCount} found on ${probill}`
             : `All required data points on ${probill} are already present`,
           'Confirm book now and the max buy hard limit in one place',
-          'Run your named sourcing profile — carrier blasts and board postings',
+          'Run your automation rule — carrier blasts and board postings',
         ]
       : mode === 'tender'
         ? [
@@ -811,17 +832,11 @@ export function AutoSourcingConfirm({
             'Weigh carrier rating, Highway data, onboarding and monitoring',
             'Suggest which offer to accept',
           ]
-        : mode === 'award'
-          ? [
-              `Re-check all ${offerCount} offers against the hard limit`,
-              'Verify Highway identity, onboarding and monitoring',
-              'Auto-award only when every entry condition matches',
-            ]
-          : [
-              'Draft the rate confirmation for the awarded carrier',
-              'Send the packet to the Highway-verified email',
-              'Assign mock driver, tractor, trailer and tracking',
-            ]
+        : [
+            `Re-check all ${offerCount} offers against the hard limit`,
+            'Verify Highway identity, onboarding and monitoring',
+            'Suggest the carrier to award',
+          ]
 
   return (
     <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="dd-auto-confirm-title">
@@ -946,9 +961,6 @@ export function AutoSourcingPanel({
   onApplyRates,
   onGoFindPost,
   onSourcingComplete,
-  onTenderComplete,
-  onAwardComplete,
-  onBookingComplete,
 }: {
   detail: LoadDetail
   mode: AutoMode
@@ -956,9 +968,6 @@ export function AutoSourcingPanel({
   onApplyRates: (patch: Partial<Pick<LoadDetail, 'maxBuy' | 'bookNowRate' | 'rejectAbove'>>) => void
   onGoFindPost: () => void
   onSourcingComplete?: () => void
-  onTenderComplete?: (bid: BidOffer) => void
-  onAwardComplete?: (bid: BidOffer, auto: boolean) => void
-  onBookingComplete?: () => void
 }) {
   const maxMissing = !detail.maxBuy || detail.maxBuy === '—' || detail.maxBuy === '$0.00'
   const bookMissing = !detail.bookNowRate || detail.bookNowRate === '—'
@@ -968,9 +977,7 @@ export function AutoSourcingPanel({
 
   /* sourcing flow */
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const sourcingProfiles = loadProfiles().sourcing
-  const [ruleId, setRuleId] = useState<string>(sourcingProfiles[2]?.id ?? sourcingProfiles[0].id)
-  const [saveName, setSaveName] = useState('')
+  const [ruleId, setRuleId] = useState<string>(PRESET_RULES[2].id)
   const [customChannels, setCustomChannels] = useState<Set<ChannelId>>(
     () => new Set<ChannelId>(['internal', 'email', 'dat'])
   )
@@ -1002,7 +1009,7 @@ export function AutoSourcingPanel({
           channels: [...customChannels],
           custom: true,
         }
-      : sourcingProfiles.find((r) => r.id === ruleId) ?? sourcingProfiles[0]
+      : PRESET_RULES.find((r) => r.id === ruleId)!
 
   const channels = new Set(rule.channels)
   const blastPicked = channels.has('email') || channels.has('whatsapp')
@@ -1312,7 +1319,7 @@ export function AutoSourcingPanel({
                     carrier reach and load boards.
                   </p>
                   <div className="dd-auto-rules">
-                    {sourcingProfiles.map((r) => (
+                    {PRESET_RULES.map((r) => (
                       <button
                         key={r.id}
                         type="button"
@@ -1392,31 +1399,6 @@ export function AutoSourcingPanel({
                               </span>
                             )
                           })}
-                        </div>
-                      )}
-                      {ruleId === 'custom' && (
-                        <div className="dd-auto-rule__save" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            value={saveName}
-                            onChange={(e) => setSaveName(e.target.value)}
-                            placeholder="Name this profile…"
-                          />
-                          <button
-                            type="button"
-                            className="dd-btn dd-btn--primary"
-                            disabled={!saveName.trim() || customChannels.size === 0}
-                            onClick={() => {
-                              saveSourcingProfile({
-                                id: `p-${Date.now()}`,
-                                name: saveName.trim(),
-                                description: 'Saved from this run.',
-                                channels: [...customChannels],
-                              })
-                              setSaveName('')
-                            }}
-                          >
-                            Save as…
-                          </button>
                         </div>
                       )}
                     </button>
@@ -1623,20 +1605,8 @@ export function AutoSourcingPanel({
                 </>
               )}
 
-              {mode === 'booking' && (
-                <div className="dd-auto-analyze">
-                  <p className="dd-auto-panel__intro">
-                    Auto Booking drafts the confirmation, sends it to the Highway-verified address, and
-                    assigns mock resources. One order at a time.
-                  </p>
-                  <button type="button" className="dd-btn dd-btn--primary" onClick={() => onBookingComplete?.()}>
-                    Run Auto Booking
-                  </button>
-                </div>
-              )}
-
               {/* ── TENDER / AWARD ── */}
-              {mode !== 'sourcing' && mode !== 'booking' && (
+              {mode !== 'sourcing' && (
                 <>
                   <p className="dd-auto-panel__intro">
                     {modeLabel} analyzes every offer on this order — rate vs your hard limit, carrier
@@ -1805,27 +1775,14 @@ export function AutoSourcingPanel({
                                 className="dd-btn dd-btn--primary dd-auto-offer__accept"
                                 onClick={(event) => {
                                   event.stopPropagation()
-                                  if (mode === 'tender') {
-                                    onTenderComplete?.(s.bid)
-                                    return
-                                  }
-                                  const award = loadProfiles().award[0]
-                                  const gate = canAutoAward(detail, award)
-                                  if (mode === 'award' && gate.ok && gate.top?.bid.id === s.bid.id) {
-                                    onAwardComplete?.(s.bid, true)
-                                    return
-                                  }
                                   setPopup({
-                                    title: `${modeLabel}: ${s.bid.carrier} recommended`,
+                                    title: `${modeLabel}: selected offer accepted (mock)`,
                                     lines: [
-                                      `${s.bid.allIn ?? s.bid.amount} all-in · score ${s.score}`,
+                                      `${s.bid.carrier} — ${s.bid.allIn ?? s.bid.amount} all-in`,
                                       ...s.reasons,
-                                      gate.ok
-                                        ? 'Accept to award.'
-                                        : `Entry conditions not met — ${gate.items.filter((i) => !i.ok).map((i) => i.label).join(', ') || 'broker decides'}.`,
+                                      'No live tender was sent · mock only',
                                     ],
                                   })
-                                  if (mode === 'award') onAwardComplete?.(s.bid, false)
                                 }}
                               >
                                 <Check size={14} />
