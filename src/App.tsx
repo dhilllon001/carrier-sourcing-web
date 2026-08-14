@@ -12,6 +12,7 @@ import {
   Users,
   KeyRound,
   Route,
+  SlidersHorizontal,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -24,12 +25,14 @@ import { CarrierDetailPage } from '@/pages/CarrierDetailPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { CmtReviewPage } from '@/pages/CmtReviewPage'
 import { AccessManagementPage } from '@/pages/AccessManagementPage'
+import { ConfigurationPage } from '@/pages/ConfigurationPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
 import { cn } from '@/lib/cn'
 
 const NAV = [
   { id: 'sourcing', label: 'Sourcing', icon: Truck },
+  { id: 'configuration', label: 'Configuration', icon: SlidersHorizontal },
   { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },
@@ -141,7 +144,9 @@ export default function App() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={
-                    nav === 'availability'
+                    nav === 'configuration'
+                      ? 'Search workflows, runs, probill, carrier…'
+                      : nav === 'availability'
                       ? 'Search carrier, lane, equipment, notes…'
                       : nav === 'carriers'
                         ? 'Search carrier, MC, DOT, contact…'
@@ -216,6 +221,16 @@ export default function App() {
                 viewMode={viewMode}
                 refreshKey={refreshKey}
                 onOpenLoad={setOpenLoadId}
+              />
+            ) : nav === 'configuration' ? (
+              <ConfigurationPage
+                search={search}
+                onOpenLoad={(probill) => {
+                  if (reportLoads.some((r) => r.id === probill)) {
+                    setNav('sourcing')
+                    setOpenLoadId(probill)
+                  }
+                }}
               />
             ) : nav === 'availability' ? (
               <AvailabilityPage search={search} />

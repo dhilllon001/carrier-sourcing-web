@@ -1,11 +1,8 @@
-import { ChevronLeft, Layers, PlusCircle, Radio, Workflow } from 'lucide-react'
+import { ChevronLeft, Layers } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { LIFECYCLE_DISPLAY } from '@/data/report'
-import type { ConfigView } from '@/components/config/AutoWorkflowsPanel'
 
 type StageName = (typeof LIFECYCLE_DISPLAY.stages)[number]['stage']
-
-export type RailTab = 'lifecycle' | 'config'
 
 type LifecycleRailProps = {
   collapsed: boolean
@@ -15,14 +12,6 @@ type LifecycleRailProps = {
   onSelectAll: () => void
   onSelectStage: (stage: StageName) => void
   onSelectSubStage: (stage: StageName, subStage: string) => void
-  tab: RailTab
-  onTabChange: (tab: RailTab) => void
-  configView: ConfigView
-  onConfigView: (view: ConfigView) => void
-  workflowCount: number
-  enabledCount: number
-  runsLive: number
-  needsYou: number
 }
 
 export function LifecycleRail({
@@ -33,14 +22,6 @@ export function LifecycleRail({
   onSelectAll,
   onSelectStage,
   onSelectSubStage,
-  tab,
-  onTabChange,
-  configView,
-  onConfigView,
-  workflowCount,
-  enabledCount,
-  runsLive,
-  needsYou,
 }: LifecycleRailProps) {
   if (collapsed) {
     return (
@@ -51,7 +32,7 @@ export function LifecycleRail({
         onClick={onToggle}
       >
         <Layers size={14} strokeWidth={2} />
-        <span>{tab === 'config' ? 'Configuration' : 'Stages'}</span>
+        <span>Stages</span>
       </button>
     )
   }
@@ -59,86 +40,17 @@ export function LifecycleRail({
   return (
     <aside className="sr-life-rail">
       <div className="sr-life-rail__head">
-        <div className="sr-rail-tabs" role="tablist" aria-label="Rail section">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'lifecycle'}
-            className={cn(tab === 'lifecycle' && 'is-on')}
-            onClick={() => onTabChange('lifecycle')}
-          >
-            Lifecycle
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'config'}
-            className={cn(tab === 'config' && 'is-on')}
-            onClick={() => onTabChange('config')}
-          >
-            Configuration
-            {needsYou > 0 && <i>{needsYou}</i>}
-          </button>
-        </div>
+        <div className="sr-life-rail__eyebrow">Lifecycle</div>
         <button
           type="button"
           className="sr-life-rail__toggle"
-          aria-label="Collapse rail"
+          aria-label="Collapse lifecycle"
           onClick={onToggle}
         >
           <ChevronLeft size={14} />
         </button>
       </div>
 
-      {tab === 'config' ? (
-        <div className="sr-life-rail__body">
-          <p className="sr-rail-note">
-            Automation that covers a load end to end — the rules, and every run they produced.
-          </p>
-
-          <nav className="sr-rail-nav">
-            <button
-              type="button"
-              className={cn('sr-rail-nav__item', configView === 'workflows' && 'is-active')}
-              onClick={() => onConfigView('workflows')}
-            >
-              <Workflow size={14} strokeWidth={1.9} />
-              <span>
-                Workflows
-                <em>
-                  {enabledCount} of {workflowCount} enabled
-                </em>
-              </span>
-              <b>{workflowCount}</b>
-            </button>
-
-            <button
-              type="button"
-              className={cn('sr-rail-nav__item', configView === 'runs' && 'is-active')}
-              onClick={() => onConfigView('runs')}
-            >
-              <Radio size={14} strokeWidth={1.9} />
-              <span>
-                Live runs
-                <em>{needsYou > 0 ? `${needsYou} waiting on you` : 'nothing waiting'}</em>
-              </span>
-              <b className={cn(needsYou > 0 && 'is-alert')}>{runsLive}</b>
-            </button>
-
-            <button
-              type="button"
-              className={cn('sr-rail-nav__item', configView === 'new' && 'is-active')}
-              onClick={() => onConfigView('new')}
-            >
-              <PlusCircle size={14} strokeWidth={1.9} />
-              <span>
-                New workflow
-                <em>pre-filled, priced live</em>
-              </span>
-            </button>
-          </nav>
-        </div>
-      ) : (
       <div className="sr-life-rail__body">
         <button
           type="button"
@@ -199,7 +111,6 @@ export function LifecycleRail({
           })}
         </ol>
       </div>
-      )}
     </aside>
   )
 }

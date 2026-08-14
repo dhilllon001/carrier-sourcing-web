@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Activity, Plus, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, X } from 'lucide-react'
+import { cn } from '@/lib/cn'
 import { RUNS, WORKFLOWS, type Workflow } from '@/data/autoWorkflows'
 import { WorkflowsView } from './WorkflowsView'
 import { RunsView } from './RunsView'
@@ -8,44 +9,72 @@ import { WorkflowBuilder } from './WorkflowBuilder'
 export type ConfigView = 'workflows' | 'runs' | 'new'
 
 type AutoWorkflowsPanelProps = {
-  view: ConfigView
-  onViewChange: (view: ConfigView) => void
+  search?: string
   onOpenLoad: (probill: string) => void
 }
 
-const TITLE: Record<ConfigView, { title: string; hint: string }> = {
-  workflows: {
-    title: 'Auto-sourcing workflows',
-    hint: 'The rules that cover a load without a person touching it',
-  },
-  runs: {
-    title: 'Live runs',
-    hint: 'Every automated run in flight and everything covered today',
-  },
-  new: {
-    title: 'New workflow',
-    hint: 'Nothing goes live until you save it',
-  },
-}
-
-export function AutoWorkflowsPanel({
-  view,
-  onViewChange,
-  onOpenLoad,
-}: AutoWorkflowsPanelProps) {
+export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPanelProps) {
+  const [view, setView] = useState<ConfigView>('workflows')
   const [workflows, setWorkflows] = useState<Workflow[]>(WORKFLOWS)
   const [selectedWorkflow, setSelectedWorkflow] = useState(WORKFLOWS[0].id)
   const [selectedRun, setSelectedRun] = useState(RUNS[0].id)
   const [toast, setToast] = useState<string | null>(null)
 
-  const inFlight = RUNS.filter((r) => r.state === 'needs-you').length
+  const needsYou = RUNS.filter((r) => r.state === 'needs-you').length
+  const q = search.trim().toLowerCase()
+
+  const shownWorkflows = useMemo(
+    () =>
+      q
+        ? workflows.filter((w) =>
+            [w.name, w.blurb, ...w.matches].join(' ').toLowerCase().includes(q)
+          )
+        : workflows,
+    [workflows, q]
+  )
+
+  const shownRuns = useMemo(
+    () =>
+      q
+        ? RUNS.filter((r) =>
+            [r.runNo, r.workflow, r.probill, r.customer, r.origin, r.destination]
+              .join(' ')
+              .toLowerCase()
+              .includes(q)
+          )
+        : RUNS,
+    [q]
+  )
 
   return (
     <div className="cfg">
       <header className="cfg__bar">
-        <div className="cfg__bar-title">
-          <h2>{TITLE[view].title}</h2>
-          <p>{TITLE[view].hint}</p>
+        <div className="cfg__tabs" role="tablist" aria-label="Configuration section">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'workflows'}
+            className={cn(view === 'workflows' && 'is-on')}
+            onClick={() => setView('workflows')}
+          >
+            Workflows
+            <i>{shownWorkflows.length}</i>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'runs'}
+            className={cn(view === 'runs' && 'is-on')}
+            onClick={() => setView('runs')}
+          >
+            Live runs
+            <i className={cn(needsYou > 0 && 'is-alert')}>{shownRuns.length}</i>
+          </button>
+          {view === 'new' && (
+            <button type="button" role="tab" aria-selected className="is-on">
+              New workflow
+            </button>
+          )}
         </div>
 
         <div className="cfg__bar-right">
@@ -53,22 +82,17 @@ export function AutoWorkflowsPanel({
             <i aria-hidden />
             Engine healthy · 1s tick
           </span>
-          {inFlight > 0 && (
+          {needsYou > 0 && (
             <button
               type="button"
               className="cfg-health is-alert"
-              onClick={() => onViewChange('runs')}
+              onClick={() => setView('runs')}
             >
-              <Activity size={12} strokeWidth={2.2} />
-              {inFlight} need you
+              {needsYou} need you
             </button>
           )}
           {view !== 'new' && (
-            <button
-              type="button"
-              className="cfg-btn is-primary"
-              onClick={() => onViewChange('new')}
-            >
+            <button type="button" className="cfg-btn is-primary" onClick={() => setView('new')}>
               <Plus size={13} strokeWidth={2.4} />
               New workflow
             </button>
@@ -88,7 +112,8 @@ export function AutoWorkflowsPanel({
       <div className="cfg__body">
         {view === 'workflows' && (
           <WorkflowsView
-            workflows={workflows}
+            workflows={shownWorkflows}
+            total={workflows.length}
             selectedId={selectedWorkflow}
             onSelect={setSelectedWorkflow}
             onToggle={(id) =>
@@ -96,14 +121,14 @@ export function AutoWorkflowsPanel({
                 list.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w))
               )
             }
-            onNew={() => onViewChange('new')}
-            onEdit={() => onViewChange('new')}
+            onNew={() => setView('new')}
+            onEdit={() => setView('new')}
           />
         )}
 
         {view === 'runs' && (
           <RunsView
-            runs={RUNS}
+            runs={shownRuns}
             selectedId={selectedRun}
             onSelect={setSelectedRun}
             onOpenLoad={onOpenLoad}
@@ -112,14 +137,14 @@ export function AutoWorkflowsPanel({
 
         {view === 'new' && (
           <WorkflowBuilder
-            onCancel={() => onViewChange('workflows')}
+            onCancel={() => setView('workflows')}
             onSave={(draft) => {
               setWorkflows((list) => [draft, ...list])
               setSelectedWorkflow(draft.id)
               setToast(
                 `${draft.name} saved${draft.enabled ? ' and enabled' : ' as paused'} — it now shows in Saved workflows.`
               )
-              onViewChange('workflows')
+              setView('workflows')
             }}
           />
         )}

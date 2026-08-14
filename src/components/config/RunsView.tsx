@@ -66,6 +66,9 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
         </header>
 
         <div className="cfg-list__body">
+          {runs.length === 0 && <p className="cfg-empty">No run matches that search.</p>}
+
+          {needsYou.length > 0 && (
           <div className="cfg-group">
             <span className="cfg-group__label is-alert">
               Needs you <b>{needsYou.length}</b>
@@ -79,7 +82,9 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
               />
             ))}
           </div>
+          )}
 
+          {covered.length > 0 && (
           <div className="cfg-group">
             <span className="cfg-group__label">
               Covered today <b>{covered.length}</b>
@@ -93,8 +98,15 @@ export function RunsView({ runs, selectedId, onSelect, onOpenLoad }: RunsViewPro
               />
             ))}
           </div>
+          )}
         </div>
       </aside>
+
+      {!active && (
+        <section className="cfg-detail">
+          <div className="cfg-detail__blank">Nothing to show for this search.</div>
+        </section>
+      )}
 
       {active && (
         <section className="cfg-detail">

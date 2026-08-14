@@ -5,6 +5,7 @@ import { ConfigCard } from './parts'
 
 type WorkflowsViewProps = {
   workflows: Workflow[]
+  total: number
   selectedId: string
   onSelect: (id: string) => void
   onToggle: (id: string) => void
@@ -14,6 +15,7 @@ type WorkflowsViewProps = {
 
 export function WorkflowsView({
   workflows,
+  total,
   selectedId,
   onSelect,
   onToggle,
@@ -29,7 +31,9 @@ export function WorkflowsView({
         <header className="cfg-list__head">
           <span className="cfg-eyebrow">Saved workflows</span>
           <em>
-            {enabledCount} of {workflows.length} enabled
+            {workflows.length < total
+              ? `${workflows.length} of ${total} shown`
+              : `${enabledCount} of ${total} enabled`}
           </em>
         </header>
 
@@ -40,6 +44,9 @@ export function WorkflowsView({
         </button>
 
         <div className="cfg-list__body">
+          {workflows.length === 0 && (
+            <p className="cfg-empty">No workflow matches that search.</p>
+          )}
           {workflows.map((wf) => (
             <button
               key={wf.id}
@@ -70,6 +77,12 @@ export function WorkflowsView({
           ))}
         </div>
       </aside>
+
+      {!active && (
+        <section className="cfg-detail">
+          <div className="cfg-detail__blank">Nothing to show for this search.</div>
+        </section>
+      )}
 
       {active && (
         <section className="cfg-detail">

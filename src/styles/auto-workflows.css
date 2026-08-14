@@ -1,136 +1,14 @@
 /* Configuration tab — auto-sourcing workflows, builder and live runs.
    Follows the View 3 idiom: white panes, #e4e7eb hairlines, 10px radii. */
 
-/* ── Left rail: section tabs + config nav ─────────────────── */
-.sr-rail-tabs {
-  display: flex;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-
-.sr-rail-tabs button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 8px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  font: 700 11px/1 var(--sr-font-body);
-  letter-spacing: 0.02em;
-  color: #7c8798;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.sr-rail-tabs button:hover {
-  color: #14181e;
-}
-
-.sr-rail-tabs button.is-on {
-  color: var(--sr-action);
-  border-bottom-color: var(--sr-action);
-}
-
-.sr-rail-tabs button i {
-  display: inline-grid;
-  place-items: center;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 4px;
-  border-radius: 4px;
-  background: #fdeceb;
-  font: 700 9.5px/1 var(--sr-font-body);
-  font-style: normal;
-  color: var(--red);
-}
-
-.sr-rail-note {
-  margin: 0 0 10px;
-  font: 400 11.5px/1.5 var(--sr-font-body);
-  color: #6b7685;
-}
-
-.sr-rail-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.sr-rail-nav__item {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 8px 9px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: #14181e;
-  text-align: left;
-  cursor: pointer;
-}
-
-.sr-rail-nav__item:hover {
-  background: #f4f6f9;
-}
-
-.sr-rail-nav__item.is-active {
-  border-color: #d2daf9;
-  background: #eff2fd;
-}
-
-.sr-rail-nav__item svg {
-  color: #6b7685;
-}
-
-.sr-rail-nav__item.is-active svg {
-  color: var(--sr-action);
-}
-
-.sr-rail-nav__item > span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  font: 700 12.5px/1.15 var(--sr-font-body);
-}
-
-.sr-rail-nav__item em {
-  font: 500 10.5px/1.3 var(--sr-font-body);
-  font-style: normal;
-  color: #7c8798;
-}
-
-.sr-rail-nav__item > b {
-  font: 700 12px/1 var(--sr-font-body);
-  font-variant-numeric: tabular-nums;
-  color: #5a636e;
-}
-
-.sr-rail-nav__item > b.is-alert {
-  color: var(--red);
-}
-
 /* ── Module shell ─────────────────────────────────────────── */
 .cfg {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  height: 100%;
   gap: 10px;
-}
-
-.sr-page__split.is-life-collapsed > .cfg {
-  grid-column: 1;
-  grid-row: 1;
-  width: 100%;
-  min-width: 0;
-  z-index: 1;
 }
 
 .cfg__bar {
@@ -139,23 +17,64 @@
   justify-content: space-between;
   gap: 14px;
   flex: none;
-  padding: 10px 14px;
+  padding: 0 14px;
   background: #fff;
   border: 1px solid #e4e7eb;
   border-radius: 10px;
 }
 
-.cfg__bar-title h2 {
-  margin: 0;
-  font: 600 14.5px/1.2 var(--sr-font-heading);
-  letter-spacing: -0.01em;
-  color: #101419;
+.cfg__tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
 }
 
-.cfg__bar-title p {
-  margin: 3px 0 0;
-  font: 400 11.5px/1.3 var(--sr-font-body);
+.cfg__tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font: 650 12.5px/1 var(--sr-font-body);
   color: #6b7685;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cfg__tabs button:hover {
+  color: #1d2530;
+}
+
+.cfg__tabs button.is-on {
+  color: var(--sr-action);
+  border-bottom-color: var(--sr-action);
+}
+
+.cfg__tabs button i {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #f1f3f6;
+  font: 700 10px/1 var(--sr-font-body);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: #5a636e;
+}
+
+.cfg__tabs button.is-on i {
+  background: rgba(43, 79, 211, 0.1);
+  color: var(--sr-action);
+}
+
+.cfg__tabs button i.is-alert {
+  background: #fdeceb;
+  color: var(--red);
 }
 
 .cfg__bar-right {
@@ -343,6 +262,21 @@ button.cfg-health {
   font: 600 10px/1 var(--sr-font-body);
   font-style: normal;
   letter-spacing: 0.03em;
+  color: #8c96a3;
+}
+
+.cfg-empty {
+  margin: 12px 2px;
+  font: 500 11.5px/1.5 var(--sr-font-body);
+  color: #8c96a3;
+}
+
+.cfg-detail__blank {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 24px;
+  font: 500 12.5px/1.5 var(--sr-font-body);
   color: #8c96a3;
 }
 
