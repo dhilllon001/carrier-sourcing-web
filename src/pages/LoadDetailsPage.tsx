@@ -1469,6 +1469,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [aiLog, setAiLog] = useState<AiActivityEntry[]>(() => buildAiActivity(base))
   const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
   const [caseEvents, setCaseEvents] = useState<CaseEvent[]>([])
+  const [actCollapsed, setActCollapsed] = useState(false)
 
   const logCase = (e: {
     key?: string
@@ -2081,7 +2082,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       )}
 
       {isV3 && (
-        <div className="v3-body">
+        <div className={cn('v3-body', actCollapsed && 'is-act-closed')}>
           <LoadStructureTree
             detail={lifeDetail}
             stage={stage}
@@ -2170,6 +2171,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                 {isFindPost(subStage) && (
                   <FindPostView
                     detail={detail}
+                    variant="cards"
                     onPostLoad={() => setPostOpen(true)}
                     onAdvanceToOffers={() => {
                       setStage('Tender')
@@ -2196,7 +2198,11 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             )}
           </div>
 
-          <CaseActivityRail events={caseEvents} />
+          <CaseActivityRail
+            events={caseEvents}
+            collapsed={actCollapsed}
+            onToggle={() => setActCollapsed((v) => !v)}
+          />
         </div>
       )}
 

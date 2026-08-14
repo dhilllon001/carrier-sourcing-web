@@ -22,10 +22,13 @@ export function FindPostView({
   detail,
   onPostLoad,
   onAdvanceToOffers,
+  variant = 'table',
 }: {
   detail: LoadDetail
   onPostLoad: () => void
   onAdvanceToOffers: () => void
+  /* 'cards' keeps the list readable inside the narrow View 3 centre pane */
+  variant?: 'table' | 'cards'
 }) {
   const [q, setQ] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -155,6 +158,107 @@ export function FindPostView({
         </div>
       )}
 
+      {variant === 'cards' && (
+        <div className="fp">
+          <div className="fp__bar">
+            <span className="fp__count">
+              <strong>{rows.length}</strong> carrier{rows.length === 1 ? '' : 's'} in reach
+              <em>
+                {rows.filter((c) => c.recommended).length} recommended ·{' '}
+                {rows.filter((c) => c.contactedRecently).length} contacted recently
+              </em>
+            </span>
+            <div className="fp__barside">
+              {selected.size > 0 && <span className="fp__sel">{selected.size} selected</span>}
+              <button type="button" className="fp__all" onClick={toggleAll}>
+                {rows.length > 0 && selected.size === rows.length ? 'Clear selection' : 'Select all'}
+              </button>
+            </div>
+          </div>
+
+          <ul className="fp__list">
+            {rows.map((c) => {
+              const idLine = [c.mc ? `MC ${c.mc}` : null, c.dot ? `DOT ${c.dot}` : null]
+                .filter(Boolean)
+                .join(' · ')
+              const touched =
+                c.lastContacted && c.lastContacted !== 'Never'
+                  ? `Contacted ${c.lastContacted}${c.lastContactChannel ? ` · ${c.lastContactChannel}` : ''}`
+                  : 'Never contacted'
+              return (
+                <li key={c.id} className={cn('fp-row', selected.has(c.id) && 'is-selected')}>
+                  <input
+                    type="checkbox"
+                    className="fp-row__pick"
+                    checked={selected.has(c.id)}
+                    onChange={() => toggle(c.id)}
+                    aria-label={`Select ${c.name}`}
+                  />
+                  <div className="fp-row__body">
+                    <div className="fp-row__head">
+                      {c.favorite && <Star size={11} className="is-star" />}
+                      <strong>{c.name}</strong>
+                      <span className={cn('fp-src', `is-${c.source.toLowerCase()}`)}>{c.source}</span>
+                      {c.recommended && <span className="fp-rec">Match {c.recommendScore}</span>}
+                    </div>
+                    <div className="fp-row__meta">
+                      <span className="mono">{idLine || 'No MC on file'}</span>
+                      <span>Last used {c.lastUsedRel}</span>
+                      <span className={cn(c.contactedRecently && 'is-touched')}>{touched}</span>
+                    </div>
+                    <div className="fp-row__stats">
+                      <div>
+                        <span>DH-P</span>
+                        <strong>{c.dhP} mi</strong>
+                      </div>
+                      <div>
+                        <span>DH-D</span>
+                        <strong>{c.dhD} mi</strong>
+                      </div>
+                      <div>
+                        <span>Last rate</span>
+                        <strong>{c.lastRate}</strong>
+                      </div>
+                      <div>
+                        <span>Loads</span>
+                        <strong>{c.loads}</strong>
+                      </div>
+                      <div>
+                        <span>Config rate</span>
+                        <strong>{c.configRate ?? '—'}</strong>
+                      </div>
+                      <div>
+                        <span>Offer</span>
+                        <strong className={cn(c.offer === 'Sent' && 'is-sent')}>
+                          {c.offer ?? 'Not sent'}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="fp-row__contact">
+                    {c.phone && (
+                      <a className="fp-ico" href={`tel:${c.phone}`} title={c.phone}>
+                        <Phone size={13} />
+                      </a>
+                    )}
+                    {c.email && (
+                      <a className="fp-ico" href={`mailto:${c.email}`} title={c.email}>
+                        <Mail size={13} />
+                      </a>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          {rows.length === 0 && (
+            <p className="fp__blank">No carriers match this search — clear the filters to widen the pool.</p>
+          )}
+        </div>
+      )}
+
+      {variant === 'table' && (
       <div className="dd-find__table-wrap">
         <table className="dd-carrier-table">
           <thead>
@@ -252,6 +356,7 @@ export function FindPostView({
           </tbody>
         </table>
       </div>
+      )}
 
       {blastOpen && (
         <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="dd-blast-title">

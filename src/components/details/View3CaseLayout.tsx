@@ -7,6 +7,8 @@ import {
   Gauge,
   Layers,
   Mail,
+  PanelRightClose,
+  PanelRightOpen,
   Sparkles,
   UserPlus,
   Users,
@@ -329,12 +331,49 @@ export type CaseEvent = {
   status: 'ok' | 'warn' | 'info'
 }
 
-export function CaseActivityRail({ events }: { events: CaseEvent[] }) {
+export function CaseActivityRail({
+  events,
+  collapsed,
+  onToggle,
+}: {
+  events: CaseEvent[]
+  collapsed: boolean
+  onToggle: () => void
+}) {
+  if (collapsed) {
+    return (
+      <aside className="v3-act is-collapsed">
+        <button
+          type="button"
+          className="v3-act__reopen"
+          onClick={onToggle}
+          aria-expanded={false}
+          title="Show activity"
+        >
+          <PanelRightOpen size={15} />
+          <span>Activity</span>
+          {events.length > 0 && <em>{events.length}</em>}
+        </button>
+      </aside>
+    )
+  }
+
   return (
     <aside className="v3-act">
       <header className="v3-act__head">
         <strong>Activity</strong>
-        {events.length > 0 && <em>{events.length}</em>}
+        <div className="v3-act__headside">
+          {events.length > 0 && <em>{events.length}</em>}
+          <button
+            type="button"
+            className="v3-act__collapse"
+            onClick={onToggle}
+            aria-expanded
+            title="Hide activity"
+          >
+            <PanelRightClose size={15} />
+          </button>
+        </div>
       </header>
 
       {events.length === 0 ? (
