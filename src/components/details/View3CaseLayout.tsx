@@ -9,6 +9,7 @@ import {
   Mail,
   PanelRightClose,
   PanelRightOpen,
+  Search,
   Sparkles,
   UserPlus,
   Users,
@@ -116,14 +117,19 @@ export function LoadStructureTree({
 
 export type CaseActionId =
   | 'maxbuy'
+  | 'booknow'
   | 'hook'
   | 'drop'
   | 'broker'
   | 'post'
+  | 'findpost'
+  | 'blast'
   | 'offers'
   | 'ai-rate'
+  | 'ai-book'
   | 'ai-email'
   | 'ai-score'
+  | 'ai-explain'
 export type CaseTab = 'overview' | 'instructions' | 'documents'
 
 const rateOrDash = (v: string) => (!v || v === '—' || v === '$0.00' ? null : v)
@@ -206,17 +212,42 @@ export function CaseCenterHeader({
   const customerRate = detail.load.fee
   const margin = maxBuy === null ? null : customerRate - toNum(maxBuy)
 
-  /* only surface what the user can actually act on right now */
-  const actions: { id: CaseActionId; label: string; icon: typeof Zap; primary?: boolean }[] = []
-  if (!maxBuy) actions.push({ id: 'maxbuy', label: 'Set max buy', icon: DollarSign, primary: true })
+  /* Next actions: only unblockers + find/sourcing steps, max 4, one primary */
+  type Act = { id: CaseActionId; label: string; icon: typeof Zap; primary?: boolean }
+  const blockers: Act[] = []
+  if (!maxBuy) blockers.push({ id: 'maxbuy', label: 'Set max buy', icon: DollarSign })
+  else if (!bookNow) blockers.push({ id: 'booknow', label: 'Set book now', icon: DollarSign })
   if (!alerts.find((a) => a.id === 'hook')?.done)
-    actions.push({ id: 'hook', label: 'Add hook appointment', icon: CalendarClock })
+    blockers.push({ id: 'hook', label: 'Add hook appointment', icon: CalendarClock })
   if (!alerts.find((a) => a.id === 'drop')?.done)
-    actions.push({ id: 'drop', label: 'Add drop appointment', icon: CalendarClock })
-  if (!detail.load.broker) actions.push({ id: 'broker', label: 'Assign broker', icon: UserPlus })
-  if (blocking === 0) actions.push({ id: 'post', label: 'Post to sourcing', icon: ArrowRight, primary: true })
+    blockers.push({ id: 'drop', label: 'Add drop appointment', icon: CalendarClock })
+  if (!detail.load.broker) blockers.push({ id: 'broker', label: 'Assign broker', icon: UserPlus })
+
+  const find: Act[] = []
+  if (maxBuy && bookNow) {
+    if (blocking === 0)
+      find.push({ id: 'post', label: 'Post to sourcing', icon: ArrowRight })
+    else find.push({ id: 'findpost', label: 'Open Find & Post', icon: Search })
+    find.push({ id: 'blast', label: 'Blast carriers', icon: Mail })
+  }
   if (detail.bids.length > 0)
-    actions.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
+    find.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
+
+  const actions: Act[] = []
+  for (const a of [...blockers, ...find]) {
+    if (actions.length >= 4) break
+    if (!actions.some((x) => x.id === a.id)) actions.push(a)
+  }
+  if (actions.length > 0) actions[0] = { ...actions[0], primary: true }
+
+  /* AI assist: context only — hide noise when it can't help */
+  const ai: { id: CaseActionId; label: string; icon: typeof Wand2 }[] = []
+  if (!maxBuy) ai.push({ id: 'ai-rate', label: 'Suggest max buy', icon: Wand2 })
+  else if (!bookNow) ai.push({ id: 'ai-book', label: 'Suggest book now', icon: Wand2 })
+  if (maxBuy) ai.push({ id: 'ai-email', label: 'Draft carrier blast', icon: Mail })
+  if (detail.bids.length > 0) ai.push({ id: 'ai-score', label: 'Score offers', icon: Gauge })
+  if (blocking > 0 && ai.length < 3)
+    ai.push({ id: 'ai-explain', label: 'Explain readiness', icon: Sparkles })
 
   return (
     <div className="v3-case">
@@ -295,27 +326,27 @@ export function CaseCenterHeader({
         </div>
       )}
 
-      <div className="v3-ai">
-        <span className="v3-ai__label">
-          <Sparkles size={12} />
-          AI assist
-        </span>
-        <div className="v3-ai__row">
-          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-rate')}>
-            <Wand2 size={13} />
-            Suggest max buy
-          </button>
-          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-email')}>
-            <Mail size={13} />
-            Draft carrier blast
-          </button>
-          <button type="button" className="v3-ai__btn" onClick={() => onAction('ai-score')}>
-            <Gauge size={13} />
-            Score offers
-          </button>
+      {ai.length > 0 && (
+        <div className="v3-ai">
+          <span className="v3-ai__label">
+            <Sparkles size={12} />
+            AI assist
+          </span>
+          <div className="v3-ai__row">
+            {ai.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className="v3-ai__btn"
+                onClick={() => onAction(a.id)}
+              >
+                <a.icon size={13} />
+                {a.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
+      )}
     </div>
   )
 }

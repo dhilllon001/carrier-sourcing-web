@@ -1616,6 +1616,33 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       }, 0)
       return
     }
+    if (id === 'booknow') {
+      setV3Tab('overview')
+      const ceiling = toRate(detail.maxBuy)
+      if (ceiling > 0 && (!detail.bookNowRate || detail.bookNowRate === '—')) {
+        const book = ceiling * 0.925
+        setDetail((d) => ({
+          ...d,
+          bookNowRate: `$${book.toFixed(2)}`,
+          rejectAbove: d.rejectAbove === '—' ? `$${(ceiling * 1.08).toFixed(2)}` : d.rejectAbove,
+        }))
+        logCase({
+          title: 'Book now set from max buy',
+          detail: `$${book.toFixed(2)} — 7.5% under the ${detail.maxBuy} hard limit.`,
+        })
+      } else {
+        logCase({
+          title: 'Opened book now',
+          detail: 'Set the auto-accept line under Max Buy.',
+          status: 'info',
+        })
+        window.setTimeout(() => {
+          const el = document.getElementById('dd-max-buy-input') as HTMLInputElement | null
+          el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }, 0)
+      }
+      return
+    }
     if (id === 'hook' || id === 'drop') {
       const wantPickup = id === 'hook'
       const stop = detail.stops.find((s) =>
@@ -1643,10 +1670,27 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       })
       return
     }
-    if (id === 'post') {
+    if (id === 'post' || id === 'findpost') {
       setStage('Sourcing')
       setSubStage('Find & Post')
-      logCase({ title: 'Moved to Find & Post', detail: 'Readiness cleared — the load can be posted.' })
+      logCase({
+        title: id === 'post' ? 'Moved to Find & Post' : 'Opened Find & Post',
+        detail:
+          id === 'post'
+            ? 'Readiness cleared — the load can be posted.'
+            : 'Finish the remaining readiness items, then post and blast.',
+        status: 'info',
+      })
+      return
+    }
+    if (id === 'blast') {
+      setStage('Sourcing')
+      setSubStage('Find & Post')
+      logCase({
+        title: 'Opened carrier blast',
+        detail: `Ready to reach carriers for ${detail.load.origin} → ${detail.load.destination}.`,
+        status: 'info',
+      })
       return
     }
     if (id === 'ai-rate') {
@@ -1662,6 +1706,31 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         key: 'rates',
         title: 'AI suggested max buy',
         detail: `$${suggested.toFixed(2)} hard limit — 88% of the ${detail.currency} customer rate on this lane.`,
+        who: 'AI assist',
+      })
+      return
+    }
+    if (id === 'ai-book') {
+      const ceiling = toRate(detail.maxBuy)
+      if (ceiling <= 0) {
+        logCase({
+          title: 'Set max buy first',
+          detail: 'Book now is derived from the hard limit.',
+          who: 'AI assist',
+          status: 'warn',
+        })
+        return
+      }
+      const book = ceiling * 0.925
+      setDetail((d) => ({
+        ...d,
+        bookNowRate: `$${book.toFixed(2)}`,
+        rejectAbove: d.rejectAbove === '—' ? `$${(ceiling * 1.08).toFixed(2)}` : d.rejectAbove,
+      }))
+      logCase({
+        key: 'rates',
+        title: 'AI suggested book now',
+        detail: `$${book.toFixed(2)} — 7.5% under Max Buy ${detail.maxBuy}.`,
         who: 'AI assist',
       })
       return
@@ -1690,6 +1759,27 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
         title: 'AI scored offers',
         detail: `${detail.bids.length} offers ranked — ${best.carrier} at ${best.allIn ?? best.amount} scores best.`,
         who: 'AI assist',
+      })
+      return
+    }
+    if (id === 'ai-explain') {
+      const missing = [
+        (!detail.maxBuy || detail.maxBuy === '—' || detail.maxBuy === '$0.00') && 'Max buy',
+        (!detail.bookNowRate || detail.bookNowRate === '—') && 'Book now',
+        detail.stops.some((s) => (s.role === 'Hook' || s.kind === 'Pickup') && s.appointmentRequired) &&
+          'Hook appointment',
+        detail.stops.some((s) => (s.role === 'Drop' || s.kind === 'Delivery') && s.appointmentRequired) &&
+          'Drop appointment',
+        !detail.load.broker && 'Owning broker',
+      ].filter(Boolean) as string[]
+      logCase({
+        title: 'Why this load can’t post yet',
+        detail:
+          missing.length === 0
+            ? 'Readiness is clear — run Auto Sourcing or Post to sourcing.'
+            : `Still needed: ${missing.join(', ')}.`,
+        who: 'AI assist',
+        status: 'info',
       })
       return
     }
