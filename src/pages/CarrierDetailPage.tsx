@@ -12,6 +12,7 @@ import {
   Mail,
   Search,
   Upload,
+  User,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { getCarrierDetail, type CarrierDetail, type CarrierPerson } from '@/data/carriers'
@@ -115,6 +116,9 @@ export function CarrierDetailPage({ carrierId, onBack }: Props) {
             <span>DOT {carrier.dot}</span>
             <span>
               <MapPin size={12} /> {carrier.city}, {carrier.state}
+            </span>
+            <span>
+              <User size={12} /> Carrier rep · {carrier.rep}
             </span>
             <span>
               <Phone size={12} /> {carrier.phone}
