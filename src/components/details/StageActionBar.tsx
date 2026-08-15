@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { useStageActionSlot } from './stageActionSlot'
 
-/** Shared "Next actions" bar — same treatment on every stage workspace.
- *  `label` and `workflow` are still accepted so call sites don't need to change,
- *  but the bar leads with Next actions instead of stage chips. */
+/** Stage actions.
+ *  In the case shell the buttons are portalled up into the work bar so they share the
+ *  row with the Auto Sourcing / Auto Tender button; only filters stay with the content.
+ *  Elsewhere the old standalone bar is kept. */
 export function StageActionBar({
   leading,
   actions,
@@ -12,6 +15,17 @@ export function StageActionBar({
   leading?: ReactNode
   actions?: ReactNode
 }) {
+  const slot = useStageActionSlot()
+
+  if (slot) {
+    return (
+      <>
+        {actions ? createPortal(actions, slot) : null}
+        {leading ? <div className="dd-acts dd-acts--lead-only">{leading}</div> : null}
+      </>
+    )
+  }
+
   return (
     <div className="dd-acts">
       <span className="dd-acts__label">Next actions</span>

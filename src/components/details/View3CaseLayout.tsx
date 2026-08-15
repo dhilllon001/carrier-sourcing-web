@@ -162,6 +162,8 @@ export function CaseWorkBar({
   status,
   autoLabel,
   onAuto,
+  showTabs = true,
+  slotRef,
 }: {
   tab: CaseTab
   onTab: (tab: CaseTab) => void
@@ -171,6 +173,10 @@ export function CaseWorkBar({
   status: string
   autoLabel: string | null
   onAuto: () => void
+  /** Stage workspaces drop the tabs and keep only the action row. */
+  showTabs?: boolean
+  /** Receives the element that stage actions are portalled into. */
+  slotRef?: (el: HTMLDivElement | null) => void
 }) {
   const tabs: [CaseTab, string, number | null][] = [
     ['overview', 'Overview', null],
@@ -180,26 +186,35 @@ export function CaseWorkBar({
 
   return (
     <div className="v3-bar">
-      <div className="v3-bar__tabs" role="tablist">
-        {tabs.map(([id, label, count]) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            className={cn(tab === id && 'is-on')}
-            onClick={() => onTab(id)}
-          >
-            {label}
-            {count !== null && <i>{count}</i>}
-          </button>
-        ))}
-      </div>
-      <div className="v3-bar__right">
-        <span className="v3-bar__stage">
+      {showTabs ? (
+        <div className="v3-bar__tabs" role="tablist">
+          {tabs.map(([id, label, count]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={cn(tab === id && 'is-on')}
+              onClick={() => onTab(id)}
+            >
+              {label}
+              {count !== null && <i>{count}</i>}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <span className="v3-bar__where">
           {stage} · {subStage}
         </span>
+      )}
+      <div className="v3-bar__right">
+        {showTabs && (
+          <span className="v3-bar__stage">
+            {stage} · {subStage}
+          </span>
+        )}
         <span className={cn('v3-bar__status', status === 'NeedCarrier' && 'is-warn')}>{status}</span>
+        <div className="v3-bar__slot" ref={slotRef} />
         {autoLabel && (
           <button type="button" className="v3-case__cta" onClick={onAuto}>
             <Zap size={13} />
@@ -249,16 +264,21 @@ function AlertRow({
 }
 
 /** Small centred dialog for the rate items — the only place a number is typed. */
-function AmountDialog({
-  alert,
+export function RateDialog({
+  title,
+  note,
+  suggest,
   onClose,
   onSave,
 }: {
-  alert: CaseAlert
+  title: string
+  note?: string
+  /** Pre-fills the field and backs the "Use suggested" shortcut. */
+  suggest?: string
   onClose: () => void
   onSave: (value: string) => void
 }) {
-  const suggested = (alert.auto?.value ?? '').replace(/[^0-9.]/g, '')
+  const suggested = (suggest ?? '').replace(/[^0-9.]/g, '')
   const [draft, setDraft] = useState(suggested)
 
   const save = () => {
@@ -272,12 +292,12 @@ function AmountDialog({
       className="v3-amt"
       role="dialog"
       aria-modal="true"
-      aria-label={alert.title}
+      aria-label={title}
       onClick={onClose}
     >
       <div className="v3-amt__sheet" onClick={(e) => e.stopPropagation()}>
-        <strong>{alert.title}</strong>
-        <span>{alert.detail}</span>
+        <strong>{title}</strong>
+        {note && <span>{note}</span>}
         <label className="v3-amt__field">
           <i>$</i>
           <input
@@ -310,6 +330,101 @@ function AmountDialog({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The open alerts as a to-do list. Blockers lead; advisories hide behind "Show more"
+ * until there is nothing blocking left.
+ */
+export function CaseNextActions({
+  detail,
+  onAction,
+  onResolve,
+  footer,
+  expanded = false,
+}: {
+  detail: LoadDetail
+  onAction: (id: CaseActionId) => void
+  onResolve: (id: CaseActionId, value: string) => void
+  /** Flow buttons rendered under the list. */
+  footer?: ReactNode
+  /** Rails have the height to show everything at once. */
+  expanded?: boolean
+}) {
+  const [showAll, setShowAll] = useState(expanded)
+  const [amountFor, setAmountFor] = useState<CaseAlert | null>(null)
+  const open = openAlerts(buildCaseAlerts(detail))
+  const blocking = open.filter((a) => a.level === 'blocker').length
+
+  const blockersOnly = open.filter((a) => a.level === 'blocker')
+  const preview = blockersOnly.length > 0 ? blockersOnly.slice(0, 3) : open.slice(0, 2)
+  const shown = showAll ? open : preview
+  const hidden = open.length - shown.length
+
+  if (open.length === 0 && !footer) {
+    return (
+      <div className="v3-acts is-clear">
+        <div className="v3-acts__top">
+          <span className="v3-acts__label">Next actions</span>
+        </div>
+        <p className="v3-acts__clear">
+          <Check size={13} />
+          Everything needed to post is set.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="v3-acts">
+      <div className="v3-acts__top">
+        <span className="v3-acts__label">Next actions</span>
+        {open.length > 0 && (
+          <em className="v3-acts__count">
+            {blocking > 0 && <b>{blocking} blocking</b>}
+            {blocking > 0 && open.length > blocking ? ' · ' : ''}
+            {open.length > blocking ? `${open.length - blocking} advisory` : ''}
+          </em>
+        )}
+      </div>
+
+      {shown.length > 0 && (
+        <ul className="v3-todo">
+          {shown.map((a) => (
+            <AlertRow
+              key={a.id}
+              alert={a}
+              onAction={onAction}
+              onResolve={onResolve}
+              onAmount={setAmountFor}
+            />
+          ))}
+        </ul>
+      )}
+
+      {hidden > 0 && (
+        <button type="button" className="v3-todo__more" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? 'Show fewer' : `Show ${hidden} more`}
+          <ChevronDown size={12} className={cn(showAll && 'is-up')} />
+        </button>
+      )}
+
+      {footer}
+
+      {amountFor && (
+        <RateDialog
+          title={amountFor.title}
+          note={amountFor.detail}
+          suggest={amountFor.auto?.value}
+          onClose={() => setAmountFor(null)}
+          onSave={(value) => {
+            onResolve(amountFor.id, value)
+            setAmountFor(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -382,8 +497,6 @@ export function CaseCenterHeader({
   onAction: (id: CaseActionId) => void
   onResolve: (id: CaseActionId, value: string) => void
 }) {
-  const [showAll, setShowAll] = useState(false)
-  const [amountFor, setAmountFor] = useState<CaseAlert | null>(null)
   const alerts = buildCaseAlerts(detail)
   const open = openAlerts(alerts)
   const loadScope = alerts.filter((a) => a.scope === 'load')
@@ -408,12 +521,6 @@ export function CaseCenterHeader({
   }
   if (detail.bids.length > 0)
     flow.push({ id: 'offers', label: `Review ${detail.bids.length} offers`, icon: Users })
-
-  /* keep the list short: blockers first, advisories only when there is nothing blocking */
-  const blockersOnly = open.filter((a) => a.level === 'blocker')
-  const preview = blockersOnly.length > 0 ? blockersOnly.slice(0, 3) : open.slice(0, 2)
-  const shown = showAll ? open : preview
-  const hidden = open.length - shown.length
 
   return (
     <div className="v3-case">
@@ -466,65 +573,27 @@ export function CaseCenterHeader({
       </div>
 
       {(open.length > 0 || flow.length > 0) && (
-        <div className="v3-acts">
-          <div className="v3-acts__top">
-            <span className="v3-acts__label">Next actions</span>
-            {open.length > 0 && (
-              <em className="v3-acts__count">
-                {blocking > 0 && <b>{blocking} blocking</b>}
-                {blocking > 0 && open.length > blocking ? ' · ' : ''}
-                {open.length > blocking ? `${open.length - blocking} advisory` : ''}
-              </em>
-            )}
-          </div>
-
-          {shown.length > 0 && (
-            <ul className="v3-todo">
-              {shown.map((a) => (
-                <AlertRow
-                  key={a.id}
-                  alert={a}
-                  onAction={onAction}
-                  onResolve={onResolve}
-                  onAmount={setAmountFor}
-                />
-              ))}
-            </ul>
-          )}
-
-          {hidden > 0 && (
-            <button type="button" className="v3-todo__more" onClick={() => setShowAll((v) => !v)}>
-              {showAll ? 'Show fewer' : `Show ${hidden} more`}
-              <ChevronDown size={12} className={cn(showAll && 'is-up')} />
-            </button>
-          )}
-
-          {flow.length > 0 && (
-            <div className="v3-acts__row">
-              {flow.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={cn('v3-acts__btn', a.primary ? 'is-primary' : 'is-flow')}
-                  onClick={() => onAction(a.id)}
-                >
-                  <a.icon size={13} />
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {amountFor && (
-        <AmountDialog
-          alert={amountFor}
-          onClose={() => setAmountFor(null)}
-          onSave={(value) => {
-            onResolve(amountFor.id, value)
-            setAmountFor(null)
-          }}
+        <CaseNextActions
+          detail={detail}
+          onAction={onAction}
+          onResolve={onResolve}
+          footer={
+            flow.length > 0 ? (
+              <div className="v3-acts__row">
+                {flow.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    className={cn('v3-acts__btn', a.primary ? 'is-primary' : 'is-flow')}
+                    onClick={() => onAction(a.id)}
+                  >
+                    <a.icon size={13} />
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            ) : null
+          }
         />
       )}
     </div>

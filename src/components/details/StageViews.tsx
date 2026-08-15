@@ -187,12 +187,22 @@ export function FindPostView({
                   aria-label="Select all carriers"
                 />
               </span>
-              <span role="columnheader">Carrier</span>
-              <span role="columnheader">Last rate</span>
-              <span role="columnheader">Deadhead</span>
-              <span role="columnheader">Loads</span>
-              <span role="columnheader">Offer</span>
-              <span className="fp-tbl__reach" role="columnheader">
+              <span className="fp-th" role="columnheader">
+                Carrier
+              </span>
+              <span className="fp-th is-num" role="columnheader">
+                Last rate
+              </span>
+              <span className="fp-th is-num" role="columnheader">
+                Deadhead
+              </span>
+              <span className="fp-th is-num" role="columnheader">
+                Loads
+              </span>
+              <span className="fp-th is-mid" role="columnheader">
+                Offer
+              </span>
+              <span className="fp-th is-mid" role="columnheader">
                 Reach
               </span>
             </div>
@@ -236,11 +246,13 @@ export function FindPostView({
 
                     <span className="fp-tr__num is-strong">{c.lastRate}</span>
                     <span className="fp-tr__num">
-                      {c.dhP} / {c.dhD} mi
+                      {c.dhP} / {c.dhD} <i>mi</i>
                     </span>
                     <span className="fp-tr__num">{c.loads}</span>
-                    <span className={cn('fp-tr__offer', c.offer === 'Sent' && 'is-sent')}>
-                      {c.offer ?? 'Not sent'}
+                    <span className="fp-tr__offer">
+                      <em className={cn('fp-pill', c.offer === 'Sent' ? 'is-sent' : 'is-idle')}>
+                        {c.offer ?? 'Not sent'}
+                      </em>
                     </span>
 
                     <span className="fp-tr__reach">
@@ -518,27 +530,28 @@ export function OffersBidsView({
 
   return (
     <div className="dd-stage dd-offers">
-      <div className="dd-acts">
-        <span className="dd-acts__label">Next actions</span>
-        <div className="dd-acts__row">
-          <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
-            <Check size={14} />
-            {bestBid ? `Accept ${bestBid.carrier}` : 'Accept best bid'}
-          </button>
-          <button type="button" className="dd-pill-btn">
-            <Mail size={14} />
-            Re-send offers
-          </button>
-          <button type="button" className="dd-pill-btn" onClick={onAddOffer}>
-            <Plus size={14} />
-            Add offer
-          </button>
-          <button type="button" className="dd-pill-btn">
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-        </div>
-      </div>
+      <StageActionBar
+        actions={
+          <>
+            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
+              <Check size={14} />
+              {bestBid ? `Accept ${bestBid.carrier}` : 'Accept best bid'}
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <Mail size={14} />
+              Re-send offers
+            </button>
+            <button type="button" className="dd-pill-btn" onClick={onAddOffer}>
+              <Plus size={14} />
+              Add offer
+            </button>
+            <button type="button" className="dd-pill-btn">
+              <RefreshCw size={14} />
+              Refresh
+            </button>
+          </>
+        }
+      />
 
       <div className="dd-offers__grid">
         <aside className="dd-bids-panel">

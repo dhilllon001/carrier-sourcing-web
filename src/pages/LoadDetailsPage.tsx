@@ -47,12 +47,15 @@ import {
 import {
   CaseActivityRail,
   CaseCenterHeader,
+  CaseNextActions,
   CaseStep,
   CaseWorkBar,
   LoadStructureTree,
   type CaseActionId,
   type CaseEvent,
 } from '@/components/details/View3CaseLayout'
+import { V4CarrierBoard, V4Thresholds } from '@/components/details/View4Workspace'
+import { StageActionSlotProvider } from '@/components/details/stageActionSlot'
 import { buildCaseAlerts, openAlerts } from '@/lib/details/caseAlerts'
 import { cn } from '@/lib/cn'
 import {
@@ -1069,12 +1072,13 @@ function ActivityTab({ detail }: { detail: LoadDetail }) {
 
 /* ══════════════ View 2 (redesign preview) building blocks ══════════════ */
 
-type DetailView = 'v1' | 'v2' | 'v3'
+type DetailView = 'v1' | 'v2' | 'v3' | 'v4'
 
 const VIEW_OPTIONS = [
   ['v1', 'View 1', 'Current theme'],
   ['v2', 'View 2', 'Redesign preview'],
   ['v3', 'View 3', 'Case layout'],
+  ['v4', 'View 4', 'Single sourcing desk'],
 ] as const
 
 const VIEW_STORAGE_KEY = 'cs-detail-view'
@@ -1082,7 +1086,7 @@ const VIEW_STORAGE_KEY = 'cs-detail-view'
 function readStoredView(): DetailView {
   try {
     const v = localStorage.getItem(VIEW_STORAGE_KEY)
-    if (v === 'v1' || v === 'v2' || v === 'v3') return v
+    if (v === 'v1' || v === 'v2' || v === 'v3' || v === 'v4') return v
   } catch {
     /* ignore */
   }
@@ -1481,6 +1485,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
   const [caseEvents, setCaseEvents] = useState<CaseEvent[]>([])
   const [actCollapsed, setActCollapsed] = useState(false)
+  /* every stage portals its buttons into this slot in the work bar */
+  const [actionSlot, setActionSlot] = useState<HTMLDivElement | null>(null)
   /* Overview is one workspace with two steps: setup, then Find & Post */
   const [setupOpen, setSetupOpen] = useState(true)
   const [findOpen, setFindOpen] = useState(false)
@@ -1633,6 +1639,9 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
 
   const isV2 = view === 'v2'
   const isV3 = view === 'v3'
+  const isV4 = view === 'v4'
+  /* V4 keeps the case shell but folds Overview and Find & Post into one desk */
+  const isCase = isV3 || isV4
 
   const caseAlerts = useMemo(() => buildCaseAlerts(detail), [detail])
   const caseBlockers = openAlerts(caseAlerts).filter((a) => a.level === 'blocker').length
@@ -1986,8 +1995,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
   }
 
   return (
-    <div className={cn('dd-page', isV2 && 'dd-page--v2', isV3 && 'dd-page--v3')}>
-      <header className={cn('dd-top', isV2 && 'dd-top--v2', isV3 && 'dd-top--v3')}>
+    <div className={cn('dd-page', isV2 && 'dd-page--v2', isCase && 'dd-page--v3')}>
+      <header className={cn('dd-top', isV2 && 'dd-top--v2', isCase && 'dd-top--v3')}>
         <div className="dd-top__row">
           <button type="button" className="dd-back" onClick={onBack}>
             <ArrowLeft size={16} />
@@ -2212,7 +2221,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
       </div>
       )}
 
-      {!isV3 && (
+      {!isCase && (
       <div
         className={cn(
           'dd-body',
@@ -2377,22 +2386,25 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
             }}
           />
 
+          <StageActionSlotProvider value={actionSlot}>
           <div className="v3-main">
+            <CaseWorkBar
+              tab={v3Tab}
+              onTab={setV3Tab}
+              docCount={detail.documents.length}
+              stage={stage}
+              subStage={subStage}
+              status={load.status}
+              showTabs={!stageWorkspace}
+              slotRef={setActionSlot}
+              autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
+              onAuto={() => {
+                setAutoAsk(false)
+                setAutoOpen(true)
+              }}
+            />
             {!stageWorkspace && (
               <>
-                <CaseWorkBar
-                  tab={v3Tab}
-                  onTab={setV3Tab}
-                  docCount={detail.documents.length}
-                  stage={stage}
-                  subStage={subStage}
-                  status={load.status}
-                  autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
-                  onAuto={() => {
-                    setAutoAsk(false)
-                    setAutoOpen(true)
-                  }}
-                />
                 <div className="v3-main__content">
                   {v3Tab === 'overview' && (
                     <div className="v3-steps">
@@ -2516,12 +2528,129 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
               </div>
             )}
           </div>
+          </StageActionSlotProvider>
 
           <CaseActivityRail
             events={caseEvents}
             collapsed={actCollapsed}
             onToggle={() => setActCollapsed((v) => !v)}
           />
+        </div>
+      )}
+
+      {isV4 && (
+        <div className={cn('v3-body v4-body', actCollapsed && 'is-act-closed')}>
+          <LoadStructureTree
+            detail={lifeDetail}
+            stage={stage}
+            subStage={subStage}
+            onSelect={(s, sub) => {
+              setStage(s)
+              setSubStage(sub)
+              setV3Tab('overview')
+            }}
+          />
+
+          <StageActionSlotProvider value={actionSlot}>
+          <div className="v3-main">
+            <CaseWorkBar
+              tab={v3Tab}
+              onTab={setV3Tab}
+              docCount={detail.documents.length}
+              stage={stage}
+              subStage={subStage}
+              status={load.status}
+              showTabs={!stageWorkspace}
+              slotRef={setActionSlot}
+              autoLabel={autoMode ? AUTO_MODE_LABEL[autoMode] : null}
+              onAuto={() => {
+                setAutoAsk(false)
+                setAutoOpen(true)
+              }}
+            />
+            {!stageWorkspace && (
+              <>
+                <div className="v3-main__content v4-desk">
+                  {v3Tab === 'overview' && (
+                    <>
+                      <V4Thresholds
+                        detail={detail}
+                        posted={isFindPost(subStage) || stage !== 'Sourcing'}
+                        onPostSourcing={() => {
+                          setStage('Sourcing')
+                          setSubStage('Find & Post')
+                          logCase({
+                            title: 'Posted to Sourcing',
+                            detail: 'Load is live for the carrier desk.',
+                          })
+                        }}
+                        onResolve={resolveCaseAlert}
+                      />
+                      <V4CarrierBoard
+                        detail={detail}
+                        onPostBoard={() => setPostOpen(true)}
+                        onBlast={(channel, count) => {
+                          logCase({
+                            title: `${channel} blast sent`,
+                            detail: `${count} carrier${count === 1 ? '' : 's'} contacted from the board.`,
+                          })
+                          setStage('Tender')
+                          setSubStage('Offers & Bids')
+                        }}
+                      />
+                    </>
+                  )}
+                  {v3Tab === 'instructions' && (
+                    <InstructionsTab
+                      detail={detail}
+                      onCarrier={(v) => setDetail((d) => ({ ...d, carrierInstructions: v }))}
+                      onInternal={(v) => setDetail((d) => ({ ...d, internalInstructions: v }))}
+                    />
+                  )}
+                  {v3Tab === 'documents' && <DocumentsTab detail={detail} />}
+                </div>
+              </>
+            )}
+
+            {stageWorkspace && (
+              <div className="v3-main__workspace">
+                {subStage === 'Offers & Bids' && (
+                  <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
+                )}
+                {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
+                {subStage === 'CMT' && <CmtValidateView detail={detail} />}
+                {subStage === 'Finalize Carrier Award' && <FinalizeAwardView detail={detail} />}
+                {subStage === 'Create Contract' && <CreateContractView detail={detail} />}
+                {(subStage === 'Send Confirmation' ||
+                  subStage === 'Signed Confirmation' ||
+                  subStage === 'Resources') && (
+                  <BookingStageView
+                    detail={detail}
+                    kind={subStage as 'Send Confirmation' | 'Signed Confirmation' | 'Resources'}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+          </StageActionSlotProvider>
+
+          <aside className={cn('v4-side', actCollapsed && 'is-closed')}>
+            {!actCollapsed && (
+              <section className="v4-next">
+                <CaseNextActions
+                  detail={detail}
+                  onAction={runCaseAction}
+                  onResolve={resolveCaseAlert}
+                  expanded
+                />
+              </section>
+            )}
+            <CaseActivityRail
+              events={caseEvents}
+              collapsed={actCollapsed}
+              onToggle={() => setActCollapsed((v) => !v)}
+            />
+          </aside>
         </div>
       )}
 
