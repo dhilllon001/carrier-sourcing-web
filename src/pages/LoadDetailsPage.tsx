@@ -2049,7 +2049,8 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                 <ChevronDown size={12} />
               </button>
             )}
-            {autoMode && (
+            {/* case views keep Auto on the work bar; only Views 1/2 need it up here */}
+            {!isCase && autoMode && (
               <button
                 type="button"
                 className="dd-auto-btn"
