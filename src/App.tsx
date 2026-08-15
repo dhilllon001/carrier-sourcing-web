@@ -48,6 +48,9 @@ export default function App() {
   const [openLoadId, setOpenLoadId] = useState<string | null>(null)
   const [openCarrierId, setOpenCarrierId] = useState<string | null>(null)
   const [laneSearchOpen, setLaneSearchOpen] = useState(false)
+  const [configView, setConfigView] = useState<
+    'workflows' | 'runs' | 'carriers' | 'favorites' | 'new'
+  >('workflows')
   const cmtPendingCount = cmtReviewQueue.filter((r) => r.status === 'Pending').length
 
   const openLoad = useMemo(
@@ -56,6 +59,13 @@ export default function App() {
   )
 
   const inDetails = Boolean(openLoad) || Boolean(openCarrierId)
+
+  const openCarrierPrefs = () => {
+    setOpenLoadId(null)
+    setOpenCarrierId(null)
+    setConfigView('carriers')
+    setNav('configuration')
+  }
 
   return (
     <div className={cn('sr-app', collapsed && 'is-collapsed', inDetails && 'is-details')}>
@@ -94,6 +104,7 @@ export default function App() {
                   setNav(item.id)
                   setOpenLoadId(null)
                   setOpenCarrierId(null)
+                  if (item.id === 'configuration') setConfigView('workflows')
                 }}
               >
                 <Icon size={16} strokeWidth={1.75} />
@@ -121,7 +132,11 @@ export default function App() {
 
       <div className="sr-main">
         {inDetails && openLoad ? (
-          <LoadDetailsPage load={openLoad} onBack={() => setOpenLoadId(null)} />
+          <LoadDetailsPage
+            load={openLoad}
+            onBack={() => setOpenLoadId(null)}
+            onOpenCarrierPrefs={openCarrierPrefs}
+          />
         ) : inDetails && openCarrierId ? (
           <CarrierDetailPage
             carrierId={openCarrierId}
@@ -224,7 +239,9 @@ export default function App() {
               />
             ) : nav === 'configuration' ? (
               <ConfigurationPage
+                key={configView}
                 search={search}
+                initialView={configView}
                 onOpenLoad={(probill) => {
                   if (reportLoads.some((r) => r.id === probill)) {
                     setNav('sourcing')

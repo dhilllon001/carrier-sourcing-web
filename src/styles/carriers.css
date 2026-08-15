@@ -1225,3 +1225,251 @@
   gap: 4px;
   margin-top: 6px;
 }
+
+/* favourites — heart lives in the grid's first column and in the detail hero */
+.mc-chip--fav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mc-chip--fav i {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 1px 5px;
+}
+
+.mc-chip--fav.is-active {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+.mc-chip--fav.is-active i {
+  background: rgba(239, 68, 68, 0.14);
+  color: #ef4444;
+}
+
+.mc-table th.mc-col-fav,
+.mc-table td.mc-col-fav {
+  width: 34px;
+  padding-left: 10px;
+  padding-right: 0;
+}
+
+.mc-heart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.mc-heart:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.mc-heart.is-on {
+  color: #ef4444;
+}
+
+.mc-table th.mc-num,
+.mc-table td.mc-num {
+  text-align: right;
+}
+
+.mc-ontime {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-ontime.is-good {
+  color: #10b981;
+}
+
+.mc-ontime.is-mid {
+  color: #eab308;
+}
+
+.mc-ontime.is-low {
+  color: #ef4444;
+}
+
+.mc-eq {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mc-eq em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.cd-hero__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cd-heart {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cd-heart:hover {
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.cd-heart.is-on {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+/* who's who — our reps first, then the carrier's own desks */
+.cd-who__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 12px 0 6px;
+}
+
+.cd-who__label:first-of-type {
+  margin-top: 4px;
+}
+
+.cd-who {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.cd-person {
+  display: flex;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.cd-person.is-ours {
+  background: #f8fafc;
+  border-color: #dbe4f0;
+}
+
+.cd-person__avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #eef2f7;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cd-person.is-ours .cd-person__avatar {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.cd-person__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cd-person__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cd-person__top strong {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.cd-person__duty {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.cd-person__role {
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.cd-person__links {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 3px;
+}
+
+.cd-person__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--sr-action, var(--accent));
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cd-person__links a:hover {
+  text-decoration: underline;
+}
+
+.cd-person__note {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 3px;
+}

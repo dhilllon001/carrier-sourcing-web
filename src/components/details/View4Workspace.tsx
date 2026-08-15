@@ -8,6 +8,7 @@ import {
   Pencil,
   Search,
   Share2,
+  SlidersHorizontal,
   Star,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -200,10 +201,12 @@ export function V4CarrierBoard({
   detail,
   onPostBoard,
   onBlast,
+  onOpenCarrierPrefs,
 }: {
   detail: LoadDetail
   onPostBoard: () => void
   onBlast: (channel: 'Email' | 'WhatsApp', count: number) => void
+  onOpenCarrierPrefs?: () => void
 }) {
   const slot = useStageActionSlot()
   const [q, setQ] = useState('')
@@ -369,6 +372,12 @@ export function V4CarrierBoard({
           )}
         </span>
         <div className="v4-selbar__acts">
+          {onOpenCarrierPrefs && (
+            <button type="button" className="v4-selbar__prefs" onClick={onOpenCarrierPrefs}>
+              <SlidersHorizontal size={12} />
+              Carrier preferences
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setPicked(new Set(rows.slice(0, 10).map((c) => c.id)))}

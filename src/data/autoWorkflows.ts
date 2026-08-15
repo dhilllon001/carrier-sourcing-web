@@ -1470,3 +1470,255 @@ export const CARRIER_PREFS: CarrierPref[] = [
     },
   },
 ]
+
+/* ── Favourites desk — teams, lanes, business units ── */
+
+export type FavCarrier = {
+  id: string
+  name: string
+  mc: string
+  city: string
+  channel: 'WhatsApp' | 'Email' | 'Phone'
+  contact: string
+  loads90: number
+  onTime: string
+  rank: number
+}
+
+export type FavTeam = {
+  id: string
+  name: string
+  lead: string
+  bu: string
+  carriers: FavCarrier[]
+}
+
+export type FavLane = {
+  id: string
+  origin: string
+  destination: string
+  miles: number
+  equipment: string
+  loads30: number
+  carriers: { name: string; mc: string; rank: number }[]
+}
+
+export type FavBusinessUnit = {
+  id: string
+  name: string
+  code: string
+  teams: number
+  carriers: FavCarrier[]
+}
+
+export const FAV_TEAMS: FavTeam[] = [
+  {
+    id: 't-spot-east',
+    name: 'Spot East',
+    lead: 'Mandeep Singh',
+    bu: 'Charger Logistics',
+    carriers: [
+      {
+        id: 'dgs',
+        name: 'DGS Logistics',
+        mc: 'MC-771204',
+        city: 'Brampton, ON',
+        channel: 'WhatsApp',
+        contact: 'Ravi Sandhu',
+        loads90: 42,
+        onTime: '96%',
+        rank: 1,
+      },
+      {
+        id: 'roadlink',
+        name: 'Roadlink Carriers',
+        mc: 'MC-512890',
+        city: 'Woodstock, ON',
+        channel: 'Email',
+        contact: 'Rohit Sharma',
+        loads90: 28,
+        onTime: '94%',
+        rank: 2,
+      },
+      {
+        id: 'uacl',
+        name: 'UACL Logistics LLC',
+        mc: 'MC-884120',
+        city: 'Mississauga, ON',
+        channel: 'WhatsApp',
+        contact: 'Dispatch desk',
+        loads90: 19,
+        onTime: '91%',
+        rank: 3,
+      },
+    ],
+  },
+  {
+    id: 't-power',
+    name: 'Power Only',
+    lead: 'Gagan Chapadia',
+    bu: 'Charger Logistics',
+    carriers: [
+      {
+        id: 'midwest',
+        name: 'Midwest Power Haul Inc',
+        mc: 'MC-551002',
+        city: 'Chicago, IL',
+        channel: 'Phone',
+        contact: 'Ops desk',
+        loads90: 31,
+        onTime: '93%',
+        rank: 1,
+      },
+      {
+        id: 'kuldip',
+        name: 'Kuldip Transport Inc',
+        mc: 'MC-712904',
+        city: 'Brampton, ON',
+        channel: 'WhatsApp',
+        contact: 'Jaspreet',
+        loads90: 22,
+        onTime: '90%',
+        rank: 2,
+      },
+    ],
+  },
+  {
+    id: 't-cross',
+    name: 'Cross-border MX',
+    lead: 'Priya Nair',
+    bu: 'International',
+    carriers: [
+      {
+        id: 'manney',
+        name: 'Manney Cross-Border SA',
+        mc: 'MX-22041',
+        city: 'Nuevo Laredo, TAM',
+        channel: 'WhatsApp',
+        contact: 'Miguel',
+        loads90: 16,
+        onTime: '88%',
+        rank: 1,
+      },
+      {
+        id: 'mangat',
+        name: 'Mangat Transhaul Inc',
+        mc: 'MC-903441',
+        city: 'Surrey, BC',
+        channel: 'WhatsApp',
+        contact: 'Mandeep',
+        loads90: 11,
+        onTime: '95%',
+        rank: 2,
+      },
+    ],
+  },
+]
+
+export const FAV_LANES: FavLane[] = [
+  {
+    id: 'l1',
+    origin: 'Brampton, ON',
+    destination: 'Chicago, IL',
+    miles: 512,
+    equipment: 'DRY-VAN',
+    loads30: 38,
+    carriers: [
+      { name: 'DGS Logistics', mc: 'MC-771204', rank: 1 },
+      { name: 'Roadlink Carriers', mc: 'MC-512890', rank: 2 },
+      { name: 'UACL Logistics LLC', mc: 'MC-884120', rank: 3 },
+    ],
+  },
+  {
+    id: 'l2',
+    origin: 'Toronto, ON',
+    destination: 'Detroit, MI',
+    miles: 231,
+    equipment: 'DRY-VAN',
+    loads30: 54,
+    carriers: [
+      { name: 'Kuldip Transport Inc', mc: 'MC-712904', rank: 1 },
+      { name: 'DGS Logistics', mc: 'MC-771204', rank: 2 },
+    ],
+  },
+  {
+    id: 'l3',
+    origin: 'Laredo, TX',
+    destination: 'Monterrey, NL',
+    miles: 148,
+    equipment: 'DRY-VAN',
+    loads30: 22,
+    carriers: [
+      { name: 'Manney Cross-Border SA', mc: 'MX-22041', rank: 1 },
+      { name: 'Mangat Transhaul Inc', mc: 'MC-903441', rank: 2 },
+    ],
+  },
+  {
+    id: 'l4',
+    origin: 'Marysville, OH',
+    destination: 'Detroit, MI',
+    miles: 186,
+    equipment: 'TRI-AXLE',
+    loads30: 17,
+    carriers: [
+      { name: 'Midwest Power Haul Inc', mc: 'MC-551002', rank: 1 },
+      { name: 'UACL Logistics LLC', mc: 'MC-884120', rank: 2 },
+    ],
+  },
+]
+
+export const FAV_BUSINESS_UNITS: FavBusinessUnit[] = [
+  {
+    id: 'bu-charger',
+    name: 'Charger Logistics Inc.',
+    code: 'CLI',
+    teams: 2,
+    carriers: [
+      ...FAV_TEAMS[0].carriers,
+      ...FAV_TEAMS[1].carriers,
+    ].filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i),
+  },
+  {
+    id: 'bu-intl',
+    name: 'International',
+    code: 'INTL',
+    teams: 1,
+    carriers: FAV_TEAMS[2].carriers,
+  },
+  {
+    id: 'bu-fleet',
+    name: 'Fleet Ops',
+    code: 'FLEET',
+    teams: 1,
+    carriers: [
+      {
+        id: 'smart',
+        name: 'Smart Choice Transport Ltd',
+        mc: 'MC-4483133',
+        city: 'Mississauga, ON',
+        channel: 'Email',
+        contact: 'Harjot Singh',
+        loads90: 14,
+        onTime: '92%',
+        rank: 1,
+      },
+    ],
+  },
+]
+
+/** Flat unique favourites across every team, ordered by rank then loads. */
+export const FAV_ALL_CARRIERS: FavCarrier[] = (() => {
+  const map = new Map<string, FavCarrier>()
+  for (const team of FAV_TEAMS) {
+    for (const c of team.carriers) {
+      const prev = map.get(c.id)
+      if (!prev || c.rank < prev.rank) map.set(c.id, c)
+    }
+  }
+  for (const bu of FAV_BUSINESS_UNITS) {
+    for (const c of bu.carriers) {
+      if (!map.has(c.id)) map.set(c.id, c)
+    }
+  }
+  return [...map.values()].sort((a, b) => a.rank - b.rank || b.loads90 - a.loads90)
+})()

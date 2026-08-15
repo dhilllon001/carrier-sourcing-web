@@ -99,6 +99,8 @@ export type BidOffer = {
   email?: string
   channel?: 'Email' | 'WhatsApp' | 'Phone' | 'DAT'
   sentAt?: string
+  /** Minutes the carrier's price is held for — drives the live countdown on the bid card. */
+  expiresInMin?: number
   insurance?: InsuranceState
   insuranceExpiry?: string
   /** Open CMT validation findings carried over from the Award review. */
@@ -497,6 +499,7 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'rohan@testcarrier.example',
     channel: 'WhatsApp',
     sentAt: 'Today · 12:34 PM',
+    expiresInMin: 24,
     insurance: 'Expiring',
     insuranceExpiry: 'Aug 22, 2026',
     cmtFlags: ['Cargo limit $100k under the $250k required for this commodity'],
@@ -522,6 +525,7 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'dispatch@midwestpower.example',
     channel: 'Email',
     sentAt: 'Today · 10:08 AM',
+    expiresInMin: 58,
   },
   {
     id: 'b3',
@@ -544,6 +548,7 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'desk@ontarioexpress.example',
     channel: 'Email',
     sentAt: 'Today · 11:52 AM',
+    expiresInMin: 9,
   },
   {
     id: 'b4',
@@ -566,6 +571,7 @@ export const SAMPLE_BIDS: BidOffer[] = [
     email: 'ops@borderbridge.example',
     channel: 'DAT',
     sentAt: 'Yesterday · 4:20 PM',
+    expiresInMin: 143,
   },
 ]
 

@@ -5911,7 +5911,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid #e6e9ee;
+  border: 1px solid #ece0cd;
   border-radius: 12px;
   background: #fff;
   overflow: hidden;
@@ -5919,12 +5919,12 @@
 
 .dd-offers .dd-wa__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   background: #fff;
-  border-bottom: 1px solid #eceff3;
-  padding: 12px 14px;
+  border-bottom: 1px solid #e8dcc9;
+  padding: 10px 14px;
 }
 
 .dd-offers .dd-wa__head strong {
@@ -5956,8 +5956,10 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #edf0f3;
-  padding: 14px;
+  background-color: #f2e8d8;
+  background-image: radial-gradient(rgba(122, 99, 64, 0.055) 1px, transparent 1px);
+  background-size: 22px 22px;
+  padding: 14px 16px 18px;
 }
 
 .dd-offers .dd-wa__day {
@@ -5965,9 +5967,9 @@
   width: fit-content;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e4e7eb;
-  color: #6b7685;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e8dcc9;
+  color: #6f6354;
   font-size: 11px;
   font-weight: 600;
 }
@@ -5975,41 +5977,44 @@
 .dd-offers .dd-wa-bubble {
   max-width: min(420px, 92%);
   margin-bottom: 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
+  padding: 8px 10px 6px;
+  border-radius: 10px;
+  box-shadow: 0 1px 1px rgba(60, 45, 20, 0.14);
 }
 
 .dd-offers .dd-wa-bubble--them {
   background: #fff;
-  border: 1px solid #e8ebf0;
-  box-shadow: 0 1px 2px rgba(15, 26, 42, 0.04);
-  border-top-left-radius: 4px;
+  border: 0;
+  border-top-left-radius: 0;
 }
 
 .dd-offers .dd-wa-bubble--me {
   margin-left: auto;
-  background: #dbeafe;
-  border: 1px solid #bfdbfe;
-  color: var(--ink);
-  border-top-right-radius: 4px;
+  background: #d9fdd3;
+  border: 0;
+  color: #111b21;
+  border-top-right-radius: 0;
 }
 
 .dd-offers .dd-wa-bubble p {
   margin: 0;
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.4;
+  color: #111b21;
 }
 
 .dd-offers .dd-wa-time {
-  display: block;
-  margin-top: 6px;
-  font-size: 10px;
-  color: #8a949f;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: #7d8b93;
 }
 
 .dd-offers .dd-wa-card {
-  min-width: 260px;
+  min-width: 268px;
   display: grid;
   gap: 10px;
 }
@@ -6018,7 +6023,49 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
+}
+
+/* the number is the point of the card — give it a green block */
+.dd-offers .dd-wa-card__label {
+  display: block;
+  font: 700 9.5px/1 var(--sr-font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a949f;
+}
+
+.dd-offers .dd-wa-card__top > div:first-child strong {
+  display: block;
+  margin-top: 4px;
+  font: 700 13.5px/1 var(--sr-font-body);
+  color: var(--sr-text-primary);
+}
+
+.dd-offers .dd-wa-card__rate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.26);
+}
+
+.dd-offers .dd-wa-card__rate span {
+  font: 700 9px/1 var(--sr-font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0f7355;
+}
+
+.dd-offers .dd-wa-card__rate strong {
+  font: 750 19px/1 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  color: #0f7355;
 }
 
 .dd-offers .dd-wa-card__facts {
@@ -6027,8 +6074,8 @@
   gap: 8px 12px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: #f7f8fa;
-  border: 1px solid #eef0f3;
+  background: #faf7f1;
+  border: 1px solid #f0e8db;
 }
 
 .dd-offers .dd-wa-card__facts > div {
@@ -6060,8 +6107,8 @@
 }
 
 .dd-offers .dd-wa__composer {
-  background: #fff;
-  border-top: 1px solid #eceff3;
+  background: #fbf6ee;
+  border-top: 1px solid #e8dcc9;
   padding: 10px 12px;
 }
 
@@ -6077,15 +6124,15 @@
   padding: 0 10px;
   border-radius: 999px;
   background: #fff;
-  border: 1px solid #d5dbe3;
-  color: var(--sr-text-primary);
+  border: 1px solid #e3d6c2;
+  color: #5c5245;
   font-size: 11.5px;
   font-weight: 550;
 }
 
 .dd-offers .dd-wa__quick button:hover {
-  border-color: var(--sr-action);
-  color: var(--sr-action);
+  border-color: #cdbca1;
+  color: var(--sr-text-primary);
 }
 
 .dd-offers .dd-wa__input-row {
@@ -6097,18 +6144,18 @@
 .dd-offers .dd-wa__input-row input {
   flex: 1;
   height: 40px;
-  padding: 0 14px;
+  padding: 0 15px;
   border-radius: 999px;
-  background: #f4f6f8;
-  border: 1px solid #e4e7eb;
+  background: #fff;
+  border: 1px solid #ece0cd;
   font-size: 13px;
 }
 
 .dd-offers .dd-wa__input-row input:focus {
   outline: none;
   background: #fff;
-  border-color: #c5d4e8;
-  box-shadow: 0 0 0 2px rgba(43, 79, 211, 0.15);
+  border-color: #d8c7ab;
+  box-shadow: 0 0 0 2px rgba(18, 133, 95, 0.14);
 }
 
 .dd-thresh-bar__btn,
@@ -13190,50 +13237,97 @@
 }
 
 .dd-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
   width: 100%;
   padding: 11px 12px;
   border: 1px solid #e6e9ee;
-  border-left: 3px solid #dfe3ea;
   border-radius: 10px;
   background: #fff;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
 
 .dd-offer:hover {
   border-color: #ccd4e0;
-  border-left-color: var(--sr-action);
 }
 
 .dd-offer.is-on {
-  border-color: #b9c9ef;
-  border-left-color: var(--sr-action);
+  border-color: var(--sr-action);
   background: #f7faff;
+  box-shadow: 0 1px 2px rgba(43, 79, 211, 0.1);
 }
 
-.dd-offer.is-best:not(.is-on) {
-  border-left-color: #16a34a;
+.dd-offer__main {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  min-width: 0;
 }
 
-.dd-offer__head {
+/* rate and countdown share one right-hand column so every card lines up */
+.dd-offer__side {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+  min-width: 96px;
+}
+
+.dd-offer__side b {
+  font: 750 17px/1 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.dd-offer__side i {
+  font: 600 10.5px/1 var(--sr-font-body);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: #b4401f;
+}
+
+.dd-offer__side i.is-pos {
+  color: #12855f;
+}
+
+.dd-offer__avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #eef1f6;
+  font: 700 11px/1 var(--sr-font-body);
+  color: #55617a;
+}
+
+.dd-offer.is-best .dd-offer__avatar {
+  background: #e8f7ee;
+  color: #12855f;
 }
 
 .dd-offer__who {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
-.dd-offer__who strong {
+.dd-offer__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dd-offer__name strong {
   font: 700 12.5px/1.25 var(--sr-font-body);
   color: var(--ink);
   overflow: hidden;
@@ -13242,58 +13336,100 @@
 }
 
 .dd-offer__who em {
-  font: 500 10.5px/1 var(--sr-font-body);
+  font: 500 10.5px/1.2 var(--sr-font-body);
   font-style: normal;
   font-variant-numeric: tabular-nums;
   color: #7c8798;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dd-offer__best {
   flex: none;
-  padding: 2px 7px;
+  padding: 1px 6px;
   border-radius: 5px;
   background: #e8f7ee;
-  font: 700 9.5px/1.5 var(--sr-font-body);
+  font: 700 9px/1.6 var(--sr-font-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: #12855f;
 }
 
-.dd-offer__rate {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.dd-offer__rate b {
-  font: 750 17px/1 var(--sr-font-body);
+/* live price-hold countdown */
+.dd-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+  min-width: 84px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font: 700 11px/1 var(--sr-font-body);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  color: var(--ink);
+  letter-spacing: 0.01em;
 }
 
-.dd-offer__rate i {
-  font: 600 10.5px/1 var(--sr-font-body);
+.dd-timer.is-none {
+  min-width: 84px;
+  background: #f5f6f8;
+  border-color: #e8ebf0;
+  color: #98a1ac;
+  font-weight: 600;
+}
+
+.dd-timer.is-cool {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: #0f7355;
+}
+
+.dd-timer.is-warm {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.32);
+  color: #a35b06;
+}
+
+.dd-timer.is-hot {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #d92d20;
+  animation: dd-timer-pulse 1.4s ease-in-out infinite;
+}
+
+.dd-timer.is-out {
+  background: #f1f3f6;
+  border-color: #e2e6ec;
+  color: #8a929c;
+}
+
+.dd-timer.is-big {
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.dd-timer.is-big em {
+  font: 500 10px/1 var(--sr-font-body);
   font-style: normal;
-  font-variant-numeric: tabular-nums;
-  color: #b4401f;
+  opacity: 0.8;
 }
 
-.dd-offer__rate i.is-pos {
-  color: #12855f;
-}
-
-.dd-offer__sub {
-  font: 500 11px/1.35 var(--sr-font-body);
-  color: #6b7685;
+@keyframes dd-timer-pulse {
+  50% {
+    opacity: 0.62;
+  }
 }
 
 .dd-offer__foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  padding-top: 7px;
-  border-top: 1px solid #eef0f3;
+  min-width: 0;
+  margin-top: 1px;
 }
 
 .dd-offer__state {
@@ -13334,19 +13470,22 @@
 }
 
 .dd-offer__foot em {
-  font: 500 10.5px/1 var(--sr-font-body);
+  font: 500 10.5px/1.2 var(--sr-font-body);
   font-style: normal;
   color: #8a929c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Chat header */
+/* Chat header — white chrome above the sand thread */
 .dd-wa__head {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-bottom: 1px solid #e2e5ea;
-  background: #f0f2f5;
+  border-bottom: 1px solid #e8dcc9;
+  background: #fff;
 }
 
 .dd-wa__avatar {
@@ -13356,9 +13495,9 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #cfd6e0;
+  background: #eceef2;
   font: 700 12px/1 var(--sr-font-body);
-  color: #47505d;
+  color: #55617a;
   text-transform: uppercase;
 }
 
@@ -13377,7 +13516,7 @@
 
 .dd-wa__who span {
   font: 500 11px/1.2 var(--sr-font-body);
-  color: #667781;
+  color: #6f6354;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -13397,21 +13536,30 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #54656f;
+  color: #6f6354;
   cursor: pointer;
 }
 
 .dd-wa__head-acts button:hover {
-  background: #e2e6ea;
+  background: #eae0d0;
 }
 
 /* Thread */
+.dd-wa {
+  border-color: #ece0cd;
+}
+
 .dd-wa__thread {
-  background-color: #efe7de;
-  background-image: radial-gradient(rgba(17, 27, 33, 0.045) 1px, transparent 1px);
+  background-color: #f6efe3;
+  background-image: radial-gradient(rgba(120, 98, 66, 0.05) 1px, transparent 1px);
   background-size: 22px 22px;
   padding: 14px 16px 18px;
   gap: 6px;
+}
+
+.dd-wa__day {
+  background: rgba(255, 255, 255, 0.92);
+  color: #6f6354;
 }
 
 .dd-wa-bubble {
@@ -13496,24 +13644,24 @@
 /* Composer */
 .dd-wa__composer {
   padding: 8px 10px 10px;
-  background: #f0f2f5;
-  border-top: 1px solid #e2e5ea;
+  background: #fbf6ee;
+  border-top: 1px solid #e8dcc9;
 }
 
 .dd-wa__quick button {
   height: 26px;
   padding: 0 10px;
-  border: 1px solid #d7dde4;
+  border: 1px solid #e3d6c2;
   border-radius: 999px;
   background: #fff;
   font: 550 11px/1 var(--sr-font-body);
-  color: #47505d;
+  color: #5c5245;
   cursor: pointer;
 }
 
 .dd-wa__quick button:hover {
-  border-color: #b9c2cc;
-  background: #f7f9fb;
+  border-color: #cdbca1;
+  background: #fffaf2;
 }
 
 .dd-wa__input-row {

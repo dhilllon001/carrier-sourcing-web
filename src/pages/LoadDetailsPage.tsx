@@ -88,6 +88,8 @@ const toRate = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
 type LoadDetailsPageProps = {
   load: ReportLoad
   onBack: () => void
+  /** Opens Auto sourcing configuration → Carrier prefs. */
+  onOpenCarrierPrefs?: () => void
 }
 
 function ModeBadge({ mode }: { mode: ReportLoad['mode'] }) {
@@ -1465,7 +1467,7 @@ function lifecyclePos(stages: LoadDetail['stages'], stage: string, sub: string) 
   return { stage: s, sub: u }
 }
 
-export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
+export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetailsPageProps) {
   const base = useMemo(() => buildLoadDetail(load), [load])
   const [detail, setDetail] = useState(base)
   const [tab, setTab] = useState<TabId>('summary')
@@ -2590,6 +2592,7 @@ export function LoadDetailsPage({ load, onBack }: LoadDetailsPageProps) {
                       <V4CarrierBoard
                         detail={detail}
                         onPostBoard={() => setPostOpen(true)}
+                        onOpenCarrierPrefs={onOpenCarrierPrefs}
                         onBlast={(channel, count) => {
                           logCase({
                             title: `${channel} blast sent`,

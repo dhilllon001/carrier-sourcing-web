@@ -605,6 +605,20 @@
   color: var(--sr-action);
 }
 
+.v4-selbar__prefs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-color: #cfdcfb !important;
+  background: #f2f6ff !important;
+  color: var(--sr-action) !important;
+}
+
+.v4-selbar__prefs:hover {
+  border-color: var(--sr-action) !important;
+  background: #e8efff !important;
+}
+
 /* table */
 .v4-tbl {
   display: flex;

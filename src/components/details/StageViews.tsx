@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Check,
   CheckCheck,
@@ -12,6 +12,7 @@ import {
   Send,
   Share2,
   Star,
+  Timer,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -464,6 +465,47 @@ export function FindPostView({
 }
 
 /* ── Offers & Bids ── */
+
+/** Counts a bid's price hold down to zero, ticking once a second. */
+function BidTimer({ deadline, big }: { deadline: number; big?: boolean }) {
+  const [left, setLeft] = useState(() => deadline - Date.now())
+
+  useEffect(() => {
+    setLeft(deadline - Date.now())
+    const id = window.setInterval(() => setLeft(deadline - Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [deadline])
+
+  const out = left <= 0
+  const mins = left / 60000
+  const tone = out ? 'is-out' : mins < 5 ? 'is-hot' : mins < 20 ? 'is-warm' : 'is-cool'
+
+  const total = Math.max(0, Math.floor(left / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const clock = h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+
+  return (
+    <span className={cn('dd-timer', tone, big && 'is-big')}>
+      <Timer size={big ? 12 : 11} strokeWidth={2.2} />
+      {out ? 'Expired' : clock}
+      {big && !out && <em>left on this bid</em>}
+    </span>
+  )
+}
+
+function bidInitials(name: string) {
+  return name
+    .replace(/[^A-Za-z ]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('')
+}
+
 export function OffersBidsView({
   detail,
   onAddOffer,
@@ -486,6 +528,15 @@ export function OffersBidsView({
   ])
   const bid = detail.bids.find((b) => b.id === selected) ?? detail.bids[0]
   const bestBid = detail.bids.find((b) => b.best) ?? detail.bids[0]
+  /* pin each hold to a wall-clock deadline once, so the countdown stays honest across re-renders */
+  const deadlines = useMemo(() => {
+    const now = Date.now()
+    const map = new Map<string, number>()
+    for (const b of detail.bids) {
+      if (b.expiresInMin) map.set(b.id, now + b.expiresInMin * 60_000)
+    }
+    return map
+  }, [detail.bids])
   const counts = useMemo(() => {
     const base = {
       All: detail.bids.length,
@@ -581,6 +632,7 @@ export function OffersBidsView({
           <div className="dd-offer-list">
             {filtered.map((b) => {
               const under = b.vsTarget.trim().startsWith('-')
+              const deadline = deadlines.get(b.id)
               return (
                 <button
                   key={b.id}
@@ -588,35 +640,39 @@ export function OffersBidsView({
                   className={cn('dd-offer', selected === b.id && 'is-on', b.best && 'is-best')}
                   onClick={() => setSelected(b.id)}
                 >
-                  <span className="dd-offer__head">
-                    <span className="dd-offer__who">
-                      <strong>{b.carrier}</strong>
-                      <em>
-                        MC# {b.mc}
-                        {b.dot ? ` · DOT ${b.dot}` : ''}
-                      </em>
+                  <span className="dd-offer__main">
+                    <span className="dd-offer__avatar" aria-hidden>
+                      {bidInitials(b.carrier)}
                     </span>
-                    {b.best && <span className="dd-offer__best">Best</span>}
+                    <span className="dd-offer__who">
+                      <span className="dd-offer__name">
+                        <strong>{b.carrier}</strong>
+                        {b.best && <span className="dd-offer__best">Best</span>}
+                      </span>
+                      <em>
+                        MC {b.mc}
+                        {b.loads ? ` · ${b.loads} loads` : ''}
+                        {b.source ? ` · ${b.source}` : ''}
+                      </em>
+                      <span className="dd-offer__foot">
+                        <span className={cn('dd-offer__state', `is-${b.status.toLowerCase()}`)}>
+                          {b.status}
+                        </span>
+                        <em>{[b.contact, b.channel].filter(Boolean).join(' · ')}</em>
+                      </span>
+                    </span>
                   </span>
 
-                  <span className="dd-offer__rate">
+                  <span className="dd-offer__side">
                     <b>{b.allIn ?? b.amount}</b>
                     <i className={cn(under && 'is-pos')}>
                       {b.vsTarget.replace(' vs Target', '')} vs target
                     </i>
-                  </span>
-
-                  <span className="dd-offer__sub">
-                    {[b.amount ? `${b.amount}/mi` : null, b.equipment, b.source]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </span>
-
-                  <span className="dd-offer__foot">
-                    <span className={cn('dd-offer__state', `is-${b.status.toLowerCase()}`)}>
-                      {b.status}
-                    </span>
-                    <em>{b.updated ?? b.sentAt ?? '—'}</em>
+                    {deadline ? (
+                      <BidTimer deadline={deadline} />
+                    ) : (
+                      <span className="dd-timer is-none">No hold</span>
+                    )}
                   </span>
                 </button>
               )
@@ -629,11 +685,7 @@ export function OffersBidsView({
             <>
               <div className="dd-wa__head">
                 <span className="dd-wa__avatar" aria-hidden>
-                  {bid.carrier
-                    .split(' ')
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join('')}
+                  {bidInitials(bid.carrier)}
                 </span>
                 <div className="dd-wa__who">
                   <strong>{bid.carrier}</strong>
@@ -641,6 +693,7 @@ export function OffersBidsView({
                     {[bid.contact, bid.phone, bid.channel ?? 'Chat'].filter(Boolean).join(' · ')}
                   </span>
                 </div>
+                {deadlines.get(bid.id) && <BidTimer deadline={deadlines.get(bid.id)!} big />}
                 <div className="dd-wa__head-acts">
                   <button type="button" aria-label="Call carrier">
                     <Phone size={14} />

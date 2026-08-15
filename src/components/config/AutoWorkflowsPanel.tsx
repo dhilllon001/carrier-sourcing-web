@@ -5,17 +5,23 @@ import { CARRIER_PREFS, RUNS, WORKFLOWS, type CarrierPref, type Workflow } from 
 import { WorkflowsView } from './WorkflowsView'
 import { RunsView } from './RunsView'
 import { CarrierPrefsView } from './CarrierPrefsView'
+import { FavoritesView } from './FavoritesView'
 import { WorkflowBuilder } from './WorkflowBuilder'
 
-export type ConfigView = 'workflows' | 'runs' | 'carriers' | 'new'
+export type ConfigView = 'workflows' | 'runs' | 'carriers' | 'favorites' | 'new'
 
 type AutoWorkflowsPanelProps = {
   search?: string
   onOpenLoad: (probill: string) => void
+  initialView?: ConfigView
 }
 
-export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPanelProps) {
-  const [view, setView] = useState<ConfigView>('workflows')
+export function AutoWorkflowsPanel({
+  search = '',
+  onOpenLoad,
+  initialView = 'workflows',
+}: AutoWorkflowsPanelProps) {
+  const [view, setView] = useState<ConfigView>(initialView)
   const [workflows, setWorkflows] = useState<Workflow[]>(WORKFLOWS)
   const [selectedWorkflow, setSelectedWorkflow] = useState(WORKFLOWS[0].id)
   const [selectedRun, setSelectedRun] = useState(RUNS[0].id)
@@ -90,6 +96,15 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
             onClick={() => setView('carriers')}
           >
             Carrier prefs
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'favorites'}
+            className={cn(view === 'favorites' && 'is-on')}
+            onClick={() => setView('favorites')}
+          >
+            Favourites
           </button>
           {view === 'new' && (
             <button type="button" role="tab" aria-selected className="is-on">
@@ -175,6 +190,8 @@ export function AutoWorkflowsPanel({ search = '', onOpenLoad }: AutoWorkflowsPan
             }}
           />
         )}
+
+        {view === 'favorites' && <FavoritesView />}
 
         {view === 'new' && (
           <WorkflowBuilder

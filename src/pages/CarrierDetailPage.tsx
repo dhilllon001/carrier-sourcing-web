@@ -5,6 +5,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  Heart,
   Lock,
   MapPin,
   Phone,
@@ -13,7 +14,8 @@ import {
   Upload,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { getCarrierDetail, type CarrierDetail } from '@/data/carriers'
+import { getCarrierDetail, type CarrierDetail, type CarrierPerson } from '@/data/carriers'
+import { useFavoriteCarriers } from '@/lib/favoriteCarriers'
 
 export type CarrierTabId =
   | 'overview'
@@ -68,6 +70,8 @@ export function CarrierDetailPage({ carrierId, onBack }: Props) {
   const [docId, setDocId] = useState<string | null>(null)
   const [noteFilter, setNoteFilter] = useState<'All' | 'Internal' | 'External' | 'Carrier Dispatch Alert'>('All')
   const [noteQ, setNoteQ] = useState('')
+  const { isFavorite, toggle } = useFavoriteCarriers()
+  const fav = isFavorite(carrierId)
 
   if (!carrier) {
     return (
@@ -93,7 +97,19 @@ export function CarrierDetailPage({ carrierId, onBack }: Props) {
 
       <header className="cd-hero">
         <div className="cd-hero__main">
-          <h1 className="cd-hero__name">{carrier.name}</h1>
+          <div className="cd-hero__title">
+            <h1 className="cd-hero__name">{carrier.name}</h1>
+            <button
+              type="button"
+              className={cn('cd-heart', fav && 'is-on')}
+              aria-pressed={fav}
+              aria-label={fav ? 'Remove from favourites' : 'Add to favourites'}
+              onClick={() => toggle(carrier.id)}
+            >
+              <Heart size={14} fill={fav ? 'currentColor' : 'none'} />
+              {fav ? 'Favourite' : 'Add to favourites'}
+            </button>
+          </div>
           <div className="cd-hero__meta">
             <span>MC {carrier.mc}</span>
             <span>DOT {carrier.dot}</span>
@@ -191,6 +207,41 @@ export function CarrierDetailPage({ carrierId, onBack }: Props) {
   )
 }
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('')
+}
+
+function PersonCard({ p, ours }: { p: CarrierPerson; ours?: boolean }) {
+  return (
+    <div className={cn('cd-person', ours && 'is-ours')}>
+      <span className="cd-person__avatar">{initials(p.name)}</span>
+      <div className="cd-person__body">
+        <div className="cd-person__top">
+          <strong>{p.name}</strong>
+          {p.duty && <span className="cd-person__duty">{p.duty}</span>}
+        </div>
+        <span className="cd-person__role">
+          {p.role}
+          {p.tz ? ` · ${p.tz}` : ''}
+        </span>
+        <div className="cd-person__links">
+          <a href={`mailto:${p.email}`} onClick={(e) => e.stopPropagation()}>
+            <Mail size={11} /> {p.email}
+          </a>
+          <a href={`tel:${p.phone.replace(/[^\d+]/g, '')}`} onClick={(e) => e.stopPropagation()}>
+            <Phone size={11} /> {p.phone}
+          </a>
+        </div>
+        {(p.note || p.since) && <span className="cd-person__note">{p.note ?? p.since}</span>}
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab({ c }: { c: CarrierDetail }) {
   const [preferred, setPreferred] = useState(c.preferredChannel ?? 'Email')
   const channels = ['Email', 'WhatsApp', 'SMS', 'Phone'] as const
@@ -219,6 +270,27 @@ function OverviewTab({ c }: { c: CarrierDetail }) {
           <span className="cd-metric__sub">Current limit</span>
         </div>
       </div>
+
+      <section className="cd-card">
+        <div className="cd-card__head">
+          <h3 className="cd-card__title">Who's who</h3>
+          <span className="cd-muted">{c.people.length} at the carrier · {c.accountTeam.length} on our side</span>
+        </div>
+
+        <div className="cd-who__label">Our team</div>
+        <div className="cd-who">
+          {c.accountTeam.map((p) => (
+            <PersonCard key={p.id} p={p} ours />
+          ))}
+        </div>
+
+        <div className="cd-who__label">Carrier contacts</div>
+        <div className="cd-who">
+          {c.people.map((p) => (
+            <PersonCard key={p.id} p={p} />
+          ))}
+        </div>
+      </section>
 
       <section className="cd-card">
         <h3 className="cd-card__title">Preferred communication</h3>
