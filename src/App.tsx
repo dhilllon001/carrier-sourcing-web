@@ -13,6 +13,7 @@ import {
   KeyRound,
   Route,
   SlidersHorizontal,
+  Gauge,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -26,14 +27,18 @@ import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { CmtReviewPage } from '@/pages/CmtReviewPage'
 import { AccessManagementPage } from '@/pages/AccessManagementPage'
 import { ConfigurationPage } from '@/pages/ConfigurationPage'
+import { CapacityManagerPage } from '@/pages/CapacityManagerPage'
+import { CarrierSearchPage } from '@/pages/CarrierSearchPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
 import { cn } from '@/lib/cn'
 
 const NAV = [
   { id: 'sourcing', label: 'Sourcing', icon: Truck },
+  { id: 'capacity', label: 'Carrier capacity manager', icon: Gauge },
   { id: 'configuration', label: 'Auto sourcing configuration', icon: SlidersHorizontal },
   { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
+  { id: 'carrier-search', label: 'Carrier search', icon: Search },
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },
   { id: 'cmt', label: 'CMT', icon: Shield },
@@ -159,10 +164,14 @@ export default function App() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={
-                    nav === 'configuration'
+                    nav === 'capacity'
+                      ? 'Search lane, customer, team, or carrier…'
+                      : nav === 'configuration'
                       ? 'Search workflows, runs, probill, carrier…'
                       : nav === 'availability'
                       ? 'Search carrier, lane, equipment, notes…'
+                      : nav === 'carrier-search'
+                        ? 'Search carrier, MC, contact, or lane…'
                       : nav === 'carriers'
                         ? 'Search carrier, MC, DOT, contact…'
                         : nav === 'cmt'
@@ -237,6 +246,8 @@ export default function App() {
                 refreshKey={refreshKey}
                 onOpenLoad={setOpenLoadId}
               />
+            ) : nav === 'capacity' ? (
+              <CapacityManagerPage search={search} />
             ) : nav === 'configuration' ? (
               <ConfigurationPage
                 key={configView}
@@ -251,6 +262,8 @@ export default function App() {
               />
             ) : nav === 'availability' ? (
               <AvailabilityPage search={search} />
+            ) : nav === 'carrier-search' ? (
+              <CarrierSearchPage search={search} onOpenCarrier={setOpenCarrierId} />
             ) : nav === 'carriers' ? (
               <MyCarriersPage
                 search={search}

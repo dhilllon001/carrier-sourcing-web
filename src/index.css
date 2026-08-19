@@ -8,6 +8,9 @@
 @import './styles/quick-lane-search.css';
 @import './styles/availability.css';
 @import './styles/carriers.css';
+@import './styles/carrier-book.css';
+@import './styles/carrier-search.css';
 @import './styles/cmt-review.css';
 @import './styles/access.css';
 @import './styles/auto-workflows.css';
+@import './styles/capacity.css';

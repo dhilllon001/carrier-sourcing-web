@@ -1,8 +1,21 @@
 import { useMemo, useState } from 'react'
-import { Heart, Plus, Search, Route, X } from 'lucide-react'
+import { History, Search, Star, Users, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { carrierList, type CarrierStatus } from '@/data/carriers'
-import { useFavoriteCarriers } from '@/lib/favoriteCarriers'
+import {
+  bookCarriers,
+  bookTotals,
+  isLapsed,
+  vsMarketPct,
+  type BookCarrier,
+} from '@/data/carrierBook'
+import { MyBookView } from '@/components/carriers/MyBookView'
+import { FavouritesRankView } from '@/components/carriers/FavouritesRankView'
+import {
+  TrackRecordView,
+  type TrackFlag,
+  type TrackRange,
+} from '@/components/carriers/TrackRecordView'
+import { AllCarriersView } from '@/components/carriers/AllCarriersView'
 
 type Props = {
   search: string
@@ -10,277 +23,249 @@ type Props = {
   onOpenLaneSearch?: () => void
 }
 
-const STATUS_OPTS: Array<'all' | CarrierStatus> = ['all', 'Active', 'Inactive', 'Disabled']
+type Tab = 'book' | 'favourites' | 'record' | 'all'
+
+const RANGE_DAYS: Record<TrackRange, number> = {
+  'All time': Infinity,
+  'Last 90 days': 90,
+  'Last 30 days': 30,
+}
+
+const money = (n: number) => `$${Math.round(n / 1000).toLocaleString()}k`
+
+function matches(c: BookCarrier, q: string) {
+  if (!q) return true
+  return (
+    c.name.toLowerCase().includes(q) ||
+    c.mc.includes(q) ||
+    c.dot.includes(q) ||
+    c.city.toLowerCase().includes(q) ||
+    c.contact.toLowerCase().includes(q) ||
+    c.owner.toLowerCase().includes(q) ||
+    c.lanes.some((l) => l.lane.toLowerCase().includes(q))
+  )
+}
 
 export function MyCarriersPage({ search, onOpenCarrier, onOpenLaneSearch }: Props) {
-  const [mode, setMode] = useState<'search' | 'lane'>('search')
+  const [tab, setTab] = useState<Tab>('book')
   const [localQ, setLocalQ] = useState('')
-  const [status, setStatus] = useState<'all' | CarrierStatus>('all')
-  const [favOnly, setFavOnly] = useState(false)
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(25)
-  const { favorites, isFavorite, toggle } = useFavoriteCarriers()
+  const [dismissed, setDismissed] = useState<string[]>([])
+  const [range, setRange] = useState<TrackRange>('All time')
+  const [flags, setFlags] = useState<TrackFlag[]>([])
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [favourites, setFavourites] = useState<string[]>(() =>
+    bookCarriers
+      .filter((c) => c.rank)
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+      .map((c) => c.id)
+  )
 
   const q = (search || localQ).trim().toLowerCase()
+  const totals = useMemo(() => bookTotals(bookCarriers), [])
 
-  const filtered = useMemo(() => {
-    let list = [...carrierList]
-    if (favOnly) list = list.filter((c) => favorites.includes(c.id))
-    if (status !== 'all') list = list.filter((c) => c.status === status)
-    if (q) {
-      list = list.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.mc.includes(q) ||
-          c.dot.includes(q) ||
-          c.city.toLowerCase().includes(q) ||
-          c.state.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          c.contactName.toLowerCase().includes(q) ||
-          c.rep.toLowerCase().includes(q) ||
-          c.team.toLowerCase().includes(q) ||
-          c.scac.toLowerCase().includes(q) ||
-          c.division.toLowerCase().includes(q)
-      )
-    }
-    return list
-  }, [q, status, favOnly, favorites])
+  const mine = useMemo(() => bookCarriers.filter((c) => c.inBook), [])
+  const bookRows = useMemo(
+    () => mine.filter((c) => matches(c, q)).sort((a, b) => b.loadsRun - a.loadsRun),
+    [mine, q]
+  )
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
-  const pageSafe = Math.min(page, totalPages)
-  const pageRows = filtered.slice((pageSafe - 1) * perPage, pageSafe * perPage)
+  const ranked = useMemo(
+    () =>
+      favourites
+        .map((id) => bookCarriers.find((c) => c.id === id))
+        .filter((c): c is BookCarrier => Boolean(c) && matches(c as BookCarrier, q)),
+    [favourites, q]
+  )
+
+  const poolAccept = useMemo(
+    () => Math.round(bookCarriers.reduce((sum, c) => sum + c.accept, 0) / bookCarriers.length),
+    []
+  )
+
+  const recordRows = useMemo(() => {
+    const days = RANGE_DAYS[range]
+    return bookCarriers
+      .filter((c) => matches(c, q))
+      .filter((c) => days === Infinity || c.daysSinceLoad <= days)
+      .filter((c) => {
+        if (flags.includes('Lapsed') && !isLapsed(c)) return false
+        if (flags.includes('New') && !c.isNew) return false
+        if (flags.includes('Has claims') && c.claims === 0) return false
+        if (flags.includes('Above market') && vsMarketPct(c) <= 0) return false
+        return true
+      })
+      .sort((a, b) => b.loadsRun - a.loadsRun)
+  }, [q, range, flags])
+
+  const toggleFavourite = (id: string) =>
+    setFavourites((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]))
+
+  const moveFavourite = (id: string, delta: number) =>
+    setFavourites((list) => {
+      const i = list.indexOf(id)
+      const j = i + delta
+      if (i < 0 || j < 0 || j >= list.length) return list
+      const next = [...list]
+      next.splice(j, 0, next.splice(i, 1)[0])
+      return next
+    })
+
+  const TABS: Array<{ id: Tab; label: string; icon: typeof Users; count?: number; hint: string }> = [
+    {
+      id: 'book',
+      label: 'My book',
+      icon: Users,
+      count: bookRows.length,
+      hint: 'Carriers you own as rep or backup',
+    },
+    {
+      id: 'favourites',
+      label: 'Favourites',
+      icon: Star,
+      count: ranked.length,
+      hint: 'Ranked shortlist, tendered first',
+    },
+    {
+      id: 'record',
+      label: 'Track record',
+      icon: History,
+      count: recordRows.length,
+      hint: 'Every carrier you have moved freight with',
+    },
+    {
+      id: 'all',
+      label: 'All carriers',
+      icon: Search,
+      hint: 'The full carrier directory',
+    },
+  ]
+
+  const activeTab = TABS.find((t) => t.id === tab)
 
   return (
-    <div className="mc-page">
-      <div className="mc-toolbar">
-        <div className="mc-toolbar__modes">
-          <button
-            type="button"
-            className={cn('mc-mode', mode === 'search' && 'is-active')}
-            onClick={() => setMode('search')}
-          >
-            <Search size={14} strokeWidth={1.75} />
-            Search
-          </button>
-          <button
-            type="button"
-            className={cn('mc-mode', mode === 'lane' && 'is-active')}
-            onClick={() => {
-              setMode('lane')
-              onOpenLaneSearch?.()
-            }}
-          >
-            <Route size={14} strokeWidth={1.75} />
-            Lane Search
-          </button>
+    <div className="bk-page">
+      <header className="bk-head">
+        <div className="bk-head__title">
+          <h2>My carriers</h2>
+          <span>Mandeep Singh · carrier sales</span>
         </div>
-
-        <div className="mc-toolbar__search">
-          <Search size={15} strokeWidth={1.75} className="mc-toolbar__search-icon" />
-          <input
-            value={localQ}
-            onChange={(e) => {
-              setLocalQ(e.target.value)
-              setPage(1)
-            }}
-            placeholder="Search name, MC, DOT, city, contact…"
-            aria-label="Search carriers"
+        <div className="bk-head__stats">
+          <Stat label="My book" value={String(totals.myBook)} />
+          <Stat label="Favourites" value={String(totals.favourites)} />
+          <Stat label="Loads run" value={totals.loadsRun.toLocaleString()} />
+          <Stat label="Spend" value={money(totals.spend)} />
+          <Stat
+            label="Needs you"
+            value={String(Math.max(0, totals.needsYou - dismissed.length))}
+            tone="warn"
           />
-          {localQ && (
-            <button
-              type="button"
-              className="mc-toolbar__clear"
-              aria-label="Clear search"
-              onClick={() => setLocalQ('')}
-            >
-              <X size={14} />
-            </button>
+        </div>
+      </header>
+
+      <nav className="bk-tabs" aria-label="Carrier views">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={cn('bk-tab', tab === t.id && 'is-on')}
+            aria-current={tab === t.id}
+            title={t.hint}
+            onClick={() => setTab(t.id)}
+          >
+            <t.icon size={13} strokeWidth={2} />
+            {t.label}
+            {t.count !== undefined && <i>{t.count}</i>}
+          </button>
+        ))}
+        <span className="bk-tabs__hint">{activeTab?.hint}</span>
+      </nav>
+
+      {tab !== 'all' && (
+        <div className="bk-searchrow">
+          <label className="bk-search">
+            <Search size={13} strokeWidth={2} />
+            <input
+              value={localQ}
+              onChange={(e) => setLocalQ(e.target.value)}
+              placeholder="Search carrier, MC, or lane…"
+              aria-label="Search carriers"
+            />
+            {localQ && (
+              <button type="button" aria-label="Clear search" onClick={() => setLocalQ('')}>
+                <X size={12} />
+              </button>
+            )}
+          </label>
+          {tab === 'book' && (
+            <span className="bk-searchrow__meta">
+              {bookRows.filter((c) => c.role === 'Rep').length} as rep ·{' '}
+              {bookRows.filter((c) => c.role === 'Backup').length} as backup
+              {totals.lapsed > 0 ? ` · ${totals.lapsed} lapsed` : ''}
+            </span>
+          )}
+          {tab === 'favourites' && (
+            <span className="bk-searchrow__meta">
+              Drag-free ranking — use the arrows to reorder
+            </span>
+          )}
+          {tab === 'record' && (
+            <span className="bk-searchrow__meta">Hover a carrier name for the full profile</span>
           )}
         </div>
+      )}
 
-        <div className="mc-toolbar__filters">
-          <button
-            type="button"
-            className={cn('mc-chip mc-chip--fav', favOnly && 'is-active')}
-            aria-pressed={favOnly}
-            onClick={() => {
-              setFavOnly((v) => !v)
-              setPage(1)
-            }}
-          >
-            <Heart size={12} fill={favOnly ? 'currentColor' : 'none'} />
-            Favourites
-            <i>{favorites.length}</i>
-          </button>
-          {STATUS_OPTS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={cn('mc-chip', status === s && 'is-active')}
-              onClick={() => {
-                setStatus(s)
-                setPage(1)
-              }}
-            >
-              {s === 'all' ? 'All' : s}
-            </button>
-          ))}
-        </div>
-
-        <div className="mc-toolbar__actions">
-          <button type="button" className="mc-btn mc-btn--ghost">
-            Carrier Onboarding
-          </button>
-          <button type="button" className="mc-btn mc-btn--primary">
-            <Plus size={15} strokeWidth={2} />
-            Add New Carrier
-          </button>
-        </div>
+      <div className="bk-body">
+        {tab === 'book' && (
+          <MyBookView
+            carriers={bookRows}
+            dismissed={dismissed}
+            onDismiss={(id) => setDismissed((d) => [...d, id])}
+            favourites={favourites}
+            onToggleFavourite={toggleFavourite}
+            onOpen={onOpenCarrier}
+          />
+        )}
+        {tab === 'favourites' && (
+          <FavouritesRankView
+            ranked={ranked}
+            poolAccept={poolAccept}
+            onMove={moveFavourite}
+            onRemove={toggleFavourite}
+            onOpen={onOpenCarrier}
+          />
+        )}
+        {tab === 'record' && (
+          <TrackRecordView
+            carriers={recordRows}
+            range={range}
+            setRange={setRange}
+            flags={flags}
+            toggleFlag={(f) =>
+              setFlags((list) => (list.includes(f) ? list.filter((x) => x !== f) : [...list, f]))
+            }
+            openId={openId}
+            setOpenId={setOpenId}
+            favourites={favourites}
+            onToggleFavourite={toggleFavourite}
+          />
+        )}
+        {tab === 'all' && (
+          <AllCarriersView
+            search={search}
+            onOpenCarrier={onOpenCarrier}
+            onOpenLaneSearch={onOpenLaneSearch}
+          />
+        )}
       </div>
+    </div>
+  )
+}
 
-      <div className="mc-table-wrap">
-        <table className="mc-table">
-          <thead>
-            <tr>
-              <th className="mc-col-fav" aria-label="Favourite" />
-              <th>Carrier Name</th>
-              <th>Status</th>
-              <th>Carrier rep</th>
-              <th>Contact</th>
-              <th className="mc-num">Loads 90d</th>
-              <th className="mc-num">On time</th>
-              <th>Last load</th>
-              <th>Equipment</th>
-              <th>MC No</th>
-              <th>DOT No</th>
-              <th>City</th>
-              <th>State</th>
-              <th>SCAC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.map((c) => {
-              const fav = isFavorite(c.id)
-              const onTimeNum = parseInt(c.onTime, 10)
-              return (
-                <tr key={c.id} onClick={() => onOpenCarrier(c.id)}>
-                  <td className="mc-col-fav">
-                    <button
-                      type="button"
-                      className={cn('mc-heart', fav && 'is-on')}
-                      aria-pressed={fav}
-                      aria-label={fav ? `Remove ${c.name} from favourites` : `Add ${c.name} to favourites`}
-                      title={fav ? 'Remove from favourites' : 'Add to favourites'}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggle(c.id)
-                      }}
-                    >
-                      <Heart size={14} fill={fav ? 'currentColor' : 'none'} />
-                    </button>
-                  </td>
-                  <td>
-                    <div className="mc-cell-2">
-                      <strong>{c.name}</strong>
-                      <span>{c.division}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={cn('mc-status', `is-${c.status.toLowerCase()}`)}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="mc-cell-2">
-                      <strong>{c.rep}</strong>
-                      <span>{c.team}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="mc-cell-2">
-                      <strong>{c.contactName}</strong>
-                      <span>{c.phone}</span>
-                    </div>
-                  </td>
-                  <td className="mc-num mc-mono">{c.loads90}</td>
-                  <td className="mc-num">
-                    <span
-                      className={cn(
-                        'mc-ontime',
-                        onTimeNum >= 93 ? 'is-good' : onTimeNum >= 85 ? 'is-mid' : 'is-low'
-                      )}
-                    >
-                      {c.onTime}
-                    </span>
-                  </td>
-                  <td>{c.lastLoad}</td>
-                  <td>
-                    <div className="mc-eq">
-                      {c.equipment.map((e) => (
-                        <em key={e}>{e}</em>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="mc-mono">{c.mc}</td>
-                  <td className="mc-mono">{c.dot}</td>
-                  <td>{c.city}</td>
-                  <td>{c.state}</td>
-                  <td className="mc-mono">{c.scac}</td>
-                </tr>
-              )
-            })}
-            {pageRows.length === 0 && (
-              <tr>
-                <td colSpan={14} className="mc-empty">
-                  No carriers match your search.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mc-pager">
-        <span>
-          Showing {(pageSafe - 1) * perPage + 1} –{' '}
-          {Math.min(pageSafe * perPage, filtered.length)} of {filtered.length}
-        </span>
-        <label className="mc-pager__per">
-          Per page
-          <select
-            value={perPage}
-            onChange={(e) => {
-              setPerPage(Number(e.target.value))
-              setPage(1)
-            }}
-          >
-            {[10, 25, 50].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="mc-pager__nav">
-          <button
-            type="button"
-            disabled={pageSafe <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Prev
-          </button>
-          <span>
-            {pageSafe} / {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={pageSafe >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            Next
-          </button>
-        </div>
-      </div>
+function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
+  return (
+    <div className={cn('bk-stat', tone && `is-${tone}`)}>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   )
 }
