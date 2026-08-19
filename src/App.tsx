@@ -38,7 +38,7 @@ const NAV = [
   { id: 'capacity', label: 'Carrier capacity manager', icon: Gauge },
   { id: 'configuration', label: 'Auto sourcing configuration', icon: SlidersHorizontal },
   { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
-  { id: 'carrier-search', label: 'Carrier search', icon: Search },
+  { id: 'carrier-search', label: 'Carrier capacity', icon: Search },
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },
   { id: 'cmt', label: 'CMT', icon: Shield },
