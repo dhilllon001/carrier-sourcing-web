@@ -12,7 +12,6 @@ import {
   Mail,
   MessageSquare,
   PanelRightClose,
-  PanelRightOpen,
   Search,
   ShieldCheck,
   Truck,
@@ -604,6 +603,8 @@ export type CaseEvent = {
   id: string
   /* consecutive entries with the same key collapse into one, so typing a rate logs once */
   key?: string
+  /** Load area or lifecycle stage where the event happened. */
+  area: string
   title: string
   detail?: string
   who: string
@@ -621,27 +622,16 @@ export function CaseActivityRail({
   onToggle: () => void
 }) {
   if (collapsed) {
-    return (
-      <aside className="v3-act is-collapsed">
-        <button
-          type="button"
-          className="v3-act__reopen"
-          onClick={onToggle}
-          aria-expanded={false}
-          title="Show activity"
-        >
-          <PanelRightOpen size={15} />
-          <span>Activity</span>
-          {events.length > 0 && <em>{events.length}</em>}
-        </button>
-      </aside>
-    )
+    return null
   }
 
   return (
     <aside className="v3-act">
       <header className="v3-act__head">
-        <strong>Activity</strong>
+        <div>
+          <strong>Recent activity</strong>
+          <span>Complete load history</span>
+        </div>
         <div className="v3-act__headside">
           {events.length > 0 && <em>{events.length}</em>}
           <button
@@ -668,12 +658,15 @@ export function CaseActivityRail({
             <li key={item.id} className={cn(`is-${item.status}`)}>
               <i className="v3-act__mark" aria-hidden />
               <div>
+                <span className="v3-act__area">{item.area}</span>
                 <div className="v3-act__top">
                   <strong>{item.title}</strong>
-                  <em>{item.when}</em>
                 </div>
                 {item.detail && <p>{item.detail}</p>}
-                <span>{item.who}</span>
+                <div className="v3-act__meta">
+                  <strong>{item.who}</strong>
+                  <span>{item.when}</span>
+                </div>
               </div>
             </li>
           ))}

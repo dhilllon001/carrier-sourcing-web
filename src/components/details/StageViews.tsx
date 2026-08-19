@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import type { LoadDetail } from '@/data/loadDetail'
+import type { BidOffer, LoadDetail } from '@/data/loadDetail'
 import { StageActionBar } from '@/components/details/StageActionBar'
 
 /* ── Find & Post ── */
@@ -509,9 +509,11 @@ function bidInitials(name: string) {
 export function OffersBidsView({
   detail,
   onAddOffer,
+  onAcceptBest,
 }: {
   detail: LoadDetail
   onAddOffer: () => void
+  onAcceptBest?: (bid: BidOffer) => void
 }) {
   const [filter, setFilter] = useState('All')
   const [selected, setSelected] = useState(detail.bids[0]?.id)
@@ -584,7 +586,11 @@ export function OffersBidsView({
       <StageActionBar
         actions={
           <>
-            <button type="button" className="dd-pill-btn dd-pill-btn--emphasis">
+            <button
+              type="button"
+              className="dd-pill-btn dd-pill-btn--emphasis"
+              onClick={() => bestBid && onAcceptBest?.(bestBid)}
+            >
               <Check size={14} />
               {bestBid ? `Accept ${bestBid.carrier}` : 'Accept best bid'}
             </button>

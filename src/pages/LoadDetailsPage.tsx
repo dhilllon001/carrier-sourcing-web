@@ -12,6 +12,7 @@ import {
   ExternalLink,
   FileText,
   Gauge,
+  History,
   Info,
   Layers,
   Mail,
@@ -1467,6 +1468,77 @@ function lifecyclePos(stages: LoadDetail['stages'], stage: string, sub: string) 
   return { stage: s, sub: u }
 }
 
+function buildCaseHistory(detail: LoadDetail): CaseEvent[] {
+  const accepted = detail.bids.find((bid) => bid.status === 'Accepted')
+  const latestOffer =
+    detail.bids.find((bid) => bid.status === 'Pending') ?? detail.bids[0]
+
+  return [
+    ...(accepted
+      ? [
+          {
+            id: 'history-accepted',
+            area: 'Award · Finalize carrier award',
+            title: 'Carrier tender accepted',
+            detail: `${accepted.carrier} was selected at ${accepted.allIn ?? accepted.amount}. Carrier compliance review remains attached to the decision.`,
+            who: 'Sukhdeep Dhillon',
+            when: 'Today · 2:14 PM',
+            status: 'ok' as const,
+          },
+        ]
+      : []),
+    ...(latestOffer
+      ? [
+          {
+            id: 'history-offer',
+            area: 'Tender · Offers & bids',
+            title: 'Carrier offer received',
+            detail: `${latestOffer.carrier} submitted ${latestOffer.allIn ?? latestOffer.amount} through ${latestOffer.channel ?? 'the carrier desk'}.`,
+            who: `${latestOffer.contact ?? latestOffer.carrier} · Carrier`,
+            when: latestOffer.sentAt ?? 'Today · 11:52 AM',
+            status: 'info' as const,
+          },
+        ]
+      : []),
+    {
+      id: 'history-rejected',
+      area: 'Tender · Offers & bids',
+      title: 'Counter offer rejected',
+      detail: 'Roadrunner Freight’s $2,890 counter was above the reject threshold and was not advanced.',
+      who: 'Sarah Mitchell · Carrier operations',
+      when: 'Today · 11:18 AM',
+      status: 'warn',
+    },
+    {
+      id: 'history-maxbuy',
+      area: 'Sourcing · Overview',
+      title: 'Max buy added',
+      detail: `${detail.maxBuy === '—' ? '$2,650.00' : detail.maxBuy} was set as the hard purchasing limit for this load.`,
+      who: 'Michael Torres · Senior broker',
+      when: 'Today · 10:42 AM',
+      status: 'ok',
+    },
+    {
+      id: 'history-posted',
+      area: 'Sourcing · Find & post',
+      title: 'Load posted to carrier network',
+      detail: 'The lane was shared with preferred carriers and posted to DAT and Loadlink.',
+      who: 'Auto Sourcing',
+      when: 'Today · 10:16 AM',
+      status: 'info',
+    },
+    {
+      id: 'history-appointment',
+      area: 'Sourcing · Overview',
+      title: 'Pickup appointment confirmed',
+      detail: `${detail.stops[0]?.facility ?? detail.load.origin} appointment was added to the load requirements.`,
+      who: 'Priya Nair · Customer operations',
+      when: 'Today · 9:48 AM',
+      status: 'ok',
+    },
+  ]
+}
+
 export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetailsPageProps) {
   const base = useMemo(() => buildLoadDetail(load), [load])
   const [detail, setDetail] = useState(base)
@@ -1485,7 +1557,7 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
   const [routeOpen, setRouteOpen] = useState(false)
   const [aiLog, setAiLog] = useState<AiActivityEntry[]>(() => buildAiActivity(base))
   const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
-  const [caseEvents, setCaseEvents] = useState<CaseEvent[]>([])
+  const [caseEvents, setCaseEvents] = useState<CaseEvent[]>(() => buildCaseHistory(base))
   const [actCollapsed, setActCollapsed] = useState(false)
   /* every stage portals its buttons into this slot in the work bar */
   const [actionSlot, setActionSlot] = useState<HTMLDivElement | null>(null)
@@ -1509,6 +1581,7 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
       const entry: CaseEvent = {
         id: `case-${Date.now()}-${prev.length}`,
         key: e.key,
+        area: `${stage} · ${subStage}`,
         title: e.title,
         detail: e.detail,
         who: e.who ?? 'You',
@@ -1536,7 +1609,7 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
     setTags(base.tags)
     setAutoOpen(false)
     setAiLog(buildAiActivity(base))
-    setCaseEvents([])
+    setCaseEvents(buildCaseHistory(base))
     setReached(lifecyclePos(base.stages, load.stage, load.subStage))
     setSetupOpen(true)
     setFindOpen(false)
@@ -1996,6 +2069,23 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
     })
   }
 
+  const acceptBestBid = (bid: BidOffer) => {
+    setDetail((current) => ({
+      ...current,
+      bids: current.bids.map((item) => ({
+        ...item,
+        status: item.id === bid.id ? 'Accepted' : item.status === 'Accepted' ? 'Closed' : item.status,
+      })),
+    }))
+    setStage('Award')
+    setSubStage('CMT')
+    logCase({
+      title: 'Carrier tender accepted',
+      detail: `${bid.carrier} accepted at ${bid.allIn ?? bid.amount}. The load moved to CMT validation.`,
+      who: 'Sukhdeep Dhillon',
+    })
+  }
+
   return (
     <div className={cn('dd-page', isV2 && 'dd-page--v2', isCase && 'dd-page--v3')}>
       <header className={cn('dd-top', isV2 && 'dd-top--v2', isCase && 'dd-top--v3')}>
@@ -2039,6 +2129,20 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
 
           <div className="dd-top__right">
             <ViewSwitch view={view} onView={setDetailView} />
+            {isCase && (
+              <button
+                type="button"
+                className={cn('dd-history-btn', !actCollapsed && 'is-active')}
+                onClick={() => setActCollapsed((current) => !current)}
+                aria-expanded={!actCollapsed}
+                aria-label={`${actCollapsed ? 'Open' : 'Close'} recent activity`}
+                title={`${actCollapsed ? 'Open' : 'Close'} recent activity`}
+              >
+                <History size={14} />
+                <span>Recent activity</span>
+                {caseEvents.length > 0 && <em>{caseEvents.length}</em>}
+              </button>
+            )}
             {isV2 && (
               <button
                 type="button"
@@ -2282,7 +2386,11 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
                   />
                 )}
                 {subStage === 'Offers & Bids' && (
-                  <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
+                  <OffersBidsView
+                    detail={detail}
+                    onAddOffer={() => setOfferOpen(true)}
+                    onAcceptBest={acceptBestBid}
+                  />
                 )}
                 {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
                 {subStage === 'CMT' && <CmtValidateView detail={detail} />}
@@ -2514,7 +2622,11 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
             {stageWorkspace && (
               <div className="v3-main__workspace">
                 {subStage === 'Offers & Bids' && (
-                  <OffersBidsView detail={detail} onAddOffer={() => setOfferOpen(true)} />
+                  <OffersBidsView
+                    detail={detail}
+                    onAddOffer={() => setOfferOpen(true)}
+                    onAcceptBest={acceptBestBid}
+                  />
                 )}
                 {subStage === 'Finalize Tender' && <FinalizeTenderView detail={detail} />}
                 {subStage === 'CMT' && <CmtValidateView detail={detail} />}
@@ -2638,8 +2750,8 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
           </div>
           </StageActionSlotProvider>
 
-          <aside className={cn('v4-side', actCollapsed && 'is-closed')}>
-            {!actCollapsed && (
+          {!actCollapsed && (
+            <aside className="v4-side">
               <section className="v4-next">
                 <CaseNextActions
                   detail={detail}
@@ -2648,13 +2760,13 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
                   expanded
                 />
               </section>
-            )}
-            <CaseActivityRail
-              events={caseEvents}
-              collapsed={actCollapsed}
-              onToggle={() => setActCollapsed((v) => !v)}
-            />
-          </aside>
+              <CaseActivityRail
+                events={caseEvents}
+                collapsed={actCollapsed}
+                onToggle={() => setActCollapsed((v) => !v)}
+              />
+            </aside>
+          )}
         </div>
       )}
 

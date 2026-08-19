@@ -2,11 +2,11 @@
    next actions in the right rail. */
 
 .v4-body {
-  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr) minmax(300px, 340px);
+  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr) minmax(340px, 30%);
 }
 
 .v4-body.is-act-closed {
-  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr) 38px;
+  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
 }
 
 .v4-side {
