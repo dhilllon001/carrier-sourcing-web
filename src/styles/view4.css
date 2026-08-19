@@ -2,11 +2,13 @@
    next actions in the right rail. */
 
 .v4-body {
-  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr) minmax(340px, 30%);
+  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr) minmax(250px, 288px);
 }
 
-.v4-body.is-act-closed {
-  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+/* the rail is narrow now, so let the hint wrap rather than clip */
+.v4-side .v3-todo__main em {
+  white-space: normal;
+  overflow: visible;
 }
 
 .v4-side {
@@ -14,10 +16,7 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
-}
-
-.v4-side.is-closed {
-  gap: 0;
+  overflow: auto;
 }
 
 .v4-next {
@@ -35,10 +34,6 @@
   background: transparent;
 }
 
-.v4-side .v3-act {
-  flex: 1;
-  min-height: 0;
-}
 
 .v4-desk {
   display: flex;

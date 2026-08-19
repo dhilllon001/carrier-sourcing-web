@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Timer } from 'lucide-react'
 import { SrDataTable, TagPopover, type SrColumn } from '@/components/report'
 import { LifecycleRail } from '@/components/report/LifecycleRail'
 import {
@@ -48,6 +48,43 @@ function money(n: number) {
     currency: 'USD',
     maximumFractionDigits: 0,
   })
+}
+
+function bidMinutes(row: ReportLoad) {
+  if (row.subStage !== 'Offers & Bids') return 0
+  if (row.bidExpiresInMin && row.bidExpiresInMin > 0) return row.bidExpiresInMin
+  return (boardHash(row.id) % 46) + 4
+}
+
+function formatBidClock(left: number) {
+  const total = Math.max(0, Math.floor(left / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+}
+
+/** Live hold remaining on the best bid. Ticks once a second. */
+function GridBidTimer({ deadline }: { deadline: number }) {
+  const [left, setLeft] = useState(() => deadline - Date.now())
+
+  useEffect(() => {
+    setLeft(deadline - Date.now())
+    const id = window.setInterval(() => setLeft(deadline - Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [deadline])
+
+  const out = left <= 0
+  const mins = left / 60000
+  const tone = out ? 'is-out' : mins < 5 ? 'is-hot' : mins < 20 ? 'is-warm' : 'is-cool'
+
+  return (
+    <span className={cn('sr-bid-timer', tone)} title={out ? 'Bid hold expired' : 'Best bid hold remaining'}>
+      <Timer size={11} strokeWidth={2.2} />
+      {out ? 'Expired' : formatBidClock(left)}
+    </span>
+  )
 }
 
 /* ── Planning boards (mock) ── */
@@ -119,6 +156,16 @@ export function CarrierSourcingReportPage({
 
   const setTagsFor = useCallback((id: string, tags: string[]) => {
     setRowTags((prev) => ({ ...prev, [id]: tags }))
+  }, [])
+
+  const bidDeadlines = useMemo(() => {
+    const now = Date.now()
+    const map = new Map<string, number>()
+    for (const row of reportLoads) {
+      const mins = bidMinutes(row)
+      if (mins > 0) map.set(row.id, now + mins * 60_000)
+    }
+    return map
   }, [])
 
   const mergedFilters = useMemo(
@@ -255,14 +302,18 @@ export function CarrierSourcingReportPage({
         key: 'stage',
         header: 'Stage',
         thClassName: 'col-stage',
-        width: 132,
-        minWidth: 100,
-        cell: (row) => (
-          <div className="sr-stage-cell">
-            <span className="sr-stage-main">{row.stage}</span>
-            <span className="sr-stage-sub">{row.subStage}</span>
-          </div>
-        ),
+        width: 148,
+        minWidth: 118,
+        cell: (row) => {
+          const deadline = bidDeadlines.get(row.id)
+          return (
+            <div className="sr-stage-cell">
+              <span className="sr-stage-main">{row.stage}</span>
+              <span className="sr-stage-sub">{row.subStage}</span>
+              {deadline ? <GridBidTimer deadline={deadline} /> : null}
+            </div>
+          )
+        },
       },
       {
         key: 'status',
@@ -355,7 +406,7 @@ export function CarrierSourcingReportPage({
         cell: (row) => <span className="sr-team">{row.team}</span>,
       },
     ],
-    [rowTags, setTagsFor]
+    [rowTags, setTagsFor, bidDeadlines]
   )
 
   return (
@@ -502,14 +553,24 @@ export function CarrierSourcingReportPage({
               }}
               hoverTitle={(row) => row.customer}
               hoverSubtitle={(row) => `${row.origin} → ${row.destination}`}
-              hoverDetails={(row) => [
-                { label: 'Probill', value: row.id },
-                { label: 'Stage', value: `${row.stage} / ${row.subStage}` },
-                { label: 'Status', value: row.status },
-                { label: 'Miles', value: row.miles.toLocaleString() },
-                { label: 'Fee', value: money(row.fee) },
-                { label: 'Team', value: row.team },
-              ]}
+              hoverDetails={(row) => {
+                const deadline = bidDeadlines.get(row.id)
+                const hold =
+                  deadline == null
+                    ? null
+                    : deadline - Date.now() <= 0
+                      ? 'Expired'
+                      : formatBidClock(deadline - Date.now())
+                return [
+                  { label: 'Probill', value: row.id },
+                  { label: 'Stage', value: `${row.stage} / ${row.subStage}` },
+                  { label: 'Status', value: row.status },
+                  ...(hold ? [{ label: 'Bid hold', value: hold }] : []),
+                  { label: 'Miles', value: row.miles.toLocaleString() },
+                  { label: 'Fee', value: money(row.fee) },
+                  { label: 'Team', value: row.team },
+                ]
+              }}
               emptyTitle="No loads match these filters"
               emptyHint="Clear filters to widen results"
               wrapClassName="sr-table-wrap--flush"
@@ -553,6 +614,9 @@ export function CarrierSourcingReportPage({
                           <div className="sr-load-card__meta">
                             {row.mode} · {row.subStage} · {row.equipment}
                           </div>
+                          {bidDeadlines.get(row.id) && (
+                            <GridBidTimer deadline={bidDeadlines.get(row.id)!} />
+                          )}
                           <div className="sr-load-card__route">
                             <span>{row.origin}</span>
                             <span className="sr-load-card__miles">{row.miles} mi</span>

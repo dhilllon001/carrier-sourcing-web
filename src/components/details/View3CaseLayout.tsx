@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -11,12 +11,12 @@ import {
   Lock,
   Mail,
   MessageSquare,
-  PanelRightClose,
   Search,
   ShieldCheck,
   Truck,
   UserPlus,
   Users,
+  X,
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -612,66 +612,77 @@ export type CaseEvent = {
   status: 'ok' | 'warn' | 'info'
 }
 
-export function CaseActivityRail({
+/** Full load history, opened from the header. Kept out of the work rails so the
+    two never compete for the same space. */
+export function CaseHistoryPanel({
   events,
-  collapsed,
-  onToggle,
+  open,
+  onClose,
 }: {
   events: CaseEvent[]
-  collapsed: boolean
-  onToggle: () => void
+  open: boolean
+  onClose: () => void
 }) {
-  if (collapsed) {
-    return null
-  }
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
 
   return (
-    <aside className="v3-act">
-      <header className="v3-act__head">
-        <div>
-          <strong>Recent activity</strong>
-          <span>Complete load history</span>
-        </div>
-        <div className="v3-act__headside">
-          {events.length > 0 && <em>{events.length}</em>}
+    <>
+      <div className="v3-hist__veil" role="presentation" onClick={onClose} />
+      <aside className="v3-hist v3-act" role="dialog" aria-label="Recent activity">
+        <header className="v3-act__head">
+          <div>
+            <strong>Recent activity</strong>
+            <span>
+              {events.length} event{events.length === 1 ? '' : 's'} · complete load history
+            </span>
+          </div>
           <button
             type="button"
             className="v3-act__collapse"
-            onClick={onToggle}
-            aria-expanded
-            title="Hide activity"
+            onClick={onClose}
+            aria-label="Close recent activity"
+            title="Close recent activity"
           >
-            <PanelRightClose size={15} />
+            <X size={15} />
           </button>
-        </div>
-      </header>
+        </header>
 
-      {events.length === 0 ? (
-        <div className="v3-act__blank">
-          <Activity size={18} />
-          <strong>Nothing yet</strong>
-          <p>Every action you take on this load is logged here as it happens.</p>
-        </div>
-      ) : (
-        <ol className="v3-act__list">
-          {events.map((item) => (
-            <li key={item.id} className={cn(`is-${item.status}`)}>
-              <i className="v3-act__mark" aria-hidden />
-              <div>
-                <span className="v3-act__area">{item.area}</span>
-                <div className="v3-act__top">
-                  <strong>{item.title}</strong>
+        {events.length === 0 ? (
+          <div className="v3-act__blank">
+            <Activity size={18} />
+            <strong>Nothing yet</strong>
+            <p>Every action taken on this load is logged here as it happens.</p>
+          </div>
+        ) : (
+          <ol className="v3-act__list">
+            {events.map((item) => (
+              <li key={item.id} className={cn(`is-${item.status}`)}>
+                <i className="v3-act__mark" aria-hidden />
+                <div>
+                  <span className="v3-act__area">{item.area}</span>
+                  <div className="v3-act__top">
+                    <strong>{item.title}</strong>
+                  </div>
+                  {item.detail && <p>{item.detail}</p>}
+                  <div className="v3-act__meta">
+                    <strong>{item.who}</strong>
+                    <span>{item.when}</span>
+                  </div>
                 </div>
-                {item.detail && <p>{item.detail}</p>}
-                <div className="v3-act__meta">
-                  <strong>{item.who}</strong>
-                  <span>{item.when}</span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
-    </aside>
+              </li>
+            ))}
+          </ol>
+        )}
+      </aside>
+    </>
   )
 }

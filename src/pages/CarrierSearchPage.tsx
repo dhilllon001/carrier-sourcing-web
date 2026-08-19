@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { DomainIcon, type DomainIconName } from '@/components/icons/DomainIcons'
 import { reportLoads } from '@/data/report'
 import {
   buildLaneSearch,
@@ -49,10 +50,10 @@ type Props = {
 /** Board filters. Every one maps to a column a rep can already see. */
 type Chip = 'fav' | 'high' | 'past' | 'open' | 'quoted' | 'insurance'
 
-const CHIPS: { id: Chip; label: string; alert?: boolean }[] = [
-  { id: 'fav', label: 'Favourites' },
+const CHIPS: { id: Chip; label: string; alert?: boolean; icon?: DomainIconName }[] = [
+  { id: 'fav', label: 'Favourites', icon: 'favCarrier' },
   { id: 'high', label: 'High confidence' },
-  { id: 'past', label: 'Used before' },
+  { id: 'past', label: 'Used before', icon: 'pastCarrier' },
   { id: 'open', label: 'Not contacted' },
   { id: 'quoted', label: 'Has offer' },
   { id: 'insurance', label: 'Insurance', alert: true },
@@ -468,7 +469,7 @@ export function CarrierSearchPage({
                 aria-pressed={on}
                 onClick={() => toggleChip(chip.id)}
               >
-                {chip.id === 'fav' && <span className="cs-fchip__star">★</span>}
+                {chip.icon && <DomainIcon name={chip.icon} size={14} />}
                 {chip.label}
                 <em>{chipCount(chip.id)}</em>
               </button>

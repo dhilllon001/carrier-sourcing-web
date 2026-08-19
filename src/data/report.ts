@@ -31,6 +31,8 @@ export type ReportLoad = {
   pickupDate: string
   deliveryDate: string
   team: string
+  /** Minutes left on the best live bid when the grid first loads. Only set on Offers & Bids. */
+  bidExpiresInMin?: number
 }
 
 export type ReportFilters = {
@@ -224,6 +226,7 @@ export const reportLoads: ReportLoad[] = [
     pickupDate: 'Jun 12 · 11:30',
     deliveryDate: 'Jun 13 · 11:30',
     team: 'Ontario',
+    bidExpiresInMin: 4,
   },
   {
     id: '11441288',
@@ -541,6 +544,7 @@ export const reportLoads: ReportLoad[] = [
     pickupDate: 'Jul 16 · 09:00',
     deliveryDate: 'Jul 17 · 16:00',
     team: 'East',
+    bidExpiresInMin: 12,
   },
   {
     id: '11445005',
@@ -751,6 +755,7 @@ export const reportLoads: ReportLoad[] = [
     pickupDate: 'Jul 16 · 09:00',
     deliveryDate: 'Jul 17 · 16:00',
     team: 'Midwest',
+    bidExpiresInMin: 38,
   },
   {
     id: '11445015',
@@ -963,6 +968,7 @@ export const reportLoads: ReportLoad[] = [
     pickupDate: 'Jul 16 · 09:00',
     deliveryDate: 'Jul 17 · 16:00',
     team: 'Midwest',
+    bidExpiresInMin: 142,
   },
 ]
 

@@ -12,6 +12,7 @@ import {
   Star,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { DomainIcon, type DomainIconName } from '@/components/icons/DomainIcons'
 import type { CarrierRow, LoadDetail } from '@/data/loadDetail'
 import { RateDialog, type CaseActionId } from './View3CaseLayout'
 import { useStageActionSlot } from './stageActionSlot'
@@ -284,10 +285,10 @@ export function V4CarrierBoard({
     </>
   )
 
-  const chips: [Chip, string, number][] = [
+  const chips: [Chip, string, number, DomainIconName?][] = [
     ['all', 'All', counts.all],
-    ['fav', 'Favourites', counts.fav],
-    ['past', 'Past', counts.past],
+    ['fav', 'Favourites', counts.fav, 'favCarrier'],
+    ['past', 'Past', counts.past, 'pastCarrier'],
     ['sent', 'Sent', counts.sent],
     ['quoted', 'Quoted', counts.quoted],
     ['notsent', 'Not sent', counts.notsent],
@@ -306,7 +307,7 @@ export function V4CarrierBoard({
         </label>
 
         <div className="v4-chips" role="tablist">
-          {chips.map(([id, label, n]) => (
+          {chips.map(([id, label, n, icon]) => (
             <button
               key={id}
               type="button"
@@ -315,6 +316,7 @@ export function V4CarrierBoard({
               className={cn('v4-chip', chip === id && 'is-on')}
               onClick={() => setChip(id)}
             >
+              {icon && <DomainIcon name={icon} size={14} />}
               {label}
               <i>{n}</i>
             </button>

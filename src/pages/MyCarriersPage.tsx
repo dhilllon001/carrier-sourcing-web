@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { History, Search, Star, Users, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { DomainIcon, type DomainIconName } from '@/components/icons/DomainIcons'
 import {
   bookCarriers,
   bookTotals,
@@ -110,32 +111,37 @@ export function MyCarriersPage({ search, onOpenCarrier, onOpenLaneSearch }: Prop
       return next
     })
 
-  const TABS: Array<{ id: Tab; label: string; icon: typeof Users; count?: number; hint: string }> = [
+  const TABS: Array<{
+    id: Tab
+    label: string
+    icon?: DomainIconName
+    count?: number
+    hint: string
+  }> = [
     {
       id: 'book',
       label: 'My book',
-      icon: Users,
+      icon: 'myCarrier',
       count: bookRows.length,
-      hint: 'Carriers you own as rep or backup',
+      hint: 'My Carrier — carriers you own as rep or backup',
     },
     {
       id: 'favourites',
       label: 'Favourites',
-      icon: Star,
+      icon: 'favCarrier',
       count: ranked.length,
-      hint: 'Ranked shortlist, tendered first',
+      hint: 'Fav Carrier — ranked shortlist, tendered first',
     },
     {
       id: 'record',
       label: 'Track record',
-      icon: History,
+      icon: 'pastCarrier',
       count: recordRows.length,
-      hint: 'Every carrier you have moved freight with',
+      hint: 'Past Carrier — every carrier you have moved freight with',
     },
     {
       id: 'all',
       label: 'All carriers',
-      icon: Search,
       hint: 'The full carrier directory',
     },
   ]
@@ -172,7 +178,11 @@ export function MyCarriersPage({ search, onOpenCarrier, onOpenLaneSearch }: Prop
             title={t.hint}
             onClick={() => setTab(t.id)}
           >
-            <t.icon size={13} strokeWidth={2} />
+            {t.icon ? (
+              <DomainIcon name={t.icon} size={15} />
+            ) : (
+              <Search size={13} strokeWidth={2} />
+            )}
             {t.label}
             {t.count !== undefined && <i>{t.count}</i>}
           </button>

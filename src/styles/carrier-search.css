@@ -132,9 +132,8 @@
   color: var(--accent);
 }
 
-.cs-fchip__star {
-  color: #f59e0b;
-  font-size: 10px;
+.cs-fchip .dom-ico {
+  margin-left: -2px;
 }
 
 .cs-fchip.is-clear {

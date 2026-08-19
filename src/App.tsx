@@ -14,6 +14,7 @@ import {
   Route,
   SlidersHorizontal,
   Gauge,
+  ShieldCog,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -25,6 +26,7 @@ import { MyCarriersPage } from '@/pages/MyCarriersPage'
 import { CarrierDetailPage } from '@/pages/CarrierDetailPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
 import { CmtReviewPage } from '@/pages/CmtReviewPage'
+import { CmtConfigurationPage } from '@/pages/CmtConfigurationPage'
 import { AccessManagementPage } from '@/pages/AccessManagementPage'
 import { ConfigurationPage } from '@/pages/ConfigurationPage'
 import { CapacityManagerPage } from '@/pages/CapacityManagerPage'
@@ -42,6 +44,7 @@ const NAV = [
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },
   { id: 'cmt', label: 'CMT', icon: Shield },
+  { id: 'cmt-configuration', label: 'CMT configuration', icon: ShieldCog },
 ] as const
 
 export default function App() {
@@ -177,6 +180,8 @@ export default function App() {
                         ? 'Search carrier, MC, DOT, contact…'
                         : nav === 'cmt'
                           ? 'Search carrier, lane, equipment, notes…'
+                          : nav === 'cmt-configuration'
+                            ? 'Search configuration, customer, condition, owner…'
                           : nav === 'access'
                             ? 'Search user, role, team…'
                             : 'Search probills, PO, customer, equipment…'
@@ -293,6 +298,8 @@ export default function App() {
               />
             ) : nav === 'cmt' ? (
               <CmtReviewPage search={search} refreshKey={refreshKey} />
+            ) : nav === 'cmt-configuration' ? (
+              <CmtConfigurationPage search={search} />
             ) : nav === 'access' ? (
               <AccessManagementPage search={search} />
             ) : (

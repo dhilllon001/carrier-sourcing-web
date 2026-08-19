@@ -24,6 +24,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* brand stage / carrier icons — never squashed inside a flex row */
+.dom-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  line-height: 0;
+}
+
 button,
 input,
 select {

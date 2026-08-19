@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   DollarSign,
   Download,
+  EyeOff,
   ExternalLink,
   FileText,
   Gauge,
@@ -16,13 +17,16 @@ import {
   Info,
   Layers,
   Mail,
+  MapPin,
   MessageCircle,
   Pencil,
   Plus,
   RadioTower,
   RefreshCw,
+  RotateCcw,
   Search,
   PanelRightClose,
+  X,
   Zap,
 } from 'lucide-react'
 import { TagPopover } from '@/components/report/TagPopover'
@@ -46,9 +50,9 @@ import {
   type AutoMode,
 } from '@/components/details/AutoSourcingPanel'
 import {
-  CaseActivityRail,
   CaseCenterHeader,
   CaseNextActions,
+  CaseHistoryPanel,
   CaseStep,
   CaseWorkBar,
   LoadStructureTree,
@@ -85,6 +89,123 @@ import type { ReportLoad } from '@/data/report'
 type TabId = 'summary' | 'instructions' | 'documents' | 'activity'
 
 const toRate = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
+
+export type PostingRoute = {
+  pickup: string
+  delivery: string
+}
+
+const POSTING_CITIES = [
+  'Brampton, ON',
+  'Mississauga, ON',
+  'Toronto, ON',
+  'Windsor, ON',
+  'Detroit, MI',
+  'Laredo, TX',
+  'San Antonio, TX',
+  'Dallas, TX',
+  'Chicago, IL',
+]
+
+function PostingRouteModal({
+  actual,
+  value,
+  onSave,
+  onClose,
+}: {
+  actual: PostingRoute
+  value: PostingRoute | null
+  onSave: (route: PostingRoute | null) => void
+  onClose: () => void
+}) {
+  const [pickup, setPickup] = useState(value?.pickup ?? actual.pickup)
+  const [delivery, setDelivery] = useState(value?.delivery ?? actual.delivery)
+  const valid = pickup.trim().length > 2 && delivery.trim().length > 2
+
+  return (
+    <div className="dd-modal-root" role="dialog" aria-modal="true" aria-labelledby="posting-route-title">
+      <button type="button" className="dd-modal-backdrop" aria-label="Close" onClick={onClose} />
+      <div className="dd-modal dd-post-route-modal">
+        <header className="dd-modal__head">
+          <div>
+            <div className="dd-modal__eyebrow">Marketplace privacy</div>
+            <h3 id="posting-route-title">Posting locations</h3>
+            <p>Publish a nearby city and state without changing the scheduled load.</p>
+          </div>
+          <button type="button" className="dd-icon-btn dd-icon-btn--light" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </header>
+
+        <div className="dd-modal__body">
+          <section className="dd-post-route__actual">
+            <Info size={15} />
+            <div>
+              <strong>Operational route stays private and unchanged</strong>
+              <span>{actual.pickup} → {actual.delivery}</span>
+            </div>
+          </section>
+
+          <section className="dd-modal-card">
+            <div className="dd-card__title">Locations visible on email, DAT and load boards</div>
+            <div className="dd-post-route__fields">
+              <label>
+                <span>Pickup city, state</span>
+                <div>
+                  <MapPin size={14} />
+                  <input
+                    autoFocus
+                    list="posting-cities"
+                    value={pickup}
+                    onChange={(event) => setPickup(event.target.value)}
+                    placeholder="e.g. Mississauga, ON"
+                  />
+                </div>
+              </label>
+              <span className="dd-post-route__arrow">→</span>
+              <label>
+                <span>Delivery city, state</span>
+                <div>
+                  <MapPin size={14} />
+                  <input
+                    list="posting-cities"
+                    value={delivery}
+                    onChange={(event) => setDelivery(event.target.value)}
+                    placeholder="e.g. San Antonio, TX"
+                  />
+                </div>
+              </label>
+              <datalist id="posting-cities">
+                {POSTING_CITIES.map((city) => <option key={city} value={city} />)}
+              </datalist>
+            </div>
+          </section>
+        </div>
+
+        <footer className="dd-modal__foot">
+          {value && (
+            <button type="button" className="dd-btn dd-post-route__reset" onClick={() => onSave(null)}>
+              <RotateCcw size={13} />
+              Use scheduled locations
+            </button>
+          )}
+          <div className="dd-modal__foot-actions">
+            <button type="button" className="dd-btn" onClick={onClose}>Cancel</button>
+            <button
+              type="button"
+              className="dd-btn dd-btn--primary"
+              disabled={!valid}
+              onClick={() => onSave({ pickup: pickup.trim(), delivery: delivery.trim() })}
+            >
+              <EyeOff size={14} />
+              Use for posting
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+  )
+}
 
 type LoadDetailsPageProps = {
   load: ReportLoad
@@ -1513,7 +1634,9 @@ function buildCaseHistory(detail: LoadDetail): CaseEvent[] {
       id: 'history-maxbuy',
       area: 'Sourcing · Overview',
       title: 'Max buy added',
-      detail: `${detail.maxBuy === '—' ? '$2,650.00' : detail.maxBuy} was set as the hard purchasing limit for this load.`,
+      detail: `${
+        detail.maxBuy === '—' || detail.maxBuy === '$0.00' ? '$2,650.00' : detail.maxBuy
+      } was set as the hard purchasing limit for this load.`,
       who: 'Michael Torres · Senior broker',
       when: 'Today · 10:42 AM',
       status: 'ok',
@@ -1555,10 +1678,12 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
   const [view, setView] = useState<DetailView>(() => readStoredView())
   const [factsOpen, setFactsOpen] = useState(false)
   const [routeOpen, setRouteOpen] = useState(false)
+  const [postingRoute, setPostingRoute] = useState<PostingRoute | null>(null)
+  const [postingRouteOpen, setPostingRouteOpen] = useState(false)
   const [aiLog, setAiLog] = useState<AiActivityEntry[]>(() => buildAiActivity(base))
   const [v3Tab, setV3Tab] = useState<'overview' | 'instructions' | 'documents'>('overview')
   const [caseEvents, setCaseEvents] = useState<CaseEvent[]>(() => buildCaseHistory(base))
-  const [actCollapsed, setActCollapsed] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   /* every stage portals its buttons into this slot in the work bar */
   const [actionSlot, setActionSlot] = useState<HTMLDivElement | null>(null)
   /* Overview is one workspace with two steps: setup, then Find & Post */
@@ -1607,6 +1732,8 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
     setStage(load.stage as DetailStage)
     setSubStage(load.subStage)
     setTags(base.tags)
+    setPostingRoute(null)
+    setPostingRouteOpen(false)
     setAutoOpen(false)
     setAiLog(buildAiActivity(base))
     setCaseEvents(buildCaseHistory(base))
@@ -2086,6 +2213,11 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
     })
   }
 
+  const actualPostingRoute: PostingRoute = {
+    pickup: detail.stops[0]?.city ?? detail.load.origin,
+    delivery: detail.stops[detail.stops.length - 1]?.city ?? detail.load.destination,
+  }
+
   return (
     <div className={cn('dd-page', isV2 && 'dd-page--v2', isCase && 'dd-page--v3')}>
       <header className={cn('dd-top', isV2 && 'dd-top--v2', isCase && 'dd-top--v3')}>
@@ -2132,11 +2264,11 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
             {isCase && (
               <button
                 type="button"
-                className={cn('dd-history-btn', !actCollapsed && 'is-active')}
-                onClick={() => setActCollapsed((current) => !current)}
-                aria-expanded={!actCollapsed}
-                aria-label={`${actCollapsed ? 'Open' : 'Close'} recent activity`}
-                title={`${actCollapsed ? 'Open' : 'Close'} recent activity`}
+                className={cn('dd-history-btn', historyOpen && 'is-active')}
+                onClick={() => setHistoryOpen((current) => !current)}
+                aria-expanded={historyOpen}
+                aria-label={`${historyOpen ? 'Close' : 'Open'} recent activity`}
+                title={`${historyOpen ? 'Close' : 'Open'} recent activity`}
               >
                 <History size={14} />
                 <span>Recent activity</span>
@@ -2315,11 +2447,26 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
                 </div>
               </article>
               {i < detail.stops.length - 1 && (
-                <div className="dd-route__bridge" aria-hidden>
+                <div className="dd-route__bridge">
                   {crossBorder && <span className="dd-route__note">Cross-border · pedimento</span>}
                   <span className="dd-route__miles">
                     {(stop.legMiles ?? load.miles).toLocaleString()} mi
                   </span>
+                  {i === 0 && (
+                    <button
+                      type="button"
+                      className={cn('dd-post-route', postingRoute && 'is-active')}
+                      onClick={() => setPostingRouteOpen(true)}
+                      title={
+                        postingRoute
+                          ? `Posted as ${postingRoute.pickup} to ${postingRoute.delivery}. Click to change.`
+                          : 'Use different pickup and delivery cities on external postings'
+                      }
+                    >
+                      <EyeOff size={12} />
+                      <span>{postingRoute ? 'Alternate posting route' : 'Post anonymously'}</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -2485,7 +2632,7 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
       )}
 
       {isV3 && (
-        <div className={cn('v3-body', actCollapsed && 'is-act-closed')}>
+        <div className="v3-body is-no-side">
           <LoadStructureTree
             detail={lifeDetail}
             stage={stage}
@@ -2644,17 +2791,11 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
             )}
           </div>
           </StageActionSlotProvider>
-
-          <CaseActivityRail
-            events={caseEvents}
-            collapsed={actCollapsed}
-            onToggle={() => setActCollapsed((v) => !v)}
-          />
         </div>
       )}
 
       {isV4 && (
-        <div className={cn('v3-body v4-body', actCollapsed && 'is-act-closed')}>
+        <div className="v3-body v4-body">
           <LoadStructureTree
             detail={lifeDetail}
             stage={stage}
@@ -2750,28 +2891,51 @@ export function LoadDetailsPage({ load, onBack, onOpenCarrierPrefs }: LoadDetail
           </div>
           </StageActionSlotProvider>
 
-          {!actCollapsed && (
-            <aside className="v4-side">
-              <section className="v4-next">
-                <CaseNextActions
-                  detail={detail}
-                  onAction={runCaseAction}
-                  onResolve={resolveCaseAlert}
-                  expanded
-                />
-              </section>
-              <CaseActivityRail
-                events={caseEvents}
-                collapsed={actCollapsed}
-                onToggle={() => setActCollapsed((v) => !v)}
+          <aside className="v4-side">
+            <section className="v4-next">
+              <CaseNextActions
+                detail={detail}
+                onAction={runCaseAction}
+                onResolve={resolveCaseAlert}
+                expanded
               />
-            </aside>
-          )}
+            </section>
+          </aside>
         </div>
       )}
 
+      {isCase && (
+        <CaseHistoryPanel
+          events={caseEvents}
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+        />
+      )}
+
       {postOpen && (
-        <PostMarketplaceModal detail={detail} onClose={() => setPostOpen(false)} />
+        <PostMarketplaceModal
+          detail={detail}
+          postingRoute={postingRoute}
+          onClose={() => setPostOpen(false)}
+        />
+      )}
+      {postingRouteOpen && (
+        <PostingRouteModal
+          actual={actualPostingRoute}
+          value={postingRoute}
+          onClose={() => setPostingRouteOpen(false)}
+          onSave={(route) => {
+            setPostingRoute(route)
+            setPostingRouteOpen(false)
+            logCase({
+              title: route ? 'Alternate posting locations saved' : 'Scheduled posting locations restored',
+              detail: route
+                ? `External posts will show ${route.pickup} → ${route.delivery}. The operational route remains unchanged.`
+                : `External posts will use ${actualPostingRoute.pickup} → ${actualPostingRoute.delivery}.`,
+              status: 'info',
+            })
+          }}
+        />
       )}
       {offerOpen && <ManualOfferModal onClose={() => setOfferOpen(false)} />}
 

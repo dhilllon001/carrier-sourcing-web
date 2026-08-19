@@ -1294,6 +1294,51 @@ body.sr-col-resizing * {
   color: var(--sr-text-meta);
 }
 
+.sr-bid-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  height: 18px;
+  margin-top: 2px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font: 700 10.5px/1 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sr-bid-timer svg {
+  flex: none;
+}
+
+.sr-bid-timer.is-cool {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.sr-bid-timer.is-warm {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.sr-bid-timer.is-hot {
+  background: #fef2f2;
+  color: #ef4444;
+  animation: sr-bid-pulse 1.4s ease-in-out infinite;
+}
+
+.sr-bid-timer.is-out {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+@keyframes sr-bid-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+
 .sr-equip {
   font-size: 11.5px;
   font-weight: 600;

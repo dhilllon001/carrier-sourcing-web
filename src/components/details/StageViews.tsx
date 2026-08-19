@@ -3,6 +3,7 @@ import {
   Check,
   CheckCheck,
   CloudUpload,
+  EyeOff,
   Mail,
   MessageCircle,
   Phone,
@@ -831,9 +832,11 @@ export function OffersBidsView({
 /* ── Finalize Tender moved to LaterStageViews ── */
 export function PostMarketplaceModal({
   detail,
+  postingRoute,
   onClose,
 }: {
   detail: LoadDetail
+  postingRoute?: { pickup: string; delivery: string } | null
   onClose: () => void
 }) {
   const pickup = detail.stops[0]
@@ -863,13 +866,21 @@ export function PostMarketplaceModal({
         <div className="dd-modal__body">
           <section className="dd-modal-card">
             <div className="dd-card__title">Load details</div>
+            {postingRoute && (
+              <div className="dd-post-route__notice">
+                <EyeOff size={14} />
+                <span>
+                  Marketplace route: <strong>{postingRoute.pickup} → {postingRoute.delivery}</strong>
+                </span>
+              </div>
+            )}
             <div className="dd-modal-route">
               <article>
                 <span>
                   Pickup {pickup?.when}
                 </span>
-                <strong>{pickup?.facility}</strong>
-                <em>{pickup?.address}</em>
+                <strong>{postingRoute?.pickup ?? pickup?.facility}</strong>
+                <em>{postingRoute ? 'Exact facility hidden on posting' : pickup?.address}</em>
                 <i className={cn('dd-stop__status', `is-${pickup?.statusTone}`)}>
                   {pickup?.status}
                 </i>
@@ -879,8 +890,8 @@ export function PostMarketplaceModal({
                 <span>
                   Delivery {delivery?.when}
                 </span>
-                <strong>{delivery?.facility}</strong>
-                <em>{delivery?.address}</em>
+                <strong>{postingRoute?.delivery ?? delivery?.facility}</strong>
+                <em>{postingRoute ? 'Exact facility hidden on posting' : delivery?.address}</em>
                 <i className={cn('dd-stop__status', `is-${delivery?.statusTone}`)}>
                   {delivery?.status}
                 </i>
