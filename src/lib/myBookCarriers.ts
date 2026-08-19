@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { carrierList } from '@/data/carriers'
 
-const KEY = 'cs-favorite-carriers'
-/* one store shared by every mounted hook, so the grid and the detail page stay in sync */
+const KEY = 'cs-my-book-carriers'
 const listeners = new Set<(ids: string[]) => void>()
 
 function seed(): string[] {
@@ -12,12 +10,7 @@ function seed(): string[] {
   } catch {
     /* ignore */
   }
-  return [
-    ...carrierList.filter((c) => c.favorite).map((c) => c.id),
-    'srsv',
-    'manney',
-    'midwest',
-  ]
+  return []
 }
 
 let current = seed()
@@ -32,7 +25,7 @@ function publish(next: string[]) {
   for (const fn of listeners) fn(next)
 }
 
-export function useFavoriteCarriers() {
+export function useMyBookCarriers() {
   const [ids, setIds] = useState(current)
 
   useEffect(() => {
@@ -42,11 +35,12 @@ export function useFavoriteCarriers() {
     }
   }, [])
 
-  const toggle = useCallback((id: string) => {
-    publish(current.includes(id) ? current.filter((x) => x !== id) : [...current, id])
+  const add = useCallback((id: string) => {
+    if (current.includes(id)) return
+    publish([...current, id])
   }, [])
 
-  const isFavorite = useCallback((id: string) => ids.includes(id), [ids])
+  const isInBook = useCallback((id: string) => ids.includes(id), [ids])
 
-  return { favorites: ids, isFavorite, toggle }
+  return { book: ids, isInBook, add }
 }

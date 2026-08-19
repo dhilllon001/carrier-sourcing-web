@@ -53,6 +53,7 @@ export default function App() {
   const [openLoadId, setOpenLoadId] = useState<string | null>(null)
   const [openCarrierId, setOpenCarrierId] = useState<string | null>(null)
   const [laneSearchOpen, setLaneSearchOpen] = useState(false)
+  const [newLaneOpen, setNewLaneOpen] = useState(false)
   const [configView, setConfigView] = useState<
     'workflows' | 'runs' | 'carriers' | 'favorites' | 'new'
   >('workflows')
@@ -184,14 +185,25 @@ export default function App() {
               </label>
 
               <div className="sr-topbar__actions">
-                <button
-                  type="button"
-                  className="sr-btn sr-btn--lane"
-                  onClick={() => setLaneSearchOpen(true)}
-                >
-                  <Route size={14} strokeWidth={1.85} />
-                  Quick Lane Search
-                </button>
+                {nav === 'carrier-search' ? (
+                  <button
+                    type="button"
+                    className="sr-btn sr-btn--lane"
+                    onClick={() => setNewLaneOpen(true)}
+                  >
+                    <SlidersHorizontal size={14} strokeWidth={1.85} />
+                    New lane search
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="sr-btn sr-btn--lane"
+                    onClick={() => setLaneSearchOpen(true)}
+                  >
+                    <Route size={14} strokeWidth={1.85} />
+                    Quick Lane Search
+                  </button>
+                )}
 
                 {nav === 'sourcing' && (
                   <div className="sr-view-toggle" role="group" aria-label="View mode">
@@ -214,27 +226,31 @@ export default function App() {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  className={cn('sr-btn sr-btn--cmt', nav === 'cmt' && 'is-active')}
-                  onClick={() => setNav('cmt')}
-                  title="CMT"
-                >
-                  <Shield size={14} strokeWidth={1.75} />
-                  CMT
-                  {cmtPendingCount > 0 && (
-                    <span className="sr-btn__badge">{cmtPendingCount}</span>
-                  )}
-                </button>
+                {nav !== 'carrier-search' && (
+                  <>
+                    <button
+                      type="button"
+                      className={cn('sr-btn sr-btn--cmt', nav === 'cmt' && 'is-active')}
+                      onClick={() => setNav('cmt')}
+                      title="CMT"
+                    >
+                      <Shield size={14} strokeWidth={1.75} />
+                      CMT
+                      {cmtPendingCount > 0 && (
+                        <span className="sr-btn__badge">{cmtPendingCount}</span>
+                      )}
+                    </button>
 
-                <button
-                  type="button"
-                  className="sr-btn sr-btn--icon"
-                  aria-label="Refresh"
-                  onClick={() => setRefreshKey((k) => k + 1)}
-                >
-                  <RefreshCw size={15} strokeWidth={1.75} />
-                </button>
+                    <button
+                      type="button"
+                      className="sr-btn sr-btn--icon"
+                      aria-label="Refresh"
+                      onClick={() => setRefreshKey((k) => k + 1)}
+                    >
+                      <RefreshCw size={15} strokeWidth={1.75} />
+                    </button>
+                  </>
+                )}
               </div>
             </header>
 
@@ -263,7 +279,12 @@ export default function App() {
             ) : nav === 'availability' ? (
               <AvailabilityPage search={search} />
             ) : nav === 'carrier-search' ? (
-              <CarrierSearchPage search={search} onOpenCarrier={setOpenCarrierId} />
+              <CarrierSearchPage
+                search={search}
+                onOpenCarrier={setOpenCarrierId}
+                panelOpen={newLaneOpen}
+                onPanelOpenChange={setNewLaneOpen}
+              />
             ) : nav === 'carriers' ? (
               <MyCarriersPage
                 search={search}

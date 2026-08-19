@@ -42,8 +42,12 @@ export type CapacityLane = {
   actuallyRun: number
   weightedRate: number
   marketRate: number
-  /** Forecast per weekday, used by the weekly capacity chart. */
-  week: { day: string; forecast: number }[]
+  /**
+   * Per weekday: loads the customer forecasts, and how much of the dedicated
+   * fleet is held for that day. Capacity is never spread evenly across the
+   * week, so the two shapes have to be declared separately.
+   */
+  week: { day: string; forecast: number; hold: number }[]
   carriers: LaneCarrier[]
 }
 
@@ -75,11 +79,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 2409,
     marketRate: 2410,
     week: [
-      { day: 'Mon', forecast: 4 },
-      { day: 'Tue', forecast: 4 },
-      { day: 'Wed', forecast: 4 },
-      { day: 'Thu', forecast: 3 },
-      { day: 'Fri', forecast: 3 },
+      { day: 'Mon', forecast: 5, hold: 4 },
+      { day: 'Tue', forecast: 4, hold: 4 },
+      { day: 'Wed', forecast: 4, hold: 3 },
+      { day: 'Thu', forecast: 3, hold: 2 },
+      { day: 'Fri', forecast: 2, hold: 2 },
     ],
     carriers: [
       {
@@ -135,11 +139,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 2180,
     marketRate: 2240,
     week: [
-      { day: 'Mon', forecast: 3 },
-      { day: 'Tue', forecast: 3 },
-      { day: 'Wed', forecast: 2 },
-      { day: 'Thu', forecast: 2 },
-      { day: 'Fri', forecast: 2 },
+      { day: 'Mon', forecast: 3, hold: 3 },
+      { day: 'Tue', forecast: 3, hold: 2 },
+      { day: 'Wed', forecast: 2, hold: 2 },
+      { day: 'Thu', forecast: 2, hold: 2 },
+      { day: 'Fri', forecast: 2, hold: 1 },
     ],
     carriers: [
       {
@@ -183,11 +187,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 410,
     marketRate: 425,
     week: [
-      { day: 'Mon', forecast: 5 },
-      { day: 'Tue', forecast: 5 },
-      { day: 'Wed', forecast: 5 },
-      { day: 'Thu', forecast: 5 },
-      { day: 'Fri', forecast: 4 },
+      { day: 'Mon', forecast: 6, hold: 6 },
+      { day: 'Tue', forecast: 5, hold: 5 },
+      { day: 'Wed', forecast: 5, hold: 5 },
+      { day: 'Thu', forecast: 4, hold: 4 },
+      { day: 'Fri', forecast: 4, hold: 4 },
     ],
     carriers: [
       {
@@ -231,11 +235,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 1173,
     marketRate: 1095,
     week: [
-      { day: 'Mon', forecast: 4 },
-      { day: 'Tue', forecast: 3 },
-      { day: 'Wed', forecast: 3 },
-      { day: 'Thu', forecast: 3 },
-      { day: 'Fri', forecast: 3 },
+      { day: 'Mon', forecast: 4, hold: 3 },
+      { day: 'Tue', forecast: 4, hold: 2 },
+      { day: 'Wed', forecast: 3, hold: 2 },
+      { day: 'Thu', forecast: 3, hold: 1 },
+      { day: 'Fri', forecast: 2, hold: 1 },
     ],
     carriers: [
       {
@@ -278,11 +282,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 1490,
     marketRate: 1520,
     week: [
-      { day: 'Mon', forecast: 3 },
-      { day: 'Tue', forecast: 3 },
-      { day: 'Wed', forecast: 3 },
-      { day: 'Thu', forecast: 3 },
-      { day: 'Fri', forecast: 2 },
+      { day: 'Mon', forecast: 3, hold: 3 },
+      { day: 'Tue', forecast: 3, hold: 2 },
+      { day: 'Wed', forecast: 3, hold: 2 },
+      { day: 'Thu', forecast: 3, hold: 2 },
+      { day: 'Fri', forecast: 2, hold: 2 },
     ],
     carriers: [
       {
@@ -326,11 +330,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 1210,
     marketRate: 1190,
     week: [
-      { day: 'Mon', forecast: 2 },
-      { day: 'Tue', forecast: 2 },
-      { day: 'Wed', forecast: 2 },
-      { day: 'Thu', forecast: 1 },
-      { day: 'Fri', forecast: 1 },
+      { day: 'Mon', forecast: 2, hold: 1 },
+      { day: 'Tue', forecast: 2, hold: 1 },
+      { day: 'Wed', forecast: 2, hold: 1 },
+      { day: 'Thu', forecast: 1, hold: 0 },
+      { day: 'Fri', forecast: 1, hold: 0 },
     ],
     carriers: [
       {
@@ -361,11 +365,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 473,
     marketRate: 470,
     week: [
-      { day: 'Mon', forecast: 6 },
-      { day: 'Tue', forecast: 6 },
-      { day: 'Wed', forecast: 6 },
-      { day: 'Thu', forecast: 6 },
-      { day: 'Fri', forecast: 6 },
+      { day: 'Mon', forecast: 7, hold: 6 },
+      { day: 'Tue', forecast: 6, hold: 6 },
+      { day: 'Wed', forecast: 6, hold: 6 },
+      { day: 'Thu', forecast: 6, hold: 5 },
+      { day: 'Fri', forecast: 5, hold: 5 },
     ],
     carriers: [
       {
@@ -409,11 +413,11 @@ export const capacityLanes: CapacityLane[] = [
     weightedRate: 4347,
     marketRate: 4170,
     week: [
-      { day: 'Mon', forecast: 2 },
-      { day: 'Tue', forecast: 2 },
-      { day: 'Wed', forecast: 2 },
-      { day: 'Thu', forecast: 2 },
-      { day: 'Fri', forecast: 1 },
+      { day: 'Mon', forecast: 2, hold: 2 },
+      { day: 'Tue', forecast: 2, hold: 1 },
+      { day: 'Wed', forecast: 2, hold: 1 },
+      { day: 'Thu', forecast: 2, hold: 1 },
+      { day: 'Fri', forecast: 1, hold: 1 },
     ],
     carriers: [
       {
@@ -444,6 +448,103 @@ export const capacityLanes: CapacityLane[] = [
   },
 ]
 
+/* ── weekly coverage ── */
+
+export type WeekDayCoverage = {
+  day: string
+  forecast: number
+  /** Loads a carrier is holding for this day. */
+  covered: number
+  /** Forecast loads with nobody on them — these fall to spot. */
+  short: number
+  /** Trucks held beyond what the customer forecasts for the day. */
+  spare: number
+  byCarrier: { id: string; name: string; standing: CarrierStanding; loads: number }[]
+}
+
+/**
+ * Hands out `total` whole loads across the week following `weights`, never
+ * exceeding `caps`. Largest-remainder so the parts always add back to the
+ * total the metrics strip shows.
+ */
+function spread(weights: number[], total: number, caps: number[]): number[] {
+  const out = weights.map(() => 0)
+  if (total <= 0) return out
+  const sum = weights.reduce((a, b) => a + b, 0)
+  const share = sum > 0 ? weights.map((w) => w / sum) : weights.map(() => 1 / weights.length)
+  const ideal = share.map((s) => s * total)
+
+  ideal.forEach((v, i) => {
+    out[i] = Math.min(caps[i], Math.floor(v))
+  })
+
+  const order = ideal
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac || weights[b.i] - weights[a.i])
+
+  let left = total - out.reduce((a, b) => a + b, 0)
+  let placed = true
+  while (left > 0 && placed) {
+    placed = false
+    for (const { i } of order) {
+      if (left === 0) break
+      if (out[i] < caps[i]) {
+        out[i] += 1
+        left -= 1
+        placed = true
+      }
+    }
+  }
+  return out
+}
+
+const standingOrder: CarrierStanding[] = ['Primary', 'Backup', 'Trial']
+
+/** Day-by-day picture of who is covering what, and where the week falls short. */
+export function weekCoverage(lane: CapacityLane): WeekDayCoverage[] {
+  const weights = lane.week.map((d) => d.hold)
+  const covered = lane.week.map(() => 0)
+  const spare = lane.week.map(() => 0)
+  const byCarrier: WeekDayCoverage['byCarrier'][] = lane.week.map(() => [])
+
+  const live = [...lane.carriers]
+    .filter((c) => !c.paused)
+    .sort((a, b) => standingOrder.indexOf(a.standing) - standingOrder.indexOf(b.standing))
+
+  for (const carrier of live) {
+    const room = lane.week.map((d, i) => Math.max(0, d.forecast - covered[i]))
+    const take = spread(weights, carrier.committed, room)
+    take.forEach((loads, i) => {
+      if (!loads) return
+      covered[i] += loads
+      byCarrier[i].push({
+        id: carrier.id,
+        name: carrier.name,
+        standing: carrier.standing,
+        loads,
+      })
+    })
+
+    /* Anything left has no load to sit on — held capacity going to waste. */
+    const over = carrier.committed - take.reduce((a, b) => a + b, 0)
+    if (over > 0) {
+      const extra = spread(weights, over, weights.map(() => over))
+      extra.forEach((loads, i) => {
+        spare[i] += loads
+      })
+    }
+  }
+
+  return lane.week.map((d, i) => ({
+    day: d.day,
+    forecast: d.forecast,
+    covered: covered[i],
+    short: Math.max(0, d.forecast - covered[i]),
+    spare: spare[i],
+    byCarrier: byCarrier[i],
+  }))
+}
+
 /* ── derived reads ── */
 
 export type LaneMetrics = {
@@ -463,14 +564,14 @@ export function laneMetrics(lane: CapacityLane): LaneMetrics {
   const committed = live.reduce((sum, c) => sum + c.committed, 0)
   const gap = Math.max(0, lane.loadsPerWk - committed)
   const coverage = lane.loadsPerWk ? Math.round((committed / lane.loadsPerWk) * 100) : 100
-  const heaviest = [...lane.week].sort((a, b) => b.forecast - a.forecast)[0]
+  const worst = [...weekCoverage(lane)].sort((a, b) => b.short - a.short)[0]
   const weight = live.reduce((sum, c) => sum + c.committed, 0) || 1
 
   return {
     committed,
     gap,
     coverage: Math.min(coverage, 100),
-    worstDay: gap > 0 ? (heaviest?.day ?? null) : null,
+    worstDay: worst && worst.short > 0 ? worst.day : null,
     vsMarketPct: ((lane.weightedRate - lane.marketRate) / lane.marketRate) * 100,
     accept: Math.round(live.reduce((sum, c) => sum + c.accept * c.committed, 0) / weight),
     onTime: Math.round(live.reduce((sum, c) => sum + c.onTime * c.committed, 0) / weight),
@@ -502,7 +603,7 @@ export function laneInsights(lane: CapacityLane): LaneInsight[] {
       level: m.coverage < 70 ? 'critical' : 'warn',
       title: `${m.gap} ${m.gap === 1 ? 'load' : 'loads'} a week fall to spot`,
       detail: `Committed capacity is ${m.committed} against ${lane.loadsPerWk} loads, so coverage sits at ${m.coverage}%.${
-        m.worstDay ? ` The shortfall lands hardest on ${m.worstDay}, the heaviest day on this lane.` : ''
+        m.worstDay ? ` The shortfall lands hardest on ${m.worstDay} — see the weekly chart below.` : ''
       }`,
       action: 'Fill the gap',
     })

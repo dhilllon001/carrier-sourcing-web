@@ -10,13 +10,13 @@ import {
   MessageCircle,
   Search,
   Send,
-  SlidersHorizontal,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { reportLoads } from '@/data/report'
 import {
   buildLaneSearch,
+  carrierConfidence,
   equipmentOptions,
   laneCities,
   laneSearches as seedLanes,
@@ -27,15 +27,46 @@ import {
   type SearchCarrier,
   type SearchSource,
 } from '@/data/carrierSearch'
+import { useFavoriteCarriers } from '@/lib/favoriteCarriers'
+import { useMyBookCarriers } from '@/lib/myBookCarriers'
 import {
   CarrierHoverCard,
   ConfidenceCell,
+  ContextMenu,
   useCarrierHover,
+  useContextMenu,
+  type MenuItem,
 } from '@/components/carriers/searchParts'
 
 type Props = {
   search: string
   onOpenCarrier?: (id: string) => void
+  /** The New lane search button lives in the app header for this page. */
+  panelOpen: boolean
+  onPanelOpenChange: (open: boolean) => void
+}
+
+/** Board filters. Every one maps to a column a rep can already see. */
+type Chip = 'fav' | 'high' | 'past' | 'open' | 'quoted' | 'insurance'
+
+const CHIPS: { id: Chip; label: string; alert?: boolean }[] = [
+  { id: 'fav', label: 'Favourites' },
+  { id: 'high', label: 'High confidence' },
+  { id: 'past', label: 'Used before' },
+  { id: 'open', label: 'Not contacted' },
+  { id: 'quoted', label: 'Has offer' },
+  { id: 'insurance', label: 'Insurance', alert: true },
+]
+
+function formatReply(min: number) {
+  if (min < 60) return `${Math.round(min)} min`
+  const hours = Math.floor(min / 60)
+  const rest = Math.round(min % 60)
+  return rest ? `${hours}h ${rest}m` : `${hours}h`
+}
+
+function insuranceIssue(carrier: SearchCarrier) {
+  return carrier.insurance === 'soon' || carrier.insurance === 'expired'
 }
 
 type Channel = 'email' | 'whatsapp'
@@ -56,27 +87,35 @@ function OfferCell({ carrier }: { carrier: SearchCarrier }) {
   )
 }
 
-export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
+export function CarrierSearchPage({
+  search,
+  onOpenCarrier,
+  panelOpen,
+  onPanelOpenChange,
+}: Props) {
   const [lanes, setLanes] = useState<LaneSearch[]>(seedLanes)
   const [openLanes, setOpenLanes] = useState<string[]>([seedLanes[0].id])
-  const [localQuery, setLocalQuery] = useState('')
-  const [panelOpen, setPanelOpen] = useState(false)
+  const [chips, setChips] = useState<Chip[]>([])
   const [selected, setSelected] = useState<Record<string, string[]>>({})
   const [assign, setAssign] = useState<AssignTarget | null>(null)
   const [probill, setProbill] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
   const { hover, bind } = useCarrierHover()
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu()
+  const { isFavorite, toggle: toggleFav } = useFavoriteCarriers()
+  const { isInBook, add: addToBook } = useMyBookCarriers()
 
   const [origin, setOrigin] = useState('Brampton, ON')
   const [destination, setDestination] = useState('Woodstock, ON')
   const [equipment, setEquipment] = useState('DRY-VAN')
   const [pickup, setPickup] = useState('2026-08-20')
+  const [delivery, setDelivery] = useState('2026-08-20')
   const [radius, setRadius] = useState('150')
   const [sources, setSources] = useState<SearchSource[]>(['PAST', 'DAT'])
 
-  const q = (search || localQuery).trim().toLowerCase()
+  const q = search.trim().toLowerCase()
 
-  const visible = useMemo(() => {
+  const searched = useMemo(() => {
     if (!q) return lanes
     return lanes
       .map((lane) => {
@@ -97,6 +136,64 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
       })
       .filter((lane): lane is LaneSearch => Boolean(lane))
   }, [lanes, q])
+
+  const totals = useMemo(() => {
+    const all = searched.flatMap((lane) => lane.carriers)
+    const quotes = all
+      .filter((carrier) => carrier.offerAmount)
+      .map((carrier) => carrier.offerAmount as number)
+    const replies = all
+      .map((carrier) => carrier.repliedInMin)
+      .filter((min): min is number => typeof min === 'number')
+    const covered = all.filter(
+      (carrier) => carrier.offer === 'Awarded' || Boolean(carrier.assignedProbill)
+    ).length
+    const need = searched.reduce((sum, lane) => sum + lane.need, 0)
+    return {
+      lanes: searched.length,
+      carriers: all.length,
+      fav: all.filter((carrier) => isFavorite(carrier.id)).length,
+      high: all.filter((carrier) => carrierConfidence(carrier).level === 'High').length,
+      past: all.filter((carrier) => carrier.loads > 0).length,
+      open: all.filter((carrier) => carrier.offer === 'Not sent').length,
+      quoted: all.filter((carrier) => carrier.offer === 'Quoted' || carrier.offer === 'Awarded')
+        .length,
+      covered,
+      need,
+      insurance: all.filter(insuranceIssue).length,
+      avgReply: replies.length
+        ? Math.round(replies.reduce((sum, min) => sum + min, 0) / replies.length)
+        : undefined,
+      best: quotes.length ? Math.min(...quotes) : undefined,
+    }
+  }, [searched, isFavorite])
+
+  const keep = (carrier: SearchCarrier) => {
+    if (chips.includes('fav') && !isFavorite(carrier.id)) return false
+    if (chips.includes('high') && carrierConfidence(carrier).level !== 'High') return false
+    if (chips.includes('past') && carrier.loads === 0) return false
+    if (chips.includes('open') && carrier.offer !== 'Not sent') return false
+    if (chips.includes('quoted') && carrier.offer !== 'Quoted' && carrier.offer !== 'Awarded')
+      return false
+    if (chips.includes('insurance') && !insuranceIssue(carrier)) return false
+    return true
+  }
+
+  const visible = useMemo(() => {
+    if (!chips.length) return searched
+    return searched
+      .map((lane) => ({ ...lane, carriers: lane.carriers.filter(keep) }))
+      .filter((lane) => lane.carriers.length > 0)
+    /* keep() reads chips and favourites, both listed below */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searched, chips, isFavorite])
+
+  const chipCount = (id: Chip) => totals[id]
+
+  const toggleChip = (id: Chip) =>
+    setChips((current) =>
+      current.includes(id) ? current.filter((chip) => chip !== id) : [...current, id]
+    )
 
   const openLoads = reportLoads.filter((load) => load.status === 'NeedCarrier')
 
@@ -131,17 +228,21 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
         day: 'numeric',
         year: 'numeric',
       }),
+      delivery: new Date(`${delivery}T12:00:00`).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
       radius: Number(radius) || 100,
       sources: sources.length ? sources : ['PAST', 'DAT'],
     })
     setLanes((current) => [lane, ...current])
     setOpenLanes((current) => [lane.id, ...current])
-    setPanelOpen(false)
+    onPanelOpenChange(false)
     setNotice(`${lane.carriers.length} carriers found for ${origin} → ${destination}.`)
   }
 
-  const blast = (lane: LaneSearch, channel: Channel) => {
-    const ids = selected[lane.id] ?? []
+  const blast = (lane: LaneSearch, channel: Channel, ids = selected[lane.id] ?? []) => {
     if (!ids.length) return
     const stamp = todayStamp()
     setLanes((current) =>
@@ -158,12 +259,139 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
             }
       )
     )
-    setSelected((current) => ({ ...current, [lane.id]: [] }))
+    setSelected((current) =>
+      JSON.stringify(ids) === JSON.stringify(current[lane.id] ?? [])
+        ? { ...current, [lane.id]: [] }
+        : current
+    )
     setNotice(
       `${channel === 'email' ? 'Email' : 'WhatsApp'} blast sent to ${ids.length} carriers on ${
         lane.origin
       } → ${lane.destination}.`
     )
+  }
+
+  const award = (laneId: string, carrier: SearchCarrier) => {
+    const stamp = todayStamp()
+    setLanes((current) =>
+      current.map((lane) =>
+        lane.id !== laneId
+          ? lane
+          : {
+              ...lane,
+              carriers: lane.carriers.map((item) =>
+                item.id === carrier.id
+                  ? { ...item, offer: 'Awarded', updated: stamp.date, updatedTime: stamp.time }
+                  : item
+              ),
+            }
+      )
+    )
+    setNotice(`Awarded to ${carrier.name}${carrier.offerAmount ? ` at ${money(carrier.offerAmount)}` : ''}.`)
+  }
+
+  const favOnLane = (lane: LaneSearch) => lane.carriers.filter((carrier) => isFavorite(carrier.id))
+
+  const laneMenu = (lane: LaneSearch, open: boolean): MenuItem[] => {
+    const favs = favOnLane(lane)
+    const picked = selected[lane.id] ?? []
+    return [
+      {
+        id: 'expand',
+        label: open ? 'Collapse carriers' : 'Expand carriers',
+        onSelect: () => toggleLane(lane.id),
+      },
+      { type: 'sep' },
+      {
+        id: 'blast-fav-email',
+        label: 'Blast email to favourites',
+        hint: favs.length ? `${favs.length}` : undefined,
+        disabled: !favs.length,
+        onSelect: () => blast(lane, 'email', favs.map((carrier) => carrier.id)),
+      },
+      {
+        id: 'blast-fav-wa',
+        label: 'Blast WhatsApp to favourites',
+        hint: favs.length ? `${favs.length}` : undefined,
+        disabled: !favs.length,
+        onSelect: () => blast(lane, 'whatsapp', favs.map((carrier) => carrier.id)),
+      },
+      {
+        id: 'blast-sel-email',
+        label: 'Blast email to selected',
+        hint: picked.length ? `${picked.length}` : undefined,
+        disabled: !picked.length,
+        onSelect: () => blast(lane, 'email'),
+      },
+      { type: 'sep' },
+      {
+        id: 'copy',
+        label: 'Copy pickup → delivery',
+        onSelect: () => {
+          void navigator.clipboard?.writeText(`${lane.origin} → ${lane.destination}`)
+          setNotice('Lane copied.')
+        },
+      },
+    ]
+  }
+
+  const carrierMenu = (lane: LaneSearch, carrier: SearchCarrier): MenuItem[] => {
+    const fav = isFavorite(carrier.id)
+    const booked = isInBook(carrier.id)
+    const items: MenuItem[] = [
+      {
+        id: 'open',
+        label: 'Open carrier',
+        onSelect: () => onOpenCarrier?.(carrier.id),
+      },
+      {
+        id: 'fav',
+        label: fav ? 'Remove from favourites' : 'Add to favourites',
+        onSelect: () => {
+          toggleFav(carrier.id)
+          setNotice(fav ? `${carrier.name} removed from favourites.` : `${carrier.name} added to favourites.`)
+        },
+      },
+      {
+        id: 'book',
+        label: booked ? 'Already in My carriers' : 'Add to My carriers',
+        disabled: booked,
+        onSelect: () => {
+          addToBook(carrier.id)
+          setNotice(`${carrier.name} added to My carriers.`)
+        },
+      },
+      { type: 'sep' },
+      {
+        id: 'email',
+        label: 'Blast email',
+        onSelect: () => blast(lane, 'email', [carrier.id]),
+      },
+      {
+        id: 'wa',
+        label: 'Blast WhatsApp',
+        disabled: !carrier.whatsapp && !carrier.contact,
+        onSelect: () => blast(lane, 'whatsapp', [carrier.id]),
+      },
+    ]
+    if (carrier.offer === 'Quoted') {
+      items.push({
+        id: 'award',
+        label: `Award${carrier.offerAmount ? ` ${money(carrier.offerAmount)}` : ''}`,
+        onSelect: () => award(lane.id, carrier),
+      })
+    }
+    if (!carrier.assignedProbill) {
+      items.push({
+        id: 'assign',
+        label: 'Assign probill',
+        onSelect: () => {
+          setAssign({ laneId: lane.id, carrier })
+          setProbill('')
+        },
+      })
+    }
+    return items
   }
 
   const confirmAssign = () => {
@@ -189,33 +417,69 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
 
   return (
     <div className="cs-page">
-      <div className="cs-bar">
-        <label className="cs-searchbar">
-          <Search size={15} strokeWidth={2} />
-          <input
-            value={localQuery}
-            onChange={(event) => setLocalQuery(event.target.value)}
-            placeholder="Search a lane, carrier, MC or DOT…"
-            aria-label="Search lanes and carriers"
-          />
-          {localQuery && (
-            <button type="button" aria-label="Clear" onClick={() => setLocalQuery('')}>
-              <X size={13} />
+      <div className="cs-status">
+        <div className="cs-facts">
+          <div className="cs-fact">
+            <span>Lanes</span>
+            <strong>{totals.lanes}</strong>
+          </div>
+          <div className="cs-fact">
+            <span>Carriers</span>
+            <strong>{totals.carriers}</strong>
+          </div>
+          <div className="cs-fact">
+            <span>Best offer</span>
+            <strong className="is-good">{totals.best ? money(totals.best) : '—'}</strong>
+          </div>
+          <div className="cs-fact">
+            <span>Covered today</span>
+            <strong
+              className={cn(
+                totals.covered >= totals.need && totals.need > 0 && 'is-good',
+                totals.covered < totals.need && 'is-warn'
+              )}
+            >
+              {totals.covered}/{totals.need}
+            </strong>
+          </div>
+          <div className="cs-fact">
+            <span>Avg reply</span>
+            <strong>{totals.avgReply ? formatReply(totals.avgReply) : '—'}</strong>
+          </div>
+          <div className="cs-fact">
+            <span>Waiting on reply</span>
+            <strong className={cn(totals.open > 0 && 'is-warn')}>{totals.open}</strong>
+          </div>
+        </div>
+
+        <div className="cs-chips" role="group" aria-label="Board filters">
+          {CHIPS.map((chip) => {
+            const on = chips.includes(chip.id)
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                className={cn(
+                  'cs-fchip',
+                  on && 'is-on',
+                  chip.id === 'fav' && 'is-fav',
+                  chip.alert && 'is-alert'
+                )}
+                aria-pressed={on}
+                onClick={() => toggleChip(chip.id)}
+              >
+                {chip.id === 'fav' && <span className="cs-fchip__star">★</span>}
+                {chip.label}
+                <em>{chipCount(chip.id)}</em>
+              </button>
+            )
+          })}
+          {chips.length > 0 && (
+            <button type="button" className="cs-fchip is-clear" onClick={() => setChips([])}>
+              Clear
             </button>
           )}
-        </label>
-        <button
-          type="button"
-          className="cs-btn cs-btn--primary"
-          onClick={() => setPanelOpen(true)}
-        >
-          <SlidersHorizontal size={13} />
-          New lane search
-        </button>
-        <span className="cs-bar__meta">
-          {visible.length} {visible.length === 1 ? 'search' : 'searches'} ·{' '}
-          {visible.reduce((sum, lane) => sum + lane.carriers.length, 0)} carriers
-        </span>
+        </div>
       </div>
 
       {notice && (
@@ -229,6 +493,25 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
       )}
 
       <div className="cs-lanes">
+        {visible.length > 0 && (
+          <div className="cs-lanerow cs-lanehead">
+            <span />
+            <span>Pickup lane</span>
+            <span>Delivery lane</span>
+            <span>Pickup</span>
+            <span>Delivery</span>
+            <span>Equipment</span>
+            <span>Radius</span>
+            <span className="cs-num">Carriers</span>
+            <span className="cs-num">Used before</span>
+            <span className="cs-num">High conf.</span>
+            <span className="cs-num">Contacted</span>
+            <span className="cs-num">Best rate</span>
+            <span>Probill</span>
+            <span className="cs-num">Searched</span>
+          </div>
+        )}
+
         {visible.map((lane) => {
           const open = openLanes.includes(lane.id)
           const stats = laneStats(lane)
@@ -238,45 +521,50 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
             <section key={lane.id} className={cn('cs-lane', open && 'is-open')}>
               <button
                 type="button"
-                className="cs-lane__head"
+                className="cs-lanerow cs-lane__head"
                 aria-expanded={open}
                 onClick={() => toggleLane(lane.id)}
+                onContextMenu={(event) =>
+                  openMenu(event, {
+                    title: `${lane.origin} → ${lane.destination}`,
+                    subtitle: `${lane.pickup} pickup · ${lane.delivery} delivery`,
+                    items: laneMenu(lane, open),
+                  })
+                }
               >
                 <ChevronRight size={14} className={cn('cs-caret', open && 'is-open')} />
-                <span className="cs-lane__route">
-                  <strong>{lane.origin}</strong>
-                  <ArrowRight size={12} />
-                  <strong>{lane.destination}</strong>
+                <span className="cs-lane__city">{lane.origin}</span>
+                <span className="cs-lane__city">{lane.destination}</span>
+                <span className="cs-lane__cell">{lane.pickup}</span>
+                <span className="cs-lane__cell">{lane.delivery}</span>
+                <span>
+                  <span className="cs-chip">{lane.equipment}</span>
                 </span>
-                <span className="cs-chip">{lane.equipment}</span>
-                <span className="cs-chip is-quiet">{lane.radius} mi radius</span>
-                <span className="cs-lane__pickup">Pickup {lane.pickup}</span>
-                <span className="cs-lane__stats">
-                  <em>
-                    <b>{stats.total}</b> carriers
-                  </em>
-                  <em>
-                    <b>{stats.past}</b> used before
-                  </em>
-                  <em>
-                    <b>{stats.strong}</b> high confidence
-                  </em>
-                  <em>
-                    <b>{stats.contacted}</b> contacted
-                  </em>
-                  {stats.bestQuote && (
-                    <em className="is-good">
-                      best <b>{money(stats.bestQuote)}</b>
-                    </em>
-                  )}
-                  {stats.assigned && (
-                    <em className="cs-assigned">
+                <span className="cs-lane__cell">{lane.radius} mi</span>
+                <span className="cs-num cs-lane__val">{stats.total}</span>
+                <span className="cs-num cs-lane__val">
+                  {stats.past || <em className="cs-quiet">0</em>}
+                </span>
+                <span className="cs-num cs-lane__val">
+                  {stats.strong || <em className="cs-quiet">0</em>}
+                </span>
+                <span className="cs-num cs-lane__val">
+                  {stats.contacted || <em className="cs-quiet">0</em>}
+                </span>
+                <span className="cs-num cs-lane__val is-good">
+                  {stats.bestQuote ? money(stats.bestQuote) : <em className="cs-quiet">—</em>}
+                </span>
+                <span>
+                  {stats.assigned ? (
+                    <span className="cs-probill">
                       <ClipboardCheck size={11} />
                       {stats.assigned.assignedProbill}
-                    </em>
+                    </span>
+                  ) : (
+                    <em className="cs-quiet">—</em>
                   )}
                 </span>
-                <span className="cs-lane__when">{lane.searchedAt}</span>
+                <span className="cs-num cs-lane__when">{lane.searchedAt}</span>
               </button>
 
               {open && (
@@ -285,6 +573,21 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                     <span>
                       {picked.length ? `${picked.length} selected` : 'Select carriers to contact'}
                     </span>
+                    <button
+                      type="button"
+                      className="cs-btn"
+                      disabled={!favOnLane(lane).length}
+                      onClick={() =>
+                        blast(
+                          lane,
+                          'email',
+                          favOnLane(lane).map((carrier) => carrier.id)
+                        )
+                      }
+                    >
+                      <Mail size={12} />
+                      Blast favourites
+                    </button>
                     <button
                       type="button"
                       className="cs-btn"
@@ -368,7 +671,17 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                         {lane.carriers.map((carrier) => (
                           <tr
                             key={carrier.id}
-                            className={cn(picked.includes(carrier.id) && 'is-selected')}
+                            className={cn(
+                              picked.includes(carrier.id) && 'is-selected',
+                              isFavorite(carrier.id) && 'is-fav'
+                            )}
+                            onContextMenu={(event) =>
+                              openMenu(event, {
+                                title: carrier.name,
+                                subtitle: `MC ${carrier.mc} · ${carrier.offer}`,
+                                items: carrierMenu(lane, carrier),
+                              })
+                            }
                           >
                             <td className="cs-col-check">
                               <input
@@ -385,6 +698,11 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                                 onClick={() => onOpenCarrier?.(carrier.id)}
                               >
                                 {carrier.name}
+                                {isFavorite(carrier.id) && (
+                                  <em className="cs-favmark" title="Favourite">
+                                    ★
+                                  </em>
+                                )}
                               </button>
                             </td>
                             <td>
@@ -463,23 +781,34 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                               {carrier.email ?? <em className="cs-quiet">—</em>}
                             </td>
                             <td className="cs-col-act cs-gsep">
-                              {carrier.assignedProbill ? (
-                                <span className="cs-probill">
-                                  <ClipboardCheck size={11} />
-                                  {carrier.assignedProbill}
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="cs-btn cs-btn--sm"
-                                  onClick={() => {
-                                    setAssign({ laneId: lane.id, carrier })
-                                    setProbill('')
-                                  }}
-                                >
-                                  Assign probill
-                                </button>
-                              )}
+                              <div className="cs-quick">
+                                {carrier.offer === 'Quoted' && !carrier.assignedProbill && (
+                                  <button
+                                    type="button"
+                                    className="cs-btn cs-btn--sm cs-btn--green"
+                                    onClick={() => award(lane.id, carrier)}
+                                  >
+                                    Award
+                                  </button>
+                                )}
+                                {carrier.assignedProbill ? (
+                                  <span className="cs-probill">
+                                    <ClipboardCheck size={11} />
+                                    {carrier.assignedProbill}
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="cs-btn cs-btn--sm cs-btn--blue"
+                                    onClick={() => {
+                                      setAssign({ laneId: lane.id, carrier })
+                                      setProbill('')
+                                    }}
+                                  >
+                                    Assign
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -495,16 +824,23 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
         {visible.length === 0 && (
           <div className="cs-empty">
             <Search size={18} />
-            <strong>No lane matches that search</strong>
-            <p>Clear the filter, or run a new lane search from the button above.</p>
+            <strong>
+              {chips.length ? 'No carriers match those filters' : 'No lane matches that search'}
+            </strong>
+            <p>
+              {chips.length
+                ? 'Clear a filter above to widen the board.'
+                : 'Clear the search, or run a new lane search from the header.'}
+            </p>
           </div>
         )}
       </div>
 
-      <CarrierHoverCard hover={hover} />
+      <CarrierHoverCard hover={menu ? null : hover} />
+      <ContextMenu menu={menu} onClose={closeMenu} />
 
       {panelOpen && (
-        <div className="cs-panel" role="presentation" onClick={() => setPanelOpen(false)}>
+        <div className="cs-panel" role="presentation" onClick={() => onPanelOpenChange(false)}>
           <aside
             role="dialog"
             aria-modal="true"
@@ -516,14 +852,14 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                 <strong>New lane search</strong>
                 <p>Match carriers on city pairs, then contact them from the results.</p>
               </div>
-              <button type="button" aria-label="Close" onClick={() => setPanelOpen(false)}>
+              <button type="button" aria-label="Close" onClick={() => onPanelOpenChange(false)}>
                 <X size={14} />
               </button>
             </header>
 
             <div className="cs-panel__body">
               <label className="cs-field">
-                <span>From city</span>
+                <span>Pickup city</span>
                 <input
                   list="cs-cities"
                   value={origin}
@@ -531,7 +867,7 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                 />
               </label>
               <label className="cs-field">
-                <span>To city</span>
+                <span>Delivery city</span>
                 <input
                   list="cs-cities"
                   value={destination}
@@ -568,14 +904,24 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
                 </label>
               </div>
 
-              <label className="cs-field">
-                <span>Pickup date</span>
-                <input
-                  type="date"
-                  value={pickup}
-                  onChange={(event) => setPickup(event.target.value)}
-                />
-              </label>
+              <div className="cs-field__row">
+                <label className="cs-field">
+                  <span>Pickup date</span>
+                  <input
+                    type="date"
+                    value={pickup}
+                    onChange={(event) => setPickup(event.target.value)}
+                  />
+                </label>
+                <label className="cs-field">
+                  <span>Delivery date</span>
+                  <input
+                    type="date"
+                    value={delivery}
+                    onChange={(event) => setDelivery(event.target.value)}
+                  />
+                </label>
+              </div>
 
               <div className="cs-field">
                 <span>Look in</span>
@@ -600,7 +946,7 @@ export function CarrierSearchPage({ search, onOpenCarrier }: Props) {
               <button
                 type="button"
                 className="cs-btn"
-                onClick={() => setPanelOpen(false)}
+                onClick={() => onPanelOpenChange(false)}
               >
                 Cancel
               </button>

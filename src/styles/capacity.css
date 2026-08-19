@@ -849,67 +849,175 @@
 }
 
 /* ── weekly chart ── */
-.cap-chart {
+/* ── weekly capacity chart ── */
+.capw-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.capw {
+  display: flex;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.capw-scale {
+  position: relative;
+  width: 16px;
+  height: 124px;
+  flex: none;
+}
+
+.capw-scale span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  font: 550 10px/1 var(--sr-font-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.capw-days {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  align-items: end;
-  gap: 10px;
-  height: 132px;
-  padding: 4px 2px 0;
+  flex: 1;
+  /* five weekdays should not stretch the full card width */
+  max-width: 620px;
+  gap: 6px;
+  /* gridlines at the top, midpoint and baseline of the plot */
+  background-image: linear-gradient(rgba(15, 23, 42, 0.07), rgba(15, 23, 42, 0.07)),
+    linear-gradient(rgba(15, 23, 42, 0.07), rgba(15, 23, 42, 0.07)),
+    linear-gradient(rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.2));
+  background-size: 100% 1px;
+  background-position: 0 0, 0 62px, 0 124px;
+  background-repeat: no-repeat;
 }
 
-.cap-bar {
+.capw-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
   gap: 5px;
-  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.12s ease;
 }
 
-.cap-bar__stack {
+.capw-col:hover,
+.capw-col.is-on {
+  background: var(--sr-surface-2, #f4f6f8);
+}
+
+.capw-plot {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  width: 22px;
-  min-height: 6px;
-  border-radius: 5px;
-  overflow: hidden;
-  background: #eef0f3;
+  align-items: center;
+  width: 100%;
+  height: 124px;
 }
 
-.cap-bar__short {
+.capw-seg {
   display: block;
-  background: repeating-linear-gradient(
-    -45deg,
-    #ef4444,
-    #ef4444 3px,
-    #f4837f 3px,
-    #f4837f 6px
-  );
+  width: min(62%, 38px);
+  min-height: 3px;
 }
 
-.cap-bar__covered {
-  display: block;
+.capw-seg--held {
   background: #10b981;
+  border-radius: 0 0 3px 3px;
 }
 
-.cap-bar__day {
-  font: 650 10.5px/1 var(--sr-font-body);
+.capw-seg--short {
+  background: repeating-linear-gradient(-45deg, #ef4444, #ef4444 3px, #f4837f 3px, #f4837f 6px);
+}
+
+.capw-seg--spare {
+  background: repeating-linear-gradient(-45deg, #cbd5e1, #cbd5e1 3px, #e6ebf1 3px, #e6ebf1 6px);
+}
+
+/* whichever segment lands on top gets the rounded cap */
+.capw-seg:first-child {
+  border-radius: 3px 3px 0 0;
+}
+
+.capw-col__day {
+  font: 650 11px/1 var(--sr-font-body);
   color: var(--ink-2);
 }
 
-.cap-bar__num {
-  font: 500 9.5px/1 var(--sr-font-body);
+.capw-col.is-short .capw-col__day {
+  color: var(--ink-1);
+}
+
+.capw-col__num {
+  font: 500 10.5px/1 var(--sr-font-body);
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
+}
+
+.capw-foot {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--sr-border-1);
+}
+
+.capw-detail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font: 500 11px/1.35 var(--sr-font-body);
+  color: var(--ink-2);
+}
+
+.capw-detail strong {
+  font: 700 11.5px/1.2 var(--sr-font-body);
+  color: var(--ink-1);
+}
+
+.capw-detail b {
+  font-weight: 650;
+}
+
+.capw-detail b.is-bad {
+  color: #dc2626;
+}
+
+.capw-detail b.is-spare {
+  color: var(--ink-3);
+}
+
+.capw-detail__who {
+  padding-left: 10px;
+  border-left: 1px solid var(--sr-border-1);
+  color: var(--ink-3);
+}
+
+.capw-hint {
+  padding-left: 14px;
+  border-left: 1px solid var(--sr-border-1);
+  color: var(--ink-3) !important;
 }
 
 .cap-legend {
   display: flex;
   gap: 14px;
   margin-top: 10px;
+}
+
+.capw-foot .cap-legend {
+  flex: 1;
+  align-items: center;
+  margin-top: 0;
 }
 
 .cap-legend span {

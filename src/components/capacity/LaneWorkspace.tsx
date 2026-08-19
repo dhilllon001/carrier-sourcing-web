@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   AlertTriangle,
   ChevronDown,
@@ -15,6 +16,7 @@ import { cn } from '@/lib/cn'
 import {
   laneInsights,
   laneMetrics,
+  weekCoverage,
   type CapacityLane,
   type CapacityTeam,
   type LaneCarrier,
@@ -90,12 +92,20 @@ export function LaneWorkspace({
   onTogglePause: (laneId: string, carrierId: string) => void
   onMakePrimary: (laneId: string, carrierId: string) => void
 }) {
+  const [hoverDay, setHoverDay] = useState<string | null>(null)
   const m = laneMetrics(lane)
   const insights = laneInsights(lane).filter((i) => !dismissed.includes(`${lane.id}:${i.id}`))
-  const peak = Math.max(...lane.week.map((d) => d.forecast), 1)
-  /* spread committed capacity across the week in proportion to demand */
-  const totalForecast = lane.week.reduce((sum, d) => sum + d.forecast, 0) || 1
   const favourite = lane.carriers.find((c) => c.favourite)
+
+  const week = weekCoverage(lane)
+  const scaleMax = Math.max(...week.map((d) => d.forecast + d.spare), 1)
+  const halfTick = Math.round(scaleMax / 2)
+  const active = week.find((d) => d.day === hoverDay)
+  /* Whoever earns the next load on a short day: the lane favourite first, then
+     the carrier with the best acceptance. */
+  const coverTarget = [...lane.carriers]
+    .filter((c) => !c.paused)
+    .sort((a, b) => Number(b.favourite ?? false) - Number(a.favourite ?? false) || b.accept - a.accept)[0]
 
   return (
     <div className="cap-lane">
@@ -226,49 +236,103 @@ export function LaneWorkspace({
           <div className="cap-card__title">
             <div>
               <strong>Weekly capacity</strong>
-              <p>Forecast demand against what carriers have committed.</p>
+              <p>Which days carriers are holding, and which fall to spot.</p>
             </div>
           </div>
-          {m.gap > 0 && <span className="cap-count is-bad">{m.gap} uncovered</span>}
+          <div className="capw-head">
+            <span className="cap-count">
+              {m.committed} of {lane.loadsPerWk} held
+            </span>
+            {m.gap > 0 && <span className="cap-count is-bad">{m.gap} to spot</span>}
+          </div>
         </div>
 
-        <div className="cap-chart">
-          {lane.week.map((d) => {
-            const share = (d.forecast / totalForecast) * m.committed
-            const covered = Math.min(d.forecast, share)
-            const short = Math.max(0, d.forecast - covered)
-            return (
-              <div key={d.day} className="cap-bar">
-                <div className="cap-bar__stack" style={{ height: `${(d.forecast / peak) * 100}%` }}>
-                  {short > 0 && (
-                    <span
-                      className="cap-bar__short"
-                      style={{ height: `${(short / d.forecast) * 100}%` }}
-                      title={`${short.toFixed(1)} uncovered`}
-                    />
-                  )}
-                  <span
-                    className="cap-bar__covered"
-                    style={{ height: `${(covered / d.forecast) * 100}%` }}
-                    title={`${covered.toFixed(1)} committed`}
-                  />
-                </div>
-                <span className="cap-bar__day">{d.day}</span>
-                <span className="cap-bar__num">
-                  {Number.isInteger(covered) ? covered : covered.toFixed(1)}/{d.forecast}
-                </span>
-              </div>
-            )
-          })}
+        <div className="capw">
+          <div className="capw-scale" aria-hidden>
+            <span style={{ bottom: '100%' }}>{scaleMax}</span>
+            <span style={{ bottom: '50%' }}>{halfTick}</span>
+            <span style={{ bottom: 0 }}>0</span>
+          </div>
+
+          <div className="capw-days" onMouseLeave={() => setHoverDay(null)}>
+            {week.map((d) => {
+              const isOn = active?.day === d.day
+              return (
+                <button
+                  key={d.day}
+                  type="button"
+                  className={cn('capw-col', d.short > 0 && 'is-short', isOn && 'is-on')}
+                  onMouseEnter={() => setHoverDay(d.day)}
+                  onFocus={() => setHoverDay(d.day)}
+                  onClick={() => setHoverDay(isOn ? null : d.day)}
+                  aria-label={`${d.day}: ${d.covered} of ${d.forecast} loads held`}
+                >
+                  <span className="capw-plot">
+                    {d.spare > 0 && (
+                      <i
+                        className="capw-seg capw-seg--spare"
+                        style={{ height: `${(d.spare / scaleMax) * 100}%` }}
+                      />
+                    )}
+                    {d.short > 0 && (
+                      <i
+                        className="capw-seg capw-seg--short"
+                        style={{ height: `${(d.short / scaleMax) * 100}%` }}
+                      />
+                    )}
+                    {d.covered > 0 && (
+                      <i
+                        className="capw-seg capw-seg--held"
+                        style={{ height: `${(d.covered / scaleMax) * 100}%` }}
+                      />
+                    )}
+                  </span>
+                  <span className="capw-col__day">{d.day}</span>
+                  <span className="capw-col__num">
+                    {d.covered}/{d.forecast}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="cap-legend">
-          <span>
-            <i className="is-covered" /> Committed capacity
-          </span>
-          <span>
-            <i className="is-short" /> Falls to spot
-          </span>
+        <div className="capw-foot">
+          {active ? (
+            <div className="capw-detail">
+              <strong>{active.day}</strong>
+              <span>
+                {active.forecast} forecast · {active.covered} held
+                {active.short > 0 && <b className="is-bad"> · {active.short} to spot</b>}
+                {active.spare > 0 && <b className="is-spare"> · {active.spare} idle</b>}
+              </span>
+              <span className="capw-detail__who">
+                {active.byCarrier.length
+                  ? active.byCarrier.map((c) => `${c.name} ${c.loads}`).join(' · ')
+                  : 'Nobody is holding this day'}
+              </span>
+              {active.short > 0 && coverTarget && (
+                <button
+                  type="button"
+                  className="cap-btn cap-btn--sm cap-btn--primary"
+                  onClick={() => onCommit(lane.id, coverTarget.id, 1)}
+                >
+                  <Plus size={12} strokeWidth={2.4} />
+                  Raise {coverTarget.name.split(' ')[0]} +1
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="cap-legend">
+              <span>
+                <i className="is-covered" /> Held by a dedicated carrier
+              </span>
+              <span>
+                <i className="is-short" /> Falls to spot
+              </span>
+              <span className="capw-hint">Hover a day for the carrier split</span>
+            </div>
+          )}
         </div>
       </section>
 
