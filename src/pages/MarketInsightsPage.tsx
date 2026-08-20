@@ -135,13 +135,11 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           type: 'map',
           map: mapName,
           roam: 'move',
-          /* The 0.75 default flattens the continent; 1 keeps the outlines true. */
-          aspectScale: 1,
-          zoom: 1.04,
-          left: 8,
-          right: 8,
-          top: 4,
-          bottom: 34,
+          /* Sizing by layoutCenter keeps the true shape. Pinning all four edges
+             instead makes ECharts stretch the outlines to fill the box. */
+          aspectScale: 0.75,
+          layoutCenter: ['50%', '47%'],
+          layoutSize: '158%',
           itemStyle: { areaColor: '#eef1f5', borderColor: '#fff', borderWidth: 0.8 },
           label: {
             show: true,
@@ -563,26 +561,50 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
               </button>
             </div>
           </header>
-          <div className="mi-chart">
-            {view === 'map' ? (
-              geo.ready ? (
-                <EChart
-                  option={mapOption}
-                  height={392}
-                  ariaLabel={`${region} loads per truck by market`}
-                />
+          <div className="mi-map-body">
+            <div className="mi-map-body__chart">
+              {view === 'map' ? (
+                geo.ready ? (
+                  <EChart
+                    option={mapOption}
+                    height={500}
+                    ariaLabel={`${region} loads per truck by market`}
+                  />
+                ) : (
+                  <div className="mi-chart__state" style={{ height: 500 }}>
+                    {geo.failed ? 'Map outline unavailable.' : 'Loading map outline…'}
+                  </div>
+                )
               ) : (
-                <div className="mi-chart__state" style={{ height: 392 }}>
-                  {geo.failed ? 'Map outline unavailable.' : 'Loading map outline…'}
-                </div>
-              )
-            ) : (
-              <EChart
-                option={capacityOption}
-                height={392}
-                ariaLabel={`${region} loads and trucks by market`}
-              />
-            )}
+                <EChart
+                  option={capacityOption}
+                  height={500}
+                  ariaLabel={`${region} loads and trucks by market`}
+                />
+              )}
+            </div>
+            <aside className="mi-rail">
+              <span>Tightest markets</span>
+              {areas.slice(0, 8).map((area) => {
+                const ratio = areaRatio(area)
+                return (
+                  <div key={area.code} className="mi-rail__row">
+                    <b>{area.code}</b>
+                    <span>{area.name}</span>
+                    <em>{ratio.toFixed(2)}×</em>
+                    <i>
+                      <u
+                        style={{
+                          width: `${Math.min(100, (ratio / 3.2) * 100)}%`,
+                          background: toneColor[areaTone(area)],
+                        }}
+                      />
+                    </i>
+                    <small>{(shares.get(area.code) ?? 0).toFixed(1)}% of loads</small>
+                  </div>
+                )
+              })}
+            </aside>
           </div>
           <div className="mi-legend">
             {(['tight', 'balanced', 'soft'] as MarketTone[]).map((tone) => (

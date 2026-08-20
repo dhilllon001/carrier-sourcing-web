@@ -381,6 +381,12 @@ export const datHeadlines = [
       'Minus fuel, rates are 40.5% above last year and 27.5% above the nine-year seasonal average.',
   },
   {
+    date: 'Week of Aug 17',
+    title: 'Van load-to-truck ratio holds near the summer high',
+    detail:
+      'Load posts eased 2% week over week while truck posts fell 1%, so the balance barely moved.',
+  },
+  {
     date: '12-month outlook',
     title: 'Shippers should plan for continued capacity pressure',
     detail:
