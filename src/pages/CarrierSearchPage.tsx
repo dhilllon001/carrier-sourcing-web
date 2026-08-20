@@ -76,6 +76,16 @@ type AssignTarget = { laneId: string; carrier: SearchCarrier }
 
 const money = (value: number) => `$${value.toLocaleString()}`
 
+let capacityRequestSequence = 1043
+
+function createCapacityId() {
+  const now = new Date()
+  const day = String(now.getDate()).padStart(2, '0')
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const year = String(now.getFullYear()).slice(-2)
+  return `CAP-${day}${month}${year}-${capacityRequestSequence++}`
+}
+
 function OfferCell({ carrier }: { carrier: SearchCarrier }) {
   if (carrier.offer === 'Not sent') return <em className="cs-quiet">Not sent</em>
   const tone =
@@ -123,7 +133,8 @@ export function CarrierSearchPage({
         const laneHit =
           lane.origin.toLowerCase().includes(q) ||
           lane.destination.toLowerCase().includes(q) ||
-          lane.equipment.toLowerCase().includes(q)
+          lane.equipment.toLowerCase().includes(q) ||
+          (lane.capacityId ?? '').toLowerCase().includes(q)
         const carriers = lane.carriers.filter(
           (carrier) =>
             carrier.name.toLowerCase().includes(q) ||
@@ -198,10 +209,9 @@ export function CarrierSearchPage({
 
   const openLoads = reportLoads.filter((load) => load.status === 'NeedCarrier')
 
+  /** One lane at a time, so the open lane is the only thing competing for attention. */
   const toggleLane = (id: string) =>
-    setOpenLanes((current) =>
-      current.includes(id) ? current.filter((laneId) => laneId !== id) : [...current, id]
-    )
+    setOpenLanes((current) => (current.includes(id) ? [] : [id]))
 
   const toggleCarrier = (laneId: string, carrierId: string) =>
     setSelected((current) => {
@@ -246,12 +256,16 @@ export function CarrierSearchPage({
   const blast = (lane: LaneSearch, channel: Channel, ids = selected[lane.id] ?? []) => {
     if (!ids.length) return
     const stamp = todayStamp()
+    const capacityId = lane.capacityId ?? createCapacityId()
     setLanes((current) =>
       current.map((item) =>
         item.id !== lane.id
           ? item
           : {
               ...item,
+              capacityId,
+              capacityCreatedAt:
+                item.capacityCreatedAt ?? `${stamp.date.replace(', 2026', '')} · ${stamp.time}`,
               carriers: item.carriers.map((carrier) =>
                 ids.includes(carrier.id) && carrier.offer === 'Not sent'
                   ? { ...carrier, offer: 'Sent', updated: stamp.date, updatedTime: stamp.time }
@@ -268,7 +282,7 @@ export function CarrierSearchPage({
     setNotice(
       `${channel === 'email' ? 'Email' : 'WhatsApp'} blast sent to ${ids.length} carriers on ${
         lane.origin
-      } → ${lane.destination}.`
+      } → ${lane.destination}. Capacity ID ${capacityId}.`
     )
   }
 
@@ -493,7 +507,7 @@ export function CarrierSearchPage({
         </div>
       )}
 
-      <div className="cs-lanes">
+      <div className={cn('cs-lanes', openLanes.length > 0 && 'is-focused')}>
         {visible.length > 0 && (
           <div className="cs-lanerow cs-lanehead">
             <span />
@@ -509,6 +523,7 @@ export function CarrierSearchPage({
             <span className="cs-num">Contacted</span>
             <span className="cs-num">Best rate</span>
             <span>Probill</span>
+            <span>Capacity ID</span>
             <span className="cs-num">Searched</span>
           </div>
         )}
@@ -565,15 +580,35 @@ export function CarrierSearchPage({
                     <em className="cs-quiet">—</em>
                   )}
                 </span>
+                <span className={cn('cs-capacity', !lane.capacityId && 'is-pending')}>
+                  {lane.capacityId ? (
+                    <>
+                      <strong>{lane.capacityId}</strong>
+                      <em>{lane.capacityCreatedAt}</em>
+                    </>
+                  ) : (
+                    <>
+                      <strong>Not created</strong>
+                      <em>Created on first send</em>
+                    </>
+                  )}
+                </span>
                 <span className="cs-num cs-lane__when">{lane.searchedAt}</span>
               </button>
 
               {open && (
                 <div className="cs-lane__body">
                   <div className="cs-actions">
-                    <span>
-                      {picked.length ? `${picked.length} selected` : 'Select carriers to contact'}
-                    </span>
+                    <div className="cs-actions__context">
+                      <span>
+                        {picked.length ? `${picked.length} selected` : 'Select carriers to contact'}
+                      </span>
+                      <em>
+                        {lane.capacityId
+                          ? `Capacity request ${lane.capacityId}`
+                          : 'A capacity ID will be created on the first send'}
+                      </em>
+                    </div>
                     <button
                       type="button"
                       className="cs-btn"
@@ -612,26 +647,6 @@ export function CarrierSearchPage({
                   <div className="cs-tablewrap">
                     <table className="cs-table">
                       <thead>
-                        <tr className="cs-groups">
-                          <th className="cs-col-check" />
-                          <th colSpan={3}>Carrier</th>
-                          <th colSpan={1} className="cs-gsep">
-                            Match
-                          </th>
-                          <th colSpan={2} className="cs-gsep">
-                            Deadhead
-                          </th>
-                          <th colSpan={4} className="cs-gsep">
-                            History with us
-                          </th>
-                          <th colSpan={3} className="cs-gsep">
-                            Sourcing
-                          </th>
-                          <th colSpan={2} className="cs-gsep">
-                            Contact
-                          </th>
-                          <th className="cs-col-act cs-gsep" />
-                        </tr>
                         <tr className="cs-cols">
                           <th className="cs-col-check">
                             <input

@@ -311,17 +311,26 @@
   display: flex;
   flex-direction: column;
   padding: 10px 16px 16px;
+  /* scroll stays, the bar itself is hidden so the board reads as one surface */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cs-lanes::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 /* one column template shared by the header row and every lane row */
 .cs-lanerow {
   display: grid;
   grid-template-columns:
-    16px minmax(128px, 1.1fr) minmax(128px, 1.1fr) 96px 96px 88px 60px 64px 78px 72px 76px 82px 92px 76px;
+    16px minmax(128px, 1.1fr) minmax(128px, 1.1fr) 96px 96px 88px 60px 64px 78px 72px 76px 82px 92px 126px
+    76px;
   align-items: center;
   gap: 0 10px;
   width: 100%;
-  min-width: 1320px;
+  min-width: 1430px;
   padding: 0 12px;
   text-align: left;
 }
@@ -346,7 +355,7 @@
 .cs-lane {
   flex: none;
   /* match the row template so borders span the full scrolled width */
-  min-width: 1320px;
+  min-width: 1430px;
   border: 1px solid var(--line);
   border-top: 0;
   background: var(--surface);
@@ -359,7 +368,27 @@
 }
 
 .cs-lane.is-open {
-  border-color: var(--accent-line);
+  border-color: #fdba74;
+  background: #fff7ed;
+}
+
+/* while a lane is expanded the rest step back, so only one lane reads as live */
+.cs-lanes.is-focused .cs-lane:not(.is-open) {
+  opacity: 0.42;
+  filter: saturate(0.55);
+  transition:
+    opacity var(--fast) var(--ease),
+    filter var(--fast) var(--ease);
+}
+
+.cs-lanes.is-focused .cs-lane:not(.is-open):hover,
+.cs-lanes.is-focused .cs-lane:not(.is-open):focus-within {
+  opacity: 1;
+  filter: none;
+}
+
+.cs-lanes.is-focused .cs-lanehead {
+  opacity: 0.55;
 }
 
 .cs-lane__head {
@@ -399,9 +428,13 @@
 }
 
 .cs-lane.is-open .cs-lane__head {
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, #fbfcfd, #f4f6f8);
-  box-shadow: inset 3px 0 0 var(--accent);
+  border-bottom: 1px solid #fed7aa;
+  background: #fff7ed;
+  box-shadow: inset 3px 0 0 #f97316;
+}
+
+.cs-lane.is-open .cs-lane__head:hover {
+  background: #ffedd5;
 }
 
 .cs-caret {
@@ -449,12 +482,49 @@
   white-space: nowrap;
 }
 
+/* capacity request reference — the ID a rep quotes back to a carrier */
+.cs-capacity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+}
+
+.cs-capacity strong {
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1d4ed8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-capacity em {
+  overflow: hidden;
+  font-size: 9.5px;
+  line-height: 1.2;
+  font-style: normal;
+  color: var(--ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-capacity.is-pending strong {
+  font-weight: 650;
+  color: var(--ink-3);
+}
+
 /* ── expanded body ── */
 
 .cs-lane__body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: var(--surface);
 }
 
 .cs-actions {
@@ -466,16 +536,30 @@
   background: var(--surface-2);
 }
 
-.cs-actions > span {
+.cs-actions__context {
+  display: flex;
+  min-width: 210px;
+  flex-direction: column;
+  gap: 2px;
   margin-right: auto;
+}
+
+.cs-actions__context span {
   font-size: 11px;
   font-weight: 600;
   color: var(--ink-2);
 }
 
+.cs-actions__context em {
+  font-size: 9.5px;
+  line-height: 1.15;
+  font-style: normal;
+  color: var(--ink-3);
+}
+
+/* the whole carrier list renders in place — the board scrolls, not the table */
 .cs-tablewrap {
-  max-height: 420px;
-  overflow: auto;
+  overflow: visible;
 }
 
 .cs-table {
@@ -485,7 +569,6 @@
   font-size: 12px;
 }
 
-/* two header rows: group band on top, columns beneath */
 .cs-table thead th {
   position: sticky;
   z-index: 2;
@@ -495,20 +578,8 @@
   white-space: nowrap;
 }
 
-.cs-groups th {
-  top: 0;
-  height: 22px;
-  border-bottom: 1px solid var(--line-soft);
-  background: #eff1f4;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
 .cs-cols th {
-  top: 22px;
+  top: 0;
   height: 26px;
   border-bottom: 1px solid var(--line);
   background: #fafbfc;
@@ -527,10 +598,6 @@
 .cs-table th.cs-gsep,
 .cs-table td.cs-gsep {
   border-left: 1px solid var(--line-soft);
-}
-
-.cs-groups th.cs-gsep {
-  border-left-color: var(--line);
 }
 
 .cs-table tbody td {

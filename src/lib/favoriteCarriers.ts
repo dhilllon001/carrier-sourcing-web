@@ -1,9 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import { carrierList } from '@/data/carriers'
 
-const KEY = 'cs-favorite-carriers'
+/* bump the suffix whenever the seeded favourites below change */
+const KEY = 'cs-favorite-carriers-v2'
 /* one store shared by every mounted hook, so the grid and the detail page stay in sync */
 const listeners = new Set<(ids: string[]) => void>()
+
+/** Carriers a rep would realistically have starred, spread across the sourcing lanes. */
+export const SEED_FAVORITES = [
+  'srsv',
+  'korol',
+  'vgn',
+  'roadlegends',
+  'manney',
+  'bajio',
+  'reeferpro',
+  'midwest',
+  'greatlakes',
+  'motorcity',
+]
 
 function seed(): string[] {
   try {
@@ -12,12 +27,7 @@ function seed(): string[] {
   } catch {
     /* ignore */
   }
-  return [
-    ...carrierList.filter((c) => c.favorite).map((c) => c.id),
-    'srsv',
-    'manney',
-    'midwest',
-  ]
+  return [...carrierList.filter((c) => c.favorite).map((c) => c.id), ...SEED_FAVORITES]
 }
 
 let current = seed()

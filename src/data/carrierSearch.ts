@@ -39,6 +39,9 @@ export type SearchCarrier = {
 
 export type LaneSearch = {
   id: string
+  /** Created the first time carriers are contacted for this capacity request. */
+  capacityId?: string
+  capacityCreatedAt?: string
   /** Pickup city / facility. */
   origin: string
   /** Delivery city / facility. */
@@ -617,7 +620,19 @@ function decorate(carriers: SearchCarrier[]): SearchCarrier[] {
 }
 
 const scenarioPool = decorate([...bramptonWoodstock, ...laredoSterling, ...chicagoDetroit])
-const favouriteScenarios = ['srsv', 'manney', 'midwest']
+/* keep in step with SEED_FAVORITES so generated lanes also carry starred carriers */
+const favouriteScenarios = [
+  'srsv',
+  'korol',
+  'vgn',
+  'roadlegends',
+  'manney',
+  'bajio',
+  'reeferpro',
+  'midwest',
+  'greatlakes',
+  'motorcity',
+]
 const quotedScenarios = scenarioPool.filter(
   (carrier) => carrier.offer === 'Quoted' || carrier.offer === 'Awarded'
 )
@@ -635,6 +650,7 @@ function scenarioCarrier(id: string) {
 function scenarioCarriers(offset: number, baseRate: number): SearchCarrier[] {
   const candidates = [
     scenarioCarrier(favouriteScenarios[offset % favouriteScenarios.length]),
+    scenarioCarrier(favouriteScenarios[(offset + 4) % favouriteScenarios.length]),
     quotedScenarios[offset % quotedScenarios.length],
     insuranceScenarios[offset % insuranceScenarios.length],
     openScenarios[offset % openScenarios.length],
@@ -660,6 +676,8 @@ function scenarioCarriers(offset: number, baseRate: number): SearchCarrier[] {
 export const laneSearches: LaneSearch[] = [
   {
     id: 'ls-brampton-woodstock',
+    capacityId: 'CAP-260820-1042',
+    capacityCreatedAt: 'Aug 20 · 09:14',
     origin: 'Brampton, ON',
     destination: 'Woodstock, ON',
     equipment: 'DRY-VAN',
@@ -673,6 +691,8 @@ export const laneSearches: LaneSearch[] = [
   },
   {
     id: 'ls-laredo-sterling',
+    capacityId: 'CAP-260820-1038',
+    capacityCreatedAt: 'Aug 20 · 08:51',
     origin: 'Laredo, TX',
     destination: 'Sterling Heights, MI',
     equipment: 'REEFER',
@@ -686,6 +706,8 @@ export const laneSearches: LaneSearch[] = [
   },
   {
     id: 'ls-chicago-detroit',
+    capacityId: 'CAP-190820-0987',
+    capacityCreatedAt: 'Aug 19 · 16:22',
     origin: 'Chicago, IL',
     destination: 'Detroit, MI',
     equipment: 'DRY-VAN',

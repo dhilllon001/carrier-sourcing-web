@@ -15,6 +15,7 @@ import {
   SlidersHorizontal,
   Gauge,
   ShieldCog,
+  Sparkles,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -31,6 +32,7 @@ import { AccessManagementPage } from '@/pages/AccessManagementPage'
 import { ConfigurationPage } from '@/pages/ConfigurationPage'
 import { CapacityManagerPage } from '@/pages/CapacityManagerPage'
 import { CarrierSearchPage } from '@/pages/CarrierSearchPage'
+import { MarketInsightsPage } from '@/pages/MarketInsightsPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
 import { cn } from '@/lib/cn'
@@ -41,6 +43,7 @@ const NAV = [
   { id: 'configuration', label: 'Auto sourcing configuration', icon: SlidersHorizontal },
   { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
   { id: 'carrier-search', label: 'Carrier capacity', icon: Search },
+  { id: 'market-insights', label: 'AI market insights', icon: Sparkles },
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },
   { id: 'cmt', label: 'CMT', icon: Shield },
@@ -176,6 +179,8 @@ export default function App() {
                       ? 'Search carrier, lane, equipment, notes…'
                       : nav === 'carrier-search'
                         ? 'Search carrier, MC, contact, or lane…'
+                      : nav === 'market-insights'
+                        ? 'Search market, route, customer…'
                       : nav === 'carriers'
                         ? 'Search carrier, MC, DOT, contact…'
                         : nav === 'cmt'
@@ -199,7 +204,7 @@ export default function App() {
                     <SlidersHorizontal size={14} strokeWidth={1.85} />
                     New lane search
                   </button>
-                ) : (
+                ) : nav === 'market-insights' ? null : (
                   <button
                     type="button"
                     className="sr-btn sr-btn--lane"
@@ -290,6 +295,8 @@ export default function App() {
                 panelOpen={newLaneOpen}
                 onPanelOpenChange={setNewLaneOpen}
               />
+            ) : nav === 'market-insights' ? (
+              <MarketInsightsPage search={search} onOpenCapacity={() => setNav('carrier-search')} />
             ) : nav === 'carriers' ? (
               <MyCarriersPage
                 search={search}
