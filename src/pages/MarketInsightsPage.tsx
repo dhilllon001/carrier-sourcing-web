@@ -135,10 +135,13 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           type: 'map',
           map: mapName,
           roam: 'move',
-          left: 10,
-          right: 10,
+          /* The 0.75 default flattens the continent; 1 keeps the outlines true. */
+          aspectScale: 1,
+          zoom: 1.04,
+          left: 8,
+          right: 8,
           top: 4,
-          bottom: 32,
+          bottom: 34,
           itemStyle: { areaColor: '#eef1f5', borderColor: '#fff', borderWidth: 0.8 },
           label: {
             show: true,
@@ -565,18 +568,18 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
               geo.ready ? (
                 <EChart
                   option={mapOption}
-                  height={346}
+                  height={392}
                   ariaLabel={`${region} loads per truck by market`}
                 />
               ) : (
-                <div className="mi-chart__state" style={{ height: 346 }}>
+                <div className="mi-chart__state" style={{ height: 392 }}>
                   {geo.failed ? 'Map outline unavailable.' : 'Loading map outline…'}
                 </div>
               )
             ) : (
               <EChart
                 option={capacityOption}
-                height={346}
+                height={392}
                 ariaLabel={`${region} loads and trucks by market`}
               />
             )}
