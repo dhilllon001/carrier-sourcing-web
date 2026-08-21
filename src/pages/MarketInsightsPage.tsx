@@ -1,17 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { EChartsOption } from 'echarts'
 import {
   Activity,
   ArrowRight,
   ArrowUpRight,
   BarChart3,
-  Clock3,
-  ExternalLink,
-  Fuel,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
   Gauge,
   Info,
   Map as MapIcon,
-  Newspaper,
   Search,
   Sparkles,
   TrendingUp,
@@ -20,14 +19,23 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { EChart } from '@/components/charts/EChart'
+import { MarketFeedPanel } from '@/components/AiAlertsPanel'
 import { CHART_FONT, chartTooltip, tooltipCategory } from '@/components/charts/chartTheme'
-import { useGeoMap, type MapName } from '@/components/charts/useGeoMap'
+import { mapRegionView, useGeoMap, type MapName } from '@/components/charts/useGeoMap'
+import {
+  routeAreaCodes,
+  routeMatchesProfile,
+  type InsightPreferenceProfile,
+} from '@/data/insightPreferences'
 import {
   areaRatio,
   areaTone,
-  datHeadlines,
+  cityMarkets,
+  cityRatio,
+  cityTone,
   insightRoutes,
   marketAreas,
+  nationalRates,
   nationalTrend,
   postingHistory,
   toneColor,
@@ -35,15 +43,34 @@ import {
   topNationalLanes,
   type EquipmentMarket,
   type InsightRegion,
-  type InsightRoute,
+  type MarketCountry,
   type MarketTone,
 } from '@/data/marketInsights'
 
-type Props = { search: string; onOpenCapacity?: () => void }
+type Props = {
+  search: string
+  profile: InsightPreferenceProfile
+  onOpenCapacity?: () => void
+  onOpenPreferences: () => void
+}
 
-const regions: InsightRegion[] = ['North America', 'United States', 'Canada']
+const regions: InsightRegion[] = ['North America', 'United States', 'Canada', 'Mexico']
+
+const countryOfRegion: Record<InsightRegion, MarketCountry | null> = {
+  'North America': null,
+  'United States': 'US',
+  Canada: 'CA',
+  Mexico: 'MX',
+}
+
+const countryLabel: Record<MarketCountry, string> = {
+  US: 'United States',
+  CA: 'Canada',
+  MX: 'Mexico',
+}
 const equipmentTypes: EquipmentMarket[] = ['Van', 'Reefer', 'Flatbed']
-const canadianStop = /, (ON|QC|BC|AB|MB|SK|NB|NS|PE|NL)$/
+/** Stop code to country, so a lane can be matched to the selected region. */
+const countryByCode = new Map(marketAreas.map((area) => [area.code, area.country]))
 
 const axisLabel = { color: '#64748b', fontSize: 13, fontFamily: CHART_FONT }
 const axisLine = { lineStyle: { color: '#dfe4ea' } }
@@ -53,29 +80,171 @@ function Signal({ tone }: { tone: MarketTone }) {
   return <span className={cn('mi-signal', `is-${tone}`)}>{toneLabel[tone]}</span>
 }
 
+type Sort = { key: string; dir: 'asc' | 'desc' }
+
+/** Numeric column header that toggles the table sort, highest first. */
+function SortHead({
+  id,
+  sort,
+  onSort,
+  children,
+}: {
+  id: string
+  sort: Sort
+  onSort: (sort: Sort) => void
+  children: ReactNode
+}) {
+  const active = sort.key === id
+  return (
+    <button
+      type="button"
+      className={cn('mi-sort', active && 'is-active')}
+      onClick={() => onSort({ key: id, dir: active && sort.dir === 'desc' ? 'asc' : 'desc' })}
+    >
+      {children}
+      {active ? sort.dir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} /> : null}
+    </button>
+  )
+}
+
+/** Long tables open collapsed so the page stays scannable. */
+const PAGE_ROWS = 12
+
+function MoreRows({
+  shown,
+  total,
+  label,
+  onToggle,
+}: {
+  shown: number
+  total: number
+  label: string
+  onToggle: () => void
+}) {
+  const open = shown >= total
+  return (
+    <button type="button" className="mi-more" onClick={onToggle}>
+      {open ? (
+        <>
+          Show top {PAGE_ROWS} {label}
+          <ChevronUp size={13} />
+        </>
+      ) : (
+        <>
+          Show all {total} {label}
+          <ChevronDown size={13} />
+        </>
+      )}
+    </button>
+  )
+}
+
+/** How the visible rows split across tight, balanced, and soft capacity. */
+function ToneMix({ rows }: { rows: MarketTone[] }) {
+  const counts = rows.reduce<Record<MarketTone, number>>(
+    (acc, tone) => ({ ...acc, [tone]: acc[tone] + 1 }),
+    { tight: 0, balanced: 0, soft: 0 }
+  )
+  return (
+    <div className="mi-mix">
+      {(['tight', 'balanced', 'soft'] as MarketTone[]).map((tone) => (
+        <span key={tone} className={cn('mi-mix__item', `is-${tone}`)}>
+          <i />
+          {counts[tone]} {toneLabel[tone].toLowerCase()}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** Loads per truck as a number plus a bar scaled against a 2.5× ceiling. */
+function Ratio({ value }: { value: number }) {
+  const tone: MarketTone = value >= 1.35 ? 'tight' : value >= 0.85 ? 'balanced' : 'soft'
+  return (
+    <span className={cn('mi-ratio', `is-${tone}`)}>
+      <b>{value.toFixed(2)}</b>
+      <i>
+        <u style={{ width: `${Math.min(100, (value / 2.5) * 100)}%` }} />
+      </i>
+    </span>
+  )
+}
+
+/** Inbound headline with the matching outbound count underneath. */
+function Pair({ inbound, outbound }: { inbound: number; outbound: number }) {
+  return (
+    <span className="mi-pair">
+      <b>{inbound.toLocaleString()}</b>
+      <em>out {outbound.toLocaleString()}</em>
+    </span>
+  )
+}
+
+/** Week-over-week rate move. Rising rates are the cost side for the desk. */
+function Move({ value }: { value: number }) {
+  return (
+    <span className={cn('mi-num', value >= 0 ? 'is-warn' : 'is-good')}>
+      {value >= 0 ? '▲' : '▼'} {Math.abs(value).toFixed(1)}%
+    </span>
+  )
+}
+
+function byKey<T extends Record<string, unknown>>(rows: T[], sort: Sort) {
+  return [...rows].sort((a, b) => {
+    const left = a[sort.key]
+    const right = b[sort.key]
+    const diff =
+      typeof left === 'number' && typeof right === 'number'
+        ? left - right
+        : String(left).localeCompare(String(right))
+    return sort.dir === 'desc' ? -diff : diff
+  })
+}
+
 const mapNames: Record<InsightRegion, MapName> = {
   'North America': 'north-america',
   'United States': 'usa',
   Canada: 'canada',
+  Mexico: 'mexico',
 }
 
-export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
+export function MarketInsightsPage({
+  search,
+  profile,
+  onOpenCapacity,
+  onOpenPreferences,
+}: Props) {
+  const preferredRoutes = useMemo(
+    () => insightRoutes.filter((route) => routeMatchesProfile(route, profile)),
+    [profile]
+  )
   const [region, setRegion] = useState<InsightRegion>('North America')
   const [equipment, setEquipment] = useState<EquipmentMarket>('Van')
   const [view, setView] = useState<'map' | 'ranking'>('map')
-  const [routeId, setRouteId] = useState(insightRoutes[0].id)
-  const [openRoute, setOpenRoute] = useState<InsightRoute | null>(insightRoutes[0])
+  const [routeId, setRouteId] = useState(preferredRoutes[0]?.id ?? insightRoutes[0].id)
+  const [stateSort, setStateSort] = useState<Sort>({ key: 'ratio', dir: 'desc' })
+  const [citySort, setCitySort] = useState<Sort>({ key: 'ratio', dir: 'desc' })
+  const [statesShown, setStatesShown] = useState(PAGE_ROWS)
+  const [citiesShown, setCitiesShown] = useState(PAGE_ROWS)
+  /** Market code the board is drilled into, set by clicking the map or a row. */
+  const [focusCode, setFocusCode] = useState<string | null>(null)
 
   const mapName = mapNames[region]
   const geo = useGeoMap(mapName)
 
   const areas = useMemo(() => {
-    const country = region === 'United States' ? 'US' : region === 'Canada' ? 'CA' : null
+    const country = countryOfRegion[region]
     return marketAreas
-      .filter((area) => !country || area.country === country)
+      .filter(
+        (area) =>
+          profile.areaCodes.includes(area.code) && (!country || area.country === country)
+      )
       .slice()
       .sort((a, b) => areaRatio(b) - areaRatio(a))
-  }, [region])
+  }, [profile.areaCodes, region])
+
+  const focus = focusCode ? areas.find((area) => area.code === focusCode) ?? null : null
+  const focusName = focus?.name ?? null
 
   /** Each market's share of regional inbound load postings. */
   const shares = useMemo(() => {
@@ -85,6 +254,8 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
 
   const mapOption = useMemo<EChartsOption>(() => {
     const byName = new Map(areas.map((area) => [area.name, area]))
+    /* Framing the drilled-in market keeps the click and the zoom together. */
+    const view = focusName && geo.ready ? mapRegionView(mapName, focusName) : null
     return {
       textStyle: { fontFamily: CHART_FONT, fontSize: 13 },
       tooltip: {
@@ -140,6 +311,7 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           aspectScale: 0.75,
           layoutCenter: ['50%', '47%'],
           layoutSize: '158%',
+          ...(view ? { center: view.center, zoom: view.zoom } : {}),
           itemStyle: { areaColor: '#eef1f5', borderColor: '#fff', borderWidth: 0.8 },
           label: {
             show: true,
@@ -167,26 +339,40 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           data: areas.map((area) => ({
             name: area.name,
             value: Number(areaRatio(area).toFixed(2)),
+            ...(area.code === focusCode
+              ? { itemStyle: { borderColor: '#0f172a', borderWidth: 1.8 } }
+              : {}),
           })),
         },
       ],
     }
-  }, [areas, mapName, shares])
+  }, [areas, focusCode, focusName, geo.ready, mapName, shares])
 
   const routes = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return insightRoutes.filter((route) => {
-      const isCanadian = canadianStop.test(route.origin) || canadianStop.test(route.destination)
+    const country = countryOfRegion[region]
+    return preferredRoutes.filter((route) => {
       const regionMatch =
-        region === 'North America' || (region === 'Canada' ? isCanadian : !isCanadian)
+        !country || routeAreaCodes(route).some((code) => countryByCode.get(code) === country)
       const textMatch =
         !q ||
         [route.origin, route.destination, route.customer].join(' ').toLowerCase().includes(q)
       return regionMatch && route.equipment === equipment && textMatch
     })
-  }, [equipment, region, search])
+  }, [equipment, preferredRoutes, region, search])
 
-  const route = insightRoutes.find((item) => item.id === routeId) ?? insightRoutes[0]
+  const route =
+    preferredRoutes.find((item) => item.id === routeId) ??
+    preferredRoutes[0] ??
+    insightRoutes[0]
+  const averageSpot =
+    areas.reduce((sum, area) => sum + area.spot, 0) / Math.max(1, areas.length)
+  const averageRatio =
+    areas.reduce((sum, area) => sum + areaRatio(area), 0) / Math.max(1, areas.length)
+  const hardestMarket = areas.reduce(
+    (hardest, area) => (!hardest || areaRatio(area) > areaRatio(hardest) ? area : hardest),
+    areas[0]
+  )
 
   /* Capacity balance: loads and trucks for the tightest markets, ratio on a second axis. */
   const capacityOption = useMemo<EChartsOption>(() => {
@@ -353,7 +539,7 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
 
   /* Top national lanes with the low-to-high band behind the paid rate. */
   const lanesOption = useMemo<EChartsOption>(() => {
-    const rows = [...topNationalLanes].reverse()
+    const rows = topNationalLanes.slice(0, 8).reverse()
     return {
       textStyle: { fontFamily: CHART_FONT, fontSize: 13 },
       grid: { top: 14, right: 26, bottom: 24, left: 84 },
@@ -410,10 +596,79 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
     }
   }, [])
 
-  const trendOption = useMemo<EChartsOption>(
+  /* Metro rows live inside the selected states, so both tables always agree.
+     Drilling into a market narrows this to that market's metros. */
+  const cityRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const country = countryOfRegion[region]
+    const rows = cityMarkets
+      .filter(
+        (city) =>
+          profile.areaCodes.includes(city.state) &&
+          (!country || city.country === country) &&
+          (!focusCode || city.state === focusCode) &&
+          (!q ||
+            [city.city, city.code, city.state, city.topOutbound]
+              .join(' ')
+              .toLowerCase()
+              .includes(q))
+      )
+      .map((city) => ({ ...city, ratio: cityRatio(city) }))
+    return byKey(rows, citySort)
+  }, [citySort, focusCode, profile.areaCodes, region, search])
+
+  const stateRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const metros = new Map<string, number>()
+    for (const city of cityMarkets) {
+      metros.set(city.state, (metros.get(city.state) ?? 0) + 1)
+    }
+    const rows = areas
+      .filter(
+        (area) => !q || [area.code, area.name].join(' ').toLowerCase().includes(q)
+      )
+      .map((area) => ({
+        area,
+        loadsIn: area.loadsIn,
+        loadsOut: area.loadsOut,
+        trucksIn: area.trucksIn,
+        trucksOut: area.trucksOut,
+        net: area.loadsIn - area.loadsOut,
+        ratio: areaRatio(area),
+        share: shares.get(area.code) ?? 0,
+        spot: area.spot,
+        contract: area.contract,
+        spread: area.spot - area.contract,
+        metros: metros.get(area.code) ?? 0,
+      }))
+    return byKey(rows, stateSort)
+  }, [areas, search, shares, stateSort])
+
+  const totals = useMemo(
+    () =>
+      stateRows.reduce(
+        (sum, row) => ({
+          loadsIn: sum.loadsIn + row.loadsIn,
+          trucksIn: sum.trucksIn + row.trucksIn,
+        }),
+        { loadsIn: 0, trucksIn: 0 }
+      ),
+    [stateRows]
+  )
+
+  const laneRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return topNationalLanes.filter(
+      (lane) =>
+        (!focusCode || lane.origin === focusCode || lane.destination === focusCode) &&
+        (!q || [lane.short, lane.lane, lane.equipment].join(' ').toLowerCase().includes(q))
+    )
+  }, [focusCode, search])
+
+  const laneTrendOption = useMemo<EChartsOption>(
     () => ({
       textStyle: { fontFamily: CHART_FONT, fontSize: 13 },
-      grid: { top: 14, right: 14, bottom: 24, left: 46 },
+      grid: { top: 14, right: 16, bottom: 24, left: 48 },
       tooltip: { ...chartTooltip, valueFormatter: (v) => `$${Number(v).toFixed(2)}/mi` },
       xAxis: {
         type: 'category',
@@ -435,36 +690,18 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           type: 'line',
           smooth: true,
           symbolSize: 7,
-          data: openRoute?.trend ?? [],
+          data: route.trend,
           lineStyle: { color: '#2563eb', width: 2.5 },
           itemStyle: { color: '#2563eb' },
           areaStyle: { color: 'rgba(37,99,235,0.10)' },
         },
       ],
     }),
-    [openRoute]
+    [route]
   )
 
   return (
     <main className="mi-page">
-      <section className="mi-hero">
-        <div>
-          <span className="mi-eyebrow">
-            <Sparkles size={13} /> AI market brief
-          </span>
-          <h2>North America freight intelligence</h2>
-          <p>
-            A static planning view built from public DAT market commentary, the supplied state rate
-            matrices, and the sample P&amp;G network. Charts render locally with Apache ECharts.
-          </p>
-        </div>
-        <div className="mi-hero__source">
-          <span>Snapshot</span>
-          <strong>Aug 20, 2026 · 3:37 PM</strong>
-          <em>No live API · no token usage</em>
-        </div>
-      </section>
-
       <section className="mi-controls">
         <div className="mi-tabs" role="tablist" aria-label="Region">
           {regions.map((item) => (
@@ -494,47 +731,72 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           ))}
         </div>
 
-        <label className="mi-route-select">
-          <Search size={14} />
-          <select value={routeId} onChange={(event) => setRouteId(event.target.value)}>
-            {insightRoutes.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.origin} → {item.destination}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" className="mi-primary" onClick={() => setOpenRoute(route)}>
-          View route insight
-          <ArrowRight size={14} />
-        </button>
+        <div className="mi-controls__meta">
+          <span>
+            {profile.areaCodes.length} markets · {profile.lanes.length} lanes · snapshot Aug 20, 2026
+          </span>
+          <button type="button" onClick={onOpenPreferences}>
+            <Sparkles size={13} /> Personalized for {profile.name}
+          </button>
+        </div>
       </section>
 
-      <section className="mi-kpis">
-        {[
-          { icon: TrendingUp, label: 'Dry van spot linehaul', value: '$2.28', unit: '/ mi', note: '+$0.65 YoY', tone: 'up' },
-          { icon: Activity, label: 'July LMI', value: '68.9', note: 'Near 4-year high' },
-          { icon: Gauge, label: 'Capacity index', value: '28.4', note: '8th month contracting', tone: 'warn' },
-          { icon: Clock3, label: 'Average tender lead', value: '3.74', unit: 'days', note: '+11% YoY', tone: 'up' },
-          { icon: Fuel, label: 'DAT fuel assumption', value: '$0.70', unit: '/ mi', note: 'Applied to matrices' },
-        ].map((kpi) => {
-          const Icon = kpi.icon
-          return (
-            <article key={kpi.label}>
-              <i>
-                <Icon size={16} />
-              </i>
-              <span>{kpi.label}</span>
+      <section className="mi-stats">
+        <header>
+          <div>
+            <h3>National rate</h3>
+            <span>Updated {nationalRates.updated}</span>
+          </div>
+          <em>{region} · {equipment}</em>
+        </header>
+
+        <div className="mi-stats__row">
+          {nationalRates.items.map((item) => (
+            <article key={item.id}>
+              <span>{item.label}</span>
               <strong>
-                {kpi.value}
-                {kpi.unit && <small>{kpi.unit}</small>}
+                ${item.value.toFixed(2)}
+                <u>
+                  ({item.delta < 0 ? '−' : item.delta > 0 ? '+' : ''}$
+                  {Math.abs(item.delta).toFixed(2)})
+                </u>
               </strong>
-              <em className={kpi.tone === 'up' ? 'is-up' : kpi.tone === 'warn' ? 'is-warn' : undefined}>
-                {kpi.note}
+              <em className={item.direction === 'neutral' ? 'is-flat' : 'is-up'}>
+                {item.direction === 'neutral' ? (
+                  <>
+                    <ArrowRight size={12} /> Rate is neutral
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp size={12} /> Rate is increasing
+                  </>
+                )}
               </em>
             </article>
-          )
-        })}
+          ))}
+
+          <article className="is-preference">
+            <span>Preferred market spot</span>
+            <strong>
+              ${averageSpot.toFixed(2)}
+              <u>/ mi</u>
+            </strong>
+            <em>
+              <Activity size={12} /> {areas.length} selected markets
+            </em>
+          </article>
+
+          <article className="is-preference">
+            <span>Average load / truck</span>
+            <strong>{averageRatio.toFixed(2)}</strong>
+            <em className={averageRatio >= 1.35 ? 'is-warn' : undefined}>
+              <Gauge size={12} />{' '}
+              {hardestMarket
+                ? `${hardestMarket.code} hardest at ${areaRatio(hardestMarket).toFixed(2)}×`
+                : 'No selected market'}
+            </em>
+          </article>
+        </div>
       </section>
 
       <section className="mi-grid">
@@ -542,8 +804,31 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
           <header>
             <div>
               <span>Market conditions</span>
-              <h3>{region} capacity balance</h3>
+              <h3>
+                {focus ? (
+                  <span className="mi-crumbs">
+                    <button type="button" onClick={() => setFocusCode(null)}>
+                      {region}
+                    </button>
+                    {countryLabel[focus.country] === region ? null : (
+                      <>
+                        <ChevronRight size={14} />
+                        {countryLabel[focus.country]}
+                      </>
+                    )}
+                    <ChevronRight size={14} />
+                    <b>{focus.name}</b>
+                  </span>
+                ) : (
+                  `${region} capacity balance`
+                )}
+              </h3>
             </div>
+            {focus ? (
+              <button type="button" className="mi-clear" onClick={() => setFocusCode(null)}>
+                <X size={13} /> Back to {region}
+              </button>
+            ) : null}
             <div className="mi-view" role="group" aria-label="Chart view">
               <button
                 type="button"
@@ -569,6 +854,10 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
                     option={mapOption}
                     height={500}
                     ariaLabel={`${region} loads per truck by market`}
+                    onSelect={(name) => {
+                      const clicked = areas.find((area) => area.name === name)
+                      if (clicked) setFocusCode(clicked.code === focusCode ? null : clicked.code)
+                    }}
                   />
                 ) : (
                   <div className="mi-chart__state" style={{ height: 500 }}>
@@ -588,7 +877,12 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
               {areas.slice(0, 8).map((area) => {
                 const ratio = areaRatio(area)
                 return (
-                  <div key={area.code} className="mi-rail__row">
+                  <button
+                    key={area.code}
+                    type="button"
+                    className={cn('mi-rail__row', area.code === focusCode && 'is-active')}
+                    onClick={() => setFocusCode(area.code === focusCode ? null : area.code)}
+                  >
                     <b>{area.code}</b>
                     <span>{area.name}</span>
                     <em>{ratio.toFixed(2)}×</em>
@@ -601,7 +895,7 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
                       />
                     </i>
                     <small>{(shares.get(area.code) ?? 0).toFixed(1)}% of loads</small>
-                  </div>
+                  </button>
                 )
               })}
             </aside>
@@ -616,43 +910,106 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
             ))}
             <span className="mi-legend__hint">
               {view === 'map'
-                ? 'Hover a market for its share of loads, postings, and rates'
+                ? 'Hover for postings and rates · click a market to drill into its metros and lanes'
                 : 'Top 16 markets by loads per truck'}
             </span>
           </div>
         </article>
 
-        <article className="mi-card mi-card--news">
-          <header>
-            <div>
-              <span>Market news</span>
-              <h3>What changed this week</h3>
-            </div>
-            <Newspaper size={17} />
-          </header>
-          <div className="mi-news-list">
-            {datHeadlines.map((headline, index) => (
-              <article key={headline.title}>
-                <i>{index + 1}</i>
-                <div>
-                  <span>{headline.date}</span>
-                  <strong>{headline.title}</strong>
-                  <p>{headline.detail}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-          <a
-            href="https://www.dat.com/blog/dry-van-report-capacity-stays-tight-as-the-july-lmi-holds-near-a-4-year-high"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read source report <ExternalLink size={13} />
-          </a>
-        </article>
+        <MarketFeedPanel profile={profile} />
       </section>
 
-      <section className="mi-grid mi-grid--thirds">
+      <section className="mi-card mi-brief">
+        <header>
+          <div>
+            <span>Lane brief</span>
+            <h3>
+              {route.origin} <ArrowRight size={15} /> {route.destination}
+            </h3>
+          </div>
+          <div className="mi-brief__pick">
+            <label className="mi-route-select">
+              <Search size={14} />
+              <select value={route.id} onChange={(event) => setRouteId(event.target.value)}>
+                {(preferredRoutes.length ? preferredRoutes : insightRoutes).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.origin} → {item.destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {onOpenCapacity && (
+              <button type="button" className="mi-primary" onClick={onOpenCapacity}>
+                Open carrier capacity <ArrowUpRight size={14} />
+              </button>
+            )}
+          </div>
+        </header>
+
+        <div className="mi-brief__signal">
+          <Signal tone={route.signal} />
+          <strong>{route.summary}</strong>
+          <em>
+            {route.customer} · {route.equipment} · {route.miles.toLocaleString()} mi ·{' '}
+            {route.weeklyLoads} loads a week
+          </em>
+        </div>
+
+        <div className="mi-brief__kpis">
+          {[
+            { label: 'Spot rate', value: `$${route.spot.toFixed(2)}`, unit: '/mi' },
+            { label: 'Contract', value: `$${route.contract.toFixed(2)}`, unit: '/mi' },
+            {
+              label: 'Spot vs contract',
+              value: `${route.spot - route.contract > 0 ? '+' : '−'}$${Math.abs(
+                route.spot - route.contract
+              ).toFixed(2)}`,
+              tone: route.spot - route.contract > 0 ? 'bad' : 'good',
+            },
+            { label: '35-day outlook', value: `$${route.forecast.toFixed(2)}`, unit: '/mi' },
+            { label: 'Load / truck', value: route.loadToTruck.toFixed(1) },
+            {
+              label: 'Carriers',
+              value: String(route.carrierMatches),
+              unit: `${route.preferredCarriers} preferred`,
+            },
+          ].map((kpi) => (
+            <article key={kpi.label}>
+              <span>{kpi.label}</span>
+              <strong
+                className={
+                  kpi.tone === 'bad' ? 'is-bad' : kpi.tone === 'good' ? 'is-good' : undefined
+                }
+              >
+                {kpi.value}
+                {kpi.unit && <small>{kpi.unit}</small>}
+              </strong>
+            </article>
+          ))}
+        </div>
+
+        <div className="mi-brief__split">
+          <div>
+            <span>7-week rate direction</span>
+            <EChart option={laneTrendOption} height={196} ariaLabel="Seven week rate direction" />
+          </div>
+          <div>
+            <span>AI planning recommendation</span>
+            <strong>{route.recommendation}</strong>
+            <div className="mi-brief__watch">
+              <span>Watch on this lane</span>
+              {route.watch.map((item) => (
+                <div key={item}>
+                  <i />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mi-grid">
         <article className="mi-card">
           <header>
             <div>
@@ -678,19 +1035,67 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
             <EChart option={postingOption} height={232} ariaLabel="Load and truck postings by week" />
           </div>
         </article>
+      </section>
 
-        <article className="mi-card">
-          <header>
-            <div>
-              <span>Top national lanes</span>
-              <h3>Broker spot versus range</h3>
-            </div>
-            <span className="mi-source">Per load</span>
-          </header>
-          <div className="mi-chart">
-            <EChart option={lanesOption} height={232} ariaLabel="Top national lanes broker spot rates" />
+      <section className="mi-card">
+        <header>
+          <div>
+            <span>Top national lanes</span>
+            <h3>
+              {focus ? `Lanes touching ${focus.name}` : 'Broker spot versus market range'} ·{' '}
+              {laneRows.length} lanes
+            </h3>
           </div>
-        </article>
+          <span className="mi-source">Per load, incl. fuel</span>
+        </header>
+        <div className="mi-table mi-table--lanes">
+          <div className="mi-table__head">
+            <span>Lane</span>
+            <span>Equipment</span>
+            <span>Miles</span>
+            <span>Loads / wk</span>
+            <span>Broker spot</span>
+            <span>$ / mile</span>
+            <span>Spread</span>
+            <span>WoW</span>
+            <span>Market range and paid position</span>
+          </div>
+          {laneRows.length ? (
+            laneRows.map((lane) => {
+              const spread = lane.high - lane.low
+              const position = ((lane.rate - lane.low) / Math.max(1, spread)) * 100
+              return (
+                <div key={lane.short} className="mi-table__row">
+                  <span className="mi-cell--name">
+                    <strong>{lane.short}</strong>
+                    <em>{lane.lane}</em>
+                  </span>
+                  <span className="mi-tag">{lane.equipment}</span>
+                  <span className="mi-num">{lane.miles.toLocaleString()}</span>
+                  <span className="mi-num">{lane.weeklyLoads.toLocaleString()}</span>
+                  <span className="mi-num is-strong">${lane.rate.toLocaleString()}</span>
+                  <span className="mi-num">${(lane.rate / lane.miles).toFixed(2)}</span>
+                  <span className="mi-num">${spread.toLocaleString()}</span>
+                  <Move value={lane.wow} />
+                  <span className="mi-range">
+                    <i>
+                      <u style={{ left: `${Math.min(96, Math.max(0, position))}%` }} />
+                    </i>
+                    <em>
+                      ${lane.low.toLocaleString()} – ${lane.high.toLocaleString()} ·{' '}
+                      {position.toFixed(0)}% of range
+                    </em>
+                  </span>
+                </div>
+              )
+            })
+          ) : (
+            <div className="mi-empty">No lanes match this search.</div>
+          )}
+        </div>
+        <div className="mi-chart mi-chart--inset">
+          <EChart option={lanesOption} height={210} ariaLabel="Top national lanes broker spot rates" />
+        </div>
       </section>
 
       <section className="mi-card mi-routes">
@@ -699,7 +1104,7 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
             <span>Network intelligence</span>
             <h3>Priority lanes · {equipment}</h3>
           </div>
-          <span className="mi-source">Sample P&amp;G network · click a lane for the brief</span>
+          <span className="mi-source">Select a lane to update the lane brief above</span>
         </header>
         <div className="mi-routes__scroll">
           <div className="mi-routes__head">
@@ -718,8 +1123,8 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
               <button
                 key={item.id}
                 type="button"
-                className="mi-route-row"
-                onClick={() => setOpenRoute(item)}
+                className={cn('mi-route-row', item.id === route.id && 'is-active')}
+                onClick={() => setRouteId(item.id)}
               >
                 <span>
                   <strong>
@@ -748,144 +1153,189 @@ export function MarketInsightsPage({ search, onOpenCapacity }: Props) {
         </div>
       </section>
 
+      <section className="mi-card">
+        <header>
+          <div>
+            <span>Market detail by state and province</span>
+            <h3>
+              {stateRows.length} markets · {totals.loadsIn.toLocaleString()} loads ·{' '}
+              {totals.trucksIn.toLocaleString()} trucks
+            </h3>
+          </div>
+          <ToneMix rows={stateRows.map((row) => areaTone(row.area))} />
+        </header>
+        <p className="mi-hint">Click a row to drill the board into that market.</p>
+        <div className="mi-table mi-table--markets">
+          <div className="mi-table__head">
+            <span>Market</span>
+            <span>Signal</span>
+            <SortHead id="loadsIn" sort={stateSort} onSort={setStateSort}>
+              Loads in / out
+            </SortHead>
+            <SortHead id="trucksIn" sort={stateSort} onSort={setStateSort}>
+              Trucks in / out
+            </SortHead>
+            <SortHead id="net" sort={stateSort} onSort={setStateSort}>
+              Net balance
+            </SortHead>
+            <SortHead id="ratio" sort={stateSort} onSort={setStateSort}>
+              Load / truck
+            </SortHead>
+            <SortHead id="share" sort={stateSort} onSort={setStateSort}>
+              Share
+            </SortHead>
+            <SortHead id="spot" sort={stateSort} onSort={setStateSort}>
+              Spot
+            </SortHead>
+            <SortHead id="contract" sort={stateSort} onSort={setStateSort}>
+              Contract
+            </SortHead>
+            <SortHead id="spread" sort={stateSort} onSort={setStateSort}>
+              Spot vs contract
+            </SortHead>
+            <SortHead id="metros" sort={stateSort} onSort={setStateSort}>
+              Metros
+            </SortHead>
+          </div>
+          {stateRows.length ? (
+            stateRows.slice(0, statesShown).map((row) => (
+              <div
+                key={`${row.area.country}-${row.area.code}`}
+                role="button"
+                tabIndex={0}
+                className={cn(
+                  'mi-table__row',
+                  'is-clickable',
+                  row.area.code === focusCode && 'is-active'
+                )}
+                onClick={() =>
+                  setFocusCode(row.area.code === focusCode ? null : row.area.code)
+                }
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setFocusCode(row.area.code === focusCode ? null : row.area.code)
+                  }
+                }}
+              >
+                <span className="mi-cell--name">
+                  <strong>{row.area.name}</strong>
+                  <em>
+                    {row.area.code} · {countryLabel[row.area.country]}
+                  </em>
+                </span>
+                <Signal tone={areaTone(row.area)} />
+                <Pair inbound={row.loadsIn} outbound={row.loadsOut} />
+                <Pair inbound={row.trucksIn} outbound={row.trucksOut} />
+                <span className={cn('mi-num', row.net >= 0 ? 'is-warn' : 'is-good')}>
+                  {row.net >= 0 ? '+' : '−'}
+                  {Math.abs(row.net).toLocaleString()}
+                </span>
+                <Ratio value={row.ratio} />
+                <span className="mi-num">{row.share.toFixed(1)}%</span>
+                <span className="mi-num">${row.spot.toFixed(2)}</span>
+                <span className="mi-num">${row.contract.toFixed(2)}</span>
+                <span className={cn('mi-num', row.spread > 0 ? 'is-warn' : 'is-good')}>
+                  {row.spread > 0 ? '+' : '−'}${Math.abs(row.spread).toFixed(2)}
+                </span>
+                <span className="mi-num">{row.metros}</span>
+              </div>
+            ))
+          ) : (
+            <div className="mi-empty">
+              No markets match this region and search. Add states or provinces in user preferences.
+            </div>
+          )}
+        </div>
+        {stateRows.length > PAGE_ROWS ? (
+          <MoreRows
+            shown={statesShown}
+            total={stateRows.length}
+            label="markets"
+            onToggle={() => setStatesShown(statesShown > PAGE_ROWS ? PAGE_ROWS : stateRows.length)}
+          />
+        ) : null}
+      </section>
+
+      <section className="mi-card">
+        <header>
+          <div>
+            <span>Market detail by city</span>
+            <h3>
+              {cityRows.length} metro market{cityRows.length === 1 ? '' : 's'}
+              {focus ? ` in ${focus.name}` : ''}
+            </h3>
+          </div>
+          <ToneMix rows={cityRows.map((city) => cityTone(city))} />
+        </header>
+        <div className="mi-table mi-table--cities">
+          <div className="mi-table__head">
+            <span>Metro market</span>
+            <span>Signal</span>
+            <SortHead id="loadsIn" sort={citySort} onSort={setCitySort}>
+              Loads in / out
+            </SortHead>
+            <SortHead id="trucksIn" sort={citySort} onSort={setCitySort}>
+              Trucks in / out
+            </SortHead>
+            <SortHead id="ratio" sort={citySort} onSort={setCitySort}>
+              Load / truck
+            </SortHead>
+            <SortHead id="spot" sort={citySort} onSort={setCitySort}>
+              Spot
+            </SortHead>
+            <SortHead id="contract" sort={citySort} onSort={setCitySort}>
+              Contract
+            </SortHead>
+            <SortHead id="wow" sort={citySort} onSort={setCitySort}>
+              WoW
+            </SortHead>
+            <SortHead id="avgMiles" sort={citySort} onSort={setCitySort}>
+              Avg haul
+            </SortHead>
+            <span>Top outbound</span>
+          </div>
+          {cityRows.length ? (
+            cityRows.slice(0, citiesShown).map((city) => (
+              <div key={city.code} className="mi-table__row">
+                <span className="mi-cell--name">
+                  <strong>{city.city}</strong>
+                  <em>
+                    {city.code} · {city.state} · {city.country}
+                  </em>
+                </span>
+                <Signal tone={cityTone(city)} />
+                <Pair inbound={city.loadsIn} outbound={city.loadsOut} />
+                <Pair inbound={city.trucksIn} outbound={city.trucksOut} />
+                <Ratio value={city.ratio} />
+                <span className="mi-num">${city.spot.toFixed(2)}</span>
+                <span className="mi-num">${city.contract.toFixed(2)}</span>
+                <Move value={city.wow} />
+                <span className="mi-num">{city.avgMiles.toLocaleString()} mi</span>
+                <span className="mi-cell--muted">{city.topOutbound}</span>
+              </div>
+            ))
+          ) : (
+            <div className="mi-empty">
+              No metro markets match this region and search.
+            </div>
+          )}
+        </div>
+        {cityRows.length > PAGE_ROWS ? (
+          <MoreRows
+            shown={citiesShown}
+            total={cityRows.length}
+            label="metros"
+            onToggle={() => setCitiesShown(citiesShown > PAGE_ROWS ? PAGE_ROWS : cityRows.length)}
+          />
+        ) : null}
+      </section>
+
       <div className="mi-footnote">
         <Info size={13} />
         Prototype only. Figures are static examples from the supplied Aug 20 rate matrices and public
         DAT commentary; this screen never requests or refreshes external data.
       </div>
-
-      {openRoute && (
-        <RouteInsightModal
-          route={openRoute}
-          trendOption={trendOption}
-          onClose={() => setOpenRoute(null)}
-          onOpenCapacity={onOpenCapacity}
-        />
-      )}
     </main>
-  )
-}
-
-function RouteInsightModal({
-  route,
-  trendOption,
-  onClose,
-  onOpenCapacity,
-}: {
-  route: InsightRoute
-  trendOption: EChartsOption
-  onClose: () => void
-  onOpenCapacity?: () => void
-}) {
-  const delta = route.spot - route.contract
-
-  return (
-    <div className="mi-modal-root" role="dialog" aria-modal="true" aria-labelledby="mi-route-title">
-      <button type="button" className="mi-modal__veil" aria-label="Close route insight" onClick={onClose} />
-      <section className="mi-modal">
-        <header>
-          <div>
-            <span>
-              <Sparkles size={13} /> Route intelligence
-            </span>
-            <h2 id="mi-route-title">
-              {route.origin} <ArrowRight size={18} /> {route.destination}
-            </h2>
-            <p>
-              {route.customer} · {route.equipment} · {route.miles.toLocaleString()} miles ·{' '}
-              {route.weeklyLoads} loads a week
-            </p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close">
-            <X size={18} />
-          </button>
-        </header>
-
-        <div className="mi-modal__body">
-          <div className="mi-modal__signal">
-            <Signal tone={route.signal} />
-            <strong>{route.summary}</strong>
-          </div>
-
-          <div className="mi-modal__kpis">
-            <div>
-              <span>Spot rate</span>
-              <strong>
-                ${route.spot.toFixed(2)}
-                <small>/mi</small>
-              </strong>
-            </div>
-            <div>
-              <span>Contract</span>
-              <strong>
-                ${route.contract.toFixed(2)}
-                <small>/mi</small>
-              </strong>
-            </div>
-            <div>
-              <span>Spot vs contract</span>
-              <strong className={delta > 0 ? 'is-bad' : 'is-good'}>
-                {delta > 0 ? '+' : '−'}${Math.abs(delta).toFixed(2)}
-              </strong>
-            </div>
-            <div>
-              <span>35-day outlook</span>
-              <strong>
-                ${route.forecast.toFixed(2)}
-                <small>/mi</small>
-              </strong>
-            </div>
-            <div>
-              <span>Load / truck</span>
-              <strong>{route.loadToTruck.toFixed(1)}</strong>
-            </div>
-            <div>
-              <span>Carriers</span>
-              <strong>
-                {route.carrierMatches}
-                <small>{route.preferredCarriers} preferred</small>
-              </strong>
-            </div>
-          </div>
-
-          <div className="mi-modal__split">
-            <article>
-              <span>7-week rate direction</span>
-              <EChart option={trendOption} height={168} ariaLabel="Seven week rate direction" />
-            </article>
-            <article>
-              <span>AI planning recommendation</span>
-              <strong>{route.recommendation}</strong>
-              <div className="mi-modal__watch">
-                <span>Watch on this lane</span>
-                {route.watch.map((item) => (
-                  <div key={item}>
-                    <i />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <footer>
-          <span>Static snapshot · refreshed Aug 20, 2026</span>
-          <button type="button" onClick={onClose}>
-            Keep current plan
-          </button>
-          <button
-            type="button"
-            className="is-primary"
-            onClick={() => {
-              onClose()
-              onOpenCapacity?.()
-            }}
-          >
-            Open carrier capacity
-          </button>
-        </footer>
-      </section>
-    </div>
   )
 }

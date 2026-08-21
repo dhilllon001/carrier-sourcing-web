@@ -1,0 +1,164 @@
+/* Thin always-on status strip pinned under every page */
+.sr-strip {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-top: 1px solid var(--sr-border-1);
+  background: var(--sr-surface-1);
+  font-family: var(--sr-font-body);
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--sr-text-secondary);
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sr-strip::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.sr-strip__live {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding-right: 2px;
+  font-weight: 650;
+  color: var(--sr-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-strip__live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2.5px rgba(34, 197, 94, 0.18);
+}
+
+.sr-strip__div {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  background: var(--sr-border-1);
+}
+
+.sr-strip__spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+.sr-strip__chip,
+.sr-strip__market,
+.sr-strip__shortcut {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--sr-text-secondary);
+  cursor: pointer;
+}
+
+.sr-strip__chip b,
+.sr-strip__market b {
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: var(--sr-text-primary);
+}
+
+.sr-strip__chip em {
+  font-style: normal;
+  color: var(--sr-text-muted, #8a95a3);
+}
+
+.sr-strip__chip:hover,
+.sr-strip__market:hover,
+.sr-strip__shortcut:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.sr-strip__chip.is-here {
+  border-color: var(--sr-border-1);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+/* Severity is carried by the icon and the count, so the strip stays quiet. */
+.sr-strip__chip.is-critical svg,
+.sr-strip__chip.is-critical b {
+  color: #ef4444;
+}
+
+.sr-strip__chip.is-urgent svg,
+.sr-strip__chip.is-urgent b {
+  color: #f97316;
+}
+
+.sr-strip__chip.is-warn svg,
+.sr-strip__chip.is-warn b {
+  color: #eab308;
+}
+
+.sr-strip__chip.is-action svg,
+.sr-strip__chip.is-action b {
+  color: #3b82f6;
+}
+
+.sr-strip__market svg:first-child {
+  color: #3b82f6;
+}
+
+.sr-strip__market em {
+  font-style: normal;
+  font-weight: 650;
+}
+
+.sr-strip__market em.is-up {
+  color: #0f7355;
+}
+
+.sr-strip__market em.is-down {
+  color: #b42318;
+}
+
+.sr-strip__market > span {
+  padding-left: 6px;
+  border-left: 1px solid var(--sr-border-1);
+}
+
+.sr-strip__market svg:last-child {
+  color: #94a3b8;
+}
+
+.sr-strip__shortcut {
+  font-weight: 600;
+}
+
+.sr-strip__shortcut kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--sr-border-1);
+  border-radius: 4px;
+  background: var(--sr-surface-2);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--sr-text-primary);
+}
+
+@media (max-width: 1180px) {
+  .sr-strip__market > span,
+  .sr-strip__chip em {
+    display: none;
+  }
+}

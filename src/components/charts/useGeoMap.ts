@@ -6,6 +6,7 @@ type GeoJson = Parameters<typeof echarts.registerMap>[1] & { features: unknown[]
 const files = {
   usa: 'geo/usa.json',
   canada: 'geo/canada.json',
+  mexico: 'geo/mexico.json',
 } as const
 
 /* Alaska and Hawaii are relocated the same way the ECharts USA sample does, so
@@ -45,10 +46,21 @@ function register(mapName: MapName) {
       echarts.registerMap('canada', await source('canada'))
       return
     }
-    const [usa, canada] = await Promise.all([source('usa'), source('canada')])
+    if (mapName === 'mexico') {
+      echarts.registerMap('mexico', await source('mexico'))
+      return
+    }
+    const [usa, canada, mexico] = await Promise.all([
+      source('usa'),
+      source('canada'),
+      source('mexico'),
+    ])
     echarts.registerMap(
       'north-america',
-      { type: 'FeatureCollection', features: [...usa.features, ...canada.features] } as GeoJson,
+      {
+        type: 'FeatureCollection',
+        features: [...usa.features, ...canada.features, ...mexico.features],
+      } as GeoJson,
       usaLayout
     )
   })()
@@ -57,7 +69,57 @@ function register(mapName: MapName) {
   return pending
 }
 
-export type MapName = 'north-america' | 'usa' | 'canada'
+export type MapName = 'north-america' | 'usa' | 'canada' | 'mexico'
+
+type Ring = number[][]
+type Feature = { properties?: { name?: string }; geometry?: { type: string; coordinates: unknown } }
+type Box = { minX: number; minY: number; maxX: number; maxY: number }
+
+function rings(feature: Feature): Ring[] {
+  if (!feature.geometry) return []
+  return feature.geometry.type === 'Polygon'
+    ? (feature.geometry.coordinates as Ring[])
+    : (feature.geometry.coordinates as Ring[][]).flat()
+}
+
+function boxOf(features: Feature[]): Box | null {
+  const box: Box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+  for (const feature of features) {
+    for (const ring of rings(feature)) {
+      for (const [x, y] of ring) {
+        if (x < box.minX) box.minX = x
+        if (x > box.maxX) box.maxX = x
+        if (y < box.minY) box.minY = y
+        if (y > box.maxY) box.maxY = y
+      }
+    }
+  }
+  return Number.isFinite(box.minX) ? box : null
+}
+
+/** Bounding-box centre and a zoom that frames one named region on a map, used
+    when the board drills into a single market. The zoom is measured against the
+    whole map's extent so it works the same on a country or the continent. */
+export function mapRegionView(mapName: MapName, regionName: string) {
+  const features = (echarts.getMap(mapName)?.geoJSON as GeoJson | undefined)?.features as
+    | Feature[]
+    | undefined
+  const feature = features?.find((item) => item.properties?.name === regionName)
+  if (!feature || !features) return null
+
+  const region = boxOf([feature])
+  const whole = boxOf(features)
+  if (!region || !whole) return null
+
+  const regionSpan = Math.max(region.maxX - region.minX, (region.maxY - region.minY) * 1.4, 0.5)
+  const wholeSpan = Math.max(whole.maxX - whole.minX, 1)
+  return {
+    center: [(region.minX + region.maxX) / 2, (region.minY + region.maxY) / 2] as [number, number],
+    /* Leaving the region at roughly a third of the frame keeps its neighbours
+       visible, which is what makes the drill-down readable. */
+    zoom: Math.min(7, Math.max(1.5, (wholeSpan / regionSpan) * 0.34)),
+  }
+}
 
 /** Loads the GeoJSON for a map once and reports when ECharts can draw it.
     Readiness is keyed by map name so a region switch never hands ECharts an

@@ -3,14 +3,15 @@
    dry van commentary, and the sample P&G network. Nothing here is fetched at
    runtime — the board never calls an API. */
 
-export type InsightRegion = 'North America' | 'United States' | 'Canada'
+export type InsightRegion = 'North America' | 'United States' | 'Canada' | 'Mexico'
 export type EquipmentMarket = 'Van' | 'Reefer' | 'Flatbed'
 export type MarketTone = 'tight' | 'balanced' | 'soft'
+export type MarketCountry = 'US' | 'CA' | 'MX'
 
 export type MarketArea = {
   code: string
   name: string
-  country: 'US' | 'CA'
+  country: MarketCountry
   loadsIn: number
   loadsOut: number
   trucksIn: number
@@ -99,6 +100,24 @@ export const marketAreas: MarketArea[] = [
   { code: 'BC', name: 'British Columbia', country: 'CA', loadsIn: 276, loadsOut: 214, trucksIn: 331, trucksOut: 307, spot: 5.44, contract: 5.97 },
   { code: 'MB', name: 'Manitoba', country: 'CA', loadsIn: 146, loadsOut: 178, trucksIn: 122, trucksOut: 137, spot: 2.82, contract: 2.95 },
   { code: 'SK', name: 'Saskatchewan', country: 'CA', loadsIn: 89, loadsOut: 97, trucksIn: 116, trucksOut: 108, spot: 2.18, contract: 2.33 },
+  /* Mexican states use the same load and truck posting model. Names match the
+     GeoJSON exactly so the map join works without a lookup table. */
+  { code: 'NL', name: 'Nuevo León', country: 'MX', loadsIn: 742, loadsOut: 884, trucksIn: 486, trucksOut: 612, spot: 2.86, contract: 3.12 },
+  { code: 'TM', name: 'Tamaulipas', country: 'MX', loadsIn: 486, loadsOut: 638, trucksIn: 342, trucksOut: 448, spot: 2.64, contract: 2.94 },
+  { code: 'CH', name: 'Chihuahua', country: 'MX', loadsIn: 418, loadsOut: 512, trucksIn: 296, trucksOut: 368, spot: 2.92, contract: 3.24 },
+  { code: 'CU', name: 'Coahuila', country: 'MX', loadsIn: 386, loadsOut: 442, trucksIn: 268, trucksOut: 318, spot: 2.78, contract: 3.08 },
+  { code: 'JA', name: 'Jalisco', country: 'MX', loadsIn: 348, loadsOut: 312, trucksIn: 286, trucksOut: 264, spot: 2.54, contract: 2.86 },
+  { code: 'MX', name: 'México', country: 'MX', loadsIn: 412, loadsOut: 368, trucksIn: 386, trucksOut: 342, spot: 2.42, contract: 2.72 },
+  { code: 'DF', name: 'Ciudad de México', country: 'MX', loadsIn: 386, loadsOut: 296, trucksIn: 358, trucksOut: 312, spot: 2.38, contract: 2.68 },
+  { code: 'GJ', name: 'Guanajuato', country: 'MX', loadsIn: 296, loadsOut: 342, trucksIn: 224, trucksOut: 268, spot: 2.62, contract: 2.92 },
+  { code: 'QE', name: 'Querétaro', country: 'MX', loadsIn: 248, loadsOut: 286, trucksIn: 186, trucksOut: 214, spot: 2.68, contract: 2.98 },
+  { code: 'BN', name: 'Baja California', country: 'MX', loadsIn: 268, loadsOut: 318, trucksIn: 212, trucksOut: 248, spot: 3.04, contract: 3.36 },
+  { code: 'SO', name: 'Sonora', country: 'MX', loadsIn: 196, loadsOut: 242, trucksIn: 168, trucksOut: 196, spot: 2.88, contract: 3.18 },
+  { code: 'SL', name: 'San Luis Potosí', country: 'MX', loadsIn: 224, loadsOut: 268, trucksIn: 176, trucksOut: 206, spot: 2.58, contract: 2.88 },
+  { code: 'PU', name: 'Puebla', country: 'MX', loadsIn: 186, loadsOut: 168, trucksIn: 162, trucksOut: 148, spot: 2.44, contract: 2.74 },
+  { code: 'AG', name: 'Aguascalientes', country: 'MX', loadsIn: 142, loadsOut: 168, trucksIn: 112, trucksOut: 132, spot: 2.52, contract: 2.82 },
+  { code: 'VE', name: 'Veracruz', country: 'MX', loadsIn: 168, loadsOut: 142, trucksIn: 148, trucksOut: 126, spot: 2.72, contract: 3.02 },
+  { code: 'SI', name: 'Sinaloa', country: 'MX', loadsIn: 132, loadsOut: 196, trucksIn: 118, trucksOut: 164, spot: 2.96, contract: 3.28 },
 ]
 
 /** Loads per truck on the board. The single number a rep reads first. */
@@ -126,6 +145,58 @@ export const toneColor: Record<MarketTone, string> = {
 }
 
 export const insightRoutes: InsightRoute[] = [
+  {
+    id: 'pg-tx-nl',
+    origin: 'Laredo, TX',
+    destination: 'Monterrey, NL',
+    customer: 'P&G',
+    equipment: 'Van',
+    miles: 148,
+    weeklyLoads: 26,
+    spot: 4.64,
+    contract: 4.28,
+    forecast: 4.78,
+    loadToTruck: 14.6,
+    carrierMatches: 38,
+    preferredCarriers: 7,
+    trend: [4.18, 4.26, 4.34, 4.42, 4.51, 4.64, 4.78],
+    signal: 'tight',
+    summary:
+      'Southbound crossings at Laredo are backing up, and Monterrey drayage capacity is the constraint.',
+    recommendation:
+      'Book transfer carriers a day ahead and hold a $4.60–$4.90 band on the Mexican leg.',
+    watch: [
+      'Laredo bridge wait times above 2 hours',
+      'Monterrey outbound ratio at 1.50×',
+      'Customs broker backlog into the weekend',
+    ],
+  },
+  {
+    id: 'pg-nl-mi',
+    origin: 'Monterrey, NL',
+    destination: 'Detroit, MI',
+    customer: 'Linamar',
+    equipment: 'Van',
+    miles: 1546,
+    weeklyLoads: 14,
+    spot: 2.56,
+    contract: 2.72,
+    forecast: 2.62,
+    loadToTruck: 9.2,
+    carrierMatches: 29,
+    preferredCarriers: 6,
+    trend: [2.38, 2.42, 2.47, 2.51, 2.49, 2.56, 2.62],
+    signal: 'balanced',
+    summary:
+      'Northbound automotive volume is steady, with capacity available on the US leg out of Laredo.',
+    recommendation:
+      'Keep the through-trailer program on contract and spot-buy only the Saltillo overflow.',
+    watch: [
+      'Plant shutdown week starting Sep 7',
+      'Laredo northbound dwell steady at 90 minutes',
+      'Detroit inbound trucks up 11%',
+    ],
+  },
   {
     id: 'pg-on-tx',
     origin: 'Brampton, ON',
@@ -342,6 +413,34 @@ export const insightRoutes: InsightRoute[] = [
   },
 ]
 
+/** Headline rate readings, mirroring the published national rate card. */
+export const nationalRates = {
+  updated: 'Aug 17, 2026',
+  items: [
+    {
+      id: 'broker-spot',
+      label: 'Broker spot rate',
+      value: 2.24,
+      delta: -0.03,
+      direction: 'increasing' as const,
+    },
+    {
+      id: 'shipper-contract',
+      label: 'Shipper contract rate',
+      value: 2.47,
+      delta: -0.06,
+      direction: 'increasing' as const,
+    },
+    {
+      id: 'fuel-surcharge',
+      label: 'Fuel surcharge',
+      value: 0.68,
+      delta: 0,
+      direction: 'neutral' as const,
+    },
+  ],
+}
+
 export const nationalTrend = {
   labels: ['May', 'Jun', 'Jul', 'Aug'],
   van: [2.89, 3.0, 3.0, 2.9],
@@ -359,13 +458,163 @@ export const postingHistory = {
   trucks: [27.4, 26.8, 22.1, 26.2, 27.1, 21.6, 27.9, 28.4, 22.4, 28.8, 28.2, 27.9],
 }
 
-export const topNationalLanes = [
-  { short: 'ATL → PHL', lane: 'Atlanta, GA → Philadelphia, PA', rate: 1743, low: 1546, high: 1903 },
-  { short: 'CHI → ATL', lane: 'Chicago, IL → Atlanta, GA', rate: 2019, low: 1769, high: 2155 },
-  { short: 'EWR → ATL', lane: 'Elizabeth, NJ → Atlanta, GA', rate: 2200, low: 1685, high: 2776 },
-  { short: 'LRD → DFW', lane: 'Laredo, TX → Dallas, TX', rate: 1431, low: 1253, high: 1549 },
-  { short: 'LAX → PHX', lane: 'Los Angeles, CA → Phoenix, AZ', rate: 1358, low: 1183, high: 1466 },
+export type NationalLane = {
+  short: string
+  lane: string
+  origin: string
+  destination: string
+  equipment: EquipmentMarket
+  miles: number
+  weeklyLoads: number
+  rate: number
+  low: number
+  high: number
+  /** Week-over-week move in the paid rate, percent. */
+  wow: number
+}
+
+export const topNationalLanes: NationalLane[] = [
+  { short: 'ATL → PHL', lane: 'Atlanta, GA → Philadelphia, PA', origin: 'GA', destination: 'PA', equipment: 'Van', miles: 763, weeklyLoads: 412, rate: 1743, low: 1546, high: 1903, wow: 1.8 },
+  { short: 'CHI → ATL', lane: 'Chicago, IL → Atlanta, GA', origin: 'IL', destination: 'GA', equipment: 'Van', miles: 718, weeklyLoads: 388, rate: 2019, low: 1769, high: 2155, wow: 2.6 },
+  { short: 'EWR → ATL', lane: 'Elizabeth, NJ → Atlanta, GA', origin: 'NJ', destination: 'GA', equipment: 'Van', miles: 872, weeklyLoads: 264, rate: 2200, low: 1685, high: 2776, wow: 4.1 },
+  { short: 'LRD → DFW', lane: 'Laredo, TX → Dallas, TX', origin: 'TX', destination: 'TX', equipment: 'Van', miles: 431, weeklyLoads: 506, rate: 1431, low: 1253, high: 1549, wow: -0.9 },
+  { short: 'LAX → PHX', lane: 'Los Angeles, CA → Phoenix, AZ', origin: 'CA', destination: 'AZ', equipment: 'Van', miles: 372, weeklyLoads: 478, rate: 1358, low: 1183, high: 1466, wow: 3.2 },
+  { short: 'ONT → DEN', lane: 'Ontario, CA → Denver, CO', origin: 'CA', destination: 'CO', equipment: 'Van', miles: 1024, weeklyLoads: 196, rate: 2384, low: 2044, high: 2691, wow: 2.2 },
+  { short: 'DFW → ATL', lane: 'Dallas, TX → Atlanta, GA', origin: 'TX', destination: 'GA', equipment: 'Van', miles: 795, weeklyLoads: 342, rate: 1866, low: 1602, high: 2058, wow: 1.4 },
+  { short: 'HOU → LRD', lane: 'Houston, TX → Laredo, TX', origin: 'TX', destination: 'TX', equipment: 'Van', miles: 316, weeklyLoads: 288, rate: 1102, low: 918, high: 1284, wow: -1.6 },
+  { short: 'CHI → DFW', lane: 'Chicago, IL → Dallas, TX', origin: 'IL', destination: 'TX', equipment: 'Van', miles: 968, weeklyLoads: 254, rate: 2246, low: 1948, high: 2492, wow: 2.9 },
+  { short: 'YYZ → DTW', lane: 'Toronto, ON → Detroit, MI', origin: 'ON', destination: 'MI', equipment: 'Van', miles: 237, weeklyLoads: 318, rate: 852, low: 712, high: 1008, wow: 3.6 },
+  { short: 'YYZ → YUL', lane: 'Toronto, ON → Montreal, QC', origin: 'ON', destination: 'PQ', equipment: 'Van', miles: 336, weeklyLoads: 366, rate: 1055, low: 902, high: 1188, wow: 0.6 },
+  { short: 'YVR → SEA', lane: 'Vancouver, BC → Seattle, WA', origin: 'BC', destination: 'WA', equipment: 'Van', miles: 143, weeklyLoads: 172, rate: 684, low: 566, high: 812, wow: -0.4 },
+  { short: 'LAK → CHI', lane: 'Lakeland, FL → Chicago, IL', origin: 'FL', destination: 'IL', equipment: 'Reefer', miles: 1181, weeklyLoads: 148, rate: 3520, low: 3042, high: 3944, wow: -2.1 },
+  { short: 'SLC → LAX', lane: 'Salt Lake City, UT → Los Angeles, CA', origin: 'UT', destination: 'CA', equipment: 'Reefer', miles: 690, weeklyLoads: 132, rate: 2246, low: 1908, high: 2564, wow: 1.1 },
+  { short: 'HOU → DEN', lane: 'Houston, TX → Denver, CO', origin: 'TX', destination: 'CO', equipment: 'Flatbed', miles: 1028, weeklyLoads: 118, rate: 4018, low: 3486, high: 4462, wow: 2.4 },
+  { short: 'BHM → ATL', lane: 'Birmingham, AL → Atlanta, GA', origin: 'AL', destination: 'GA', equipment: 'Flatbed', miles: 148, weeklyLoads: 106, rate: 742, low: 618, high: 884, wow: 0.8 },
+  { short: 'LRD → MTY', lane: 'Laredo, TX → Monterrey, NL', origin: 'TX', destination: 'NL', equipment: 'Van', miles: 148, weeklyLoads: 486, rate: 686, low: 542, high: 848, wow: 3.4 },
+  { short: 'MTY → LRD', lane: 'Monterrey, NL → Laredo, TX', origin: 'NL', destination: 'TX', equipment: 'Van', miles: 148, weeklyLoads: 512, rate: 742, low: 596, high: 902, wow: 4.2 },
+  { short: 'ELP → CJS', lane: 'El Paso, TX → Ciudad Juárez, CH', origin: 'TX', destination: 'CH', equipment: 'Van', miles: 22, weeklyLoads: 368, rate: 412, low: 336, high: 508, wow: 3.1 },
+  { short: 'DFW → MTY', lane: 'Dallas, TX → Monterrey, NL', origin: 'TX', destination: 'NL', equipment: 'Van', miles: 586, weeklyLoads: 226, rate: 1864, low: 1586, high: 2142, wow: 2.8 },
+  { short: 'MTY → CHI', lane: 'Monterrey, NL → Chicago, IL', origin: 'NL', destination: 'IL', equipment: 'Van', miles: 1462, weeklyLoads: 168, rate: 3684, low: 3184, high: 4108, wow: 2.2 },
+  { short: 'SLW → DTW', lane: 'Saltillo, CU → Detroit, MI', origin: 'CU', destination: 'MI', equipment: 'Van', miles: 1546, weeklyLoads: 148, rate: 3948, low: 3402, high: 4386, wow: 1.8 },
+  { short: 'TIJ → LAX', lane: 'Tijuana, BN → Los Angeles, CA', origin: 'BN', destination: 'CA', equipment: 'Reefer', miles: 148, weeklyLoads: 196, rate: 892, low: 736, high: 1064, wow: 2.2 },
+  { short: 'QRO → LRD', lane: 'Querétaro, QE → Laredo, TX', origin: 'QE', destination: 'TX', equipment: 'Van', miles: 624, weeklyLoads: 184, rate: 1968, low: 1682, high: 2246, wow: 2.6 },
 ]
+
+export type CityMarket = {
+  code: string
+  city: string
+  state: string
+  country: MarketCountry
+  loadsIn: number
+  loadsOut: number
+  trucksIn: number
+  trucksOut: number
+  spot: number
+  contract: number
+  /** Average length of haul on outbound freight, miles. */
+  avgMiles: number
+  topOutbound: string
+  /** Week-over-week move in the outbound spot rate, percent. */
+  wow: number
+}
+
+/** Metro-level detail behind each state, for desks that source city to city. */
+export const cityMarkets: CityMarket[] = [
+  { code: 'LAX', city: 'Los Angeles', state: 'CA', country: 'US', loadsIn: 684, loadsOut: 512, trucksIn: 214, trucksOut: 268, spot: 4.62, contract: 4.48, avgMiles: 486, topOutbound: 'Phoenix, AZ', wow: 3.2 },
+  { code: 'ONT', city: 'Ontario / Fontana', state: 'CA', country: 'US', loadsIn: 462, loadsOut: 388, trucksIn: 168, trucksOut: 196, spot: 4.38, contract: 4.31, avgMiles: 624, topOutbound: 'Denver, CO', wow: 2.6 },
+  { code: 'SCK', city: 'Stockton', state: 'CA', country: 'US', loadsIn: 286, loadsOut: 241, trucksIn: 126, trucksOut: 148, spot: 4.12, contract: 4.24, avgMiles: 712, topOutbound: 'Salt Lake City, UT', wow: 1.4 },
+  { code: 'OAK', city: 'Oakland', state: 'CA', country: 'US', loadsIn: 248, loadsOut: 196, trucksIn: 114, trucksOut: 132, spot: 4.46, contract: 4.52, avgMiles: 538, topOutbound: 'Los Angeles, CA', wow: 2.1 },
+  { code: 'DFW', city: 'Dallas / Fort Worth', state: 'TX', country: 'US', loadsIn: 612, loadsOut: 486, trucksIn: 342, trucksOut: 398, spot: 4.08, contract: 4.18, avgMiles: 668, topOutbound: 'Atlanta, GA', wow: 1.8 },
+  { code: 'HOU', city: 'Houston', state: 'TX', country: 'US', loadsIn: 468, loadsOut: 392, trucksIn: 286, trucksOut: 324, spot: 3.94, contract: 4.06, avgMiles: 542, topOutbound: 'Laredo, TX', wow: -0.7 },
+  { code: 'LRD', city: 'Laredo', state: 'TX', country: 'US', loadsIn: 386, loadsOut: 512, trucksIn: 196, trucksOut: 168, spot: 4.24, contract: 4.02, avgMiles: 398, topOutbound: 'Dallas, TX', wow: 2.9 },
+  { code: 'SAT', city: 'San Antonio', state: 'TX', country: 'US', loadsIn: 214, loadsOut: 168, trucksIn: 142, trucksOut: 156, spot: 3.86, contract: 4.01, avgMiles: 486, topOutbound: 'Houston, TX', wow: 0.4 },
+  { code: 'ELP', city: 'El Paso', state: 'TX', country: 'US', loadsIn: 186, loadsOut: 148, trucksIn: 98, trucksOut: 112, spot: 4.16, contract: 4.22, avgMiles: 724, topOutbound: 'Phoenix, AZ', wow: 1.2 },
+  { code: 'CHI', city: 'Chicago', state: 'IL', country: 'US', loadsIn: 428, loadsOut: 486, trucksIn: 512, trucksOut: 442, spot: 5.24, contract: 5.06, avgMiles: 712, topOutbound: 'Atlanta, GA', wow: 2.6 },
+  { code: 'JOT', city: 'Joliet', state: 'IL', country: 'US', loadsIn: 186, loadsOut: 214, trucksIn: 246, trucksOut: 198, spot: 4.98, contract: 4.88, avgMiles: 668, topOutbound: 'Dallas, TX', wow: 1.6 },
+  { code: 'ATL', city: 'Atlanta', state: 'GA', country: 'US', loadsIn: 486, loadsOut: 132, trucksIn: 342, trucksOut: 368, spot: 4.68, contract: 4.72, avgMiles: 624, topOutbound: 'Philadelphia, PA', wow: 1.9 },
+  { code: 'SAV', city: 'Savannah', state: 'GA', country: 'US', loadsIn: 148, loadsOut: 42, trucksIn: 128, trucksOut: 136, spot: 4.42, contract: 4.58, avgMiles: 486, topOutbound: 'Atlanta, GA', wow: -0.6 },
+  { code: 'LAL', city: 'Lakeland', state: 'FL', country: 'US', loadsIn: 268, loadsOut: 96, trucksIn: 112, trucksOut: 118, spot: 3.82, contract: 4.12, avgMiles: 968, topOutbound: 'Chicago, IL', wow: -2.1 },
+  { code: 'MIA', city: 'Miami', state: 'FL', country: 'US', loadsIn: 342, loadsOut: 68, trucksIn: 138, trucksOut: 142, spot: 3.94, contract: 4.18, avgMiles: 742, topOutbound: 'Atlanta, GA', wow: 0.8 },
+  { code: 'JAX', city: 'Jacksonville', state: 'FL', country: 'US', loadsIn: 186, loadsOut: 72, trucksIn: 96, trucksOut: 104, spot: 3.68, contract: 4.02, avgMiles: 386, topOutbound: 'Atlanta, GA', wow: 1.1 },
+  { code: 'YYZ', city: 'Toronto', state: 'ON', country: 'CA', loadsIn: 412, loadsOut: 342, trucksIn: 368, trucksOut: 356, spot: 3.62, contract: 3.98, avgMiles: 486, topOutbound: 'Montreal, QC', wow: 3.6 },
+  { code: 'YBR', city: 'Brampton', state: 'ON', country: 'CA', loadsIn: 268, loadsOut: 224, trucksIn: 212, trucksOut: 206, spot: 3.54, contract: 3.92, avgMiles: 968, topOutbound: 'Dallas, TX', wow: 2.8 },
+  { code: 'YMI', city: 'Mississauga', state: 'ON', country: 'CA', loadsIn: 196, loadsOut: 168, trucksIn: 178, trucksOut: 172, spot: 3.48, contract: 3.86, avgMiles: 542, topOutbound: 'Detroit, MI', wow: 2.2 },
+  { code: 'YWH', city: 'Windsor', state: 'ON', country: 'CA', loadsIn: 118, loadsOut: 142, trucksIn: 96, trucksOut: 88, spot: 3.38, contract: 3.74, avgMiles: 286, topOutbound: 'Detroit, MI', wow: 1.4 },
+  { code: 'YUL', city: 'Montreal', state: 'PQ', country: 'CA', loadsIn: 268, loadsOut: 312, trucksIn: 286, trucksOut: 272, spot: 3.92, contract: 3.64, avgMiles: 412, topOutbound: 'Toronto, ON', wow: 0.6 },
+  { code: 'YYC', city: 'Calgary', state: 'AB', country: 'CA', loadsIn: 196, loadsOut: 148, trucksIn: 174, trucksOut: 162, spot: 3.48, contract: 4.28, avgMiles: 624, topOutbound: 'Seattle, WA', wow: 1.8 },
+  { code: 'YEG', city: 'Edmonton', state: 'AB', country: 'CA', loadsIn: 122, loadsOut: 103, trucksIn: 112, trucksOut: 102, spot: 3.38, contract: 4.36, avgMiles: 712, topOutbound: 'Calgary, AB', wow: 0.9 },
+  { code: 'YVR', city: 'Vancouver', state: 'BC', country: 'CA', loadsIn: 186, loadsOut: 142, trucksIn: 212, trucksOut: 198, spot: 5.38, contract: 5.86, avgMiles: 386, topOutbound: 'Seattle, WA', wow: -0.4 },
+  { code: 'PHX', city: 'Phoenix', state: 'AZ', country: 'US', loadsIn: 286, loadsOut: 86, trucksIn: 152, trucksOut: 138, spot: 4.52, contract: 4.78, avgMiles: 486, topOutbound: 'Los Angeles, CA', wow: 2.4 },
+  { code: 'DTW', city: 'Detroit', state: 'MI', country: 'US', loadsIn: 312, loadsOut: 268, trucksIn: 386, trucksOut: 252, spot: 4.58, contract: 4.74, avgMiles: 542, topOutbound: 'Toronto, ON', wow: 1.6 },
+  { code: 'MEM', city: 'Memphis', state: 'TN', country: 'US', loadsIn: 246, loadsOut: 262, trucksIn: 342, trucksOut: 248, spot: 4.98, contract: 5.12, avgMiles: 624, topOutbound: 'Dallas, TX', wow: 1.2 },
+  { code: 'BNA', city: 'Nashville', state: 'TN', country: 'US', loadsIn: 152, loadsOut: 144, trucksIn: 206, trucksOut: 141, spot: 5.06, contract: 5.24, avgMiles: 568, topOutbound: 'Atlanta, GA', wow: 0.7 },
+  { code: 'IND', city: 'Indianapolis', state: 'IN', country: 'US', loadsIn: 268, loadsOut: 296, trucksIn: 412, trucksOut: 268, spot: 5.42, contract: 5.28, avgMiles: 586, topOutbound: 'Chicago, IL', wow: 2.1 },
+  { code: 'CMH', city: 'Columbus', state: 'OH', country: 'US', loadsIn: 286, loadsOut: 268, trucksIn: 386, trucksOut: 286, spot: 4.94, contract: 5.02, avgMiles: 542, topOutbound: 'Chicago, IL', wow: 1.8 },
+  { code: 'EWR', city: 'Elizabeth / Newark', state: 'NJ', country: 'US', loadsIn: 386, loadsOut: 168, trucksIn: 286, trucksOut: 224, spot: 6.08, contract: 6.34, avgMiles: 486, topOutbound: 'Atlanta, GA', wow: 4.1 },
+  { code: 'MDT', city: 'Harrisburg', state: 'PA', country: 'US', loadsIn: 342, loadsOut: 268, trucksIn: 312, trucksOut: 268, spot: 5.42, contract: 5.48, avgMiles: 412, topOutbound: 'Chicago, IL', wow: 1.4 },
+  { code: 'CLT', city: 'Charlotte', state: 'NC', country: 'US', loadsIn: 268, loadsOut: 162, trucksIn: 246, trucksOut: 214, spot: 4.76, contract: 4.92, avgMiles: 486, topOutbound: 'Atlanta, GA', wow: 0.9 },
+  { code: 'SEA', city: 'Seattle', state: 'WA', country: 'US', loadsIn: 186, loadsOut: 96, trucksIn: 128, trucksOut: 112, spot: 4.42, contract: 4.78, avgMiles: 624, topOutbound: 'Portland, OR', wow: -0.8 },
+  { code: 'DEN', city: 'Denver', state: 'CO', country: 'US', loadsIn: 268, loadsOut: 52, trucksIn: 106, trucksOut: 98, spot: 4.88, contract: 5.28, avgMiles: 742, topOutbound: 'Salt Lake City, UT', wow: 2.2 },
+  { code: 'MCI', city: 'Kansas City', state: 'MO', country: 'US', loadsIn: 196, loadsOut: 168, trucksIn: 248, trucksOut: 172, spot: 4.82, contract: 5.06, avgMiles: 624, topOutbound: 'Chicago, IL', wow: 1.1 },
+  { code: 'STL', city: 'St. Louis', state: 'MO', country: 'US', loadsIn: 148, loadsOut: 126, trucksIn: 186, trucksOut: 132, spot: 4.74, contract: 5.02, avgMiles: 542, topOutbound: 'Dallas, TX', wow: 0.6 },
+  { code: 'SDF', city: 'Louisville', state: 'KY', country: 'US', loadsIn: 168, loadsOut: 186, trucksIn: 268, trucksOut: 164, spot: 5.68, contract: 5.72, avgMiles: 486, topOutbound: 'Atlanta, GA', wow: 1.9 },
+  { code: 'CVG', city: 'Cincinnati', state: 'OH', country: 'US', loadsIn: 196, loadsOut: 182, trucksIn: 264, trucksOut: 188, spot: 5.04, contract: 5.12, avgMiles: 512, topOutbound: 'Atlanta, GA', wow: 1.2 },
+  { code: 'CLE', city: 'Cleveland', state: 'OH', country: 'US', loadsIn: 168, loadsOut: 152, trucksIn: 228, trucksOut: 172, spot: 4.86, contract: 4.98, avgMiles: 468, topOutbound: 'Chicago, IL', wow: 0.8 },
+  { code: 'PIT', city: 'Pittsburgh', state: 'PA', country: 'US', loadsIn: 162, loadsOut: 138, trucksIn: 196, trucksOut: 152, spot: 5.28, contract: 5.36, avgMiles: 486, topOutbound: 'Chicago, IL', wow: 1.1 },
+  { code: 'PHL', city: 'Philadelphia', state: 'PA', country: 'US', loadsIn: 268, loadsOut: 168, trucksIn: 246, trucksOut: 196, spot: 5.62, contract: 5.68, avgMiles: 412, topOutbound: 'Chicago, IL', wow: 2.2 },
+  { code: 'JFK', city: 'New York / Long Island', state: 'NY', country: 'US', loadsIn: 312, loadsOut: 142, trucksIn: 268, trucksOut: 186, spot: 6.12, contract: 6.24, avgMiles: 386, topOutbound: 'Harrisburg, PA', wow: 3.1 },
+  { code: 'BUF', city: 'Buffalo', state: 'NY', country: 'US', loadsIn: 128, loadsOut: 142, trucksIn: 148, trucksOut: 118, spot: 5.42, contract: 5.58, avgMiles: 342, topOutbound: 'Toronto, ON', wow: 1.6 },
+  { code: 'BOS', city: 'Boston', state: 'MA', country: 'US', loadsIn: 186, loadsOut: 96, trucksIn: 168, trucksOut: 92, spot: 5.94, contract: 6.42, avgMiles: 412, topOutbound: 'Harrisburg, PA', wow: 2.6 },
+  { code: 'RIC', city: 'Richmond', state: 'VA', country: 'US', loadsIn: 132, loadsOut: 108, trucksIn: 156, trucksOut: 98, spot: 5.36, contract: 5.52, avgMiles: 386, topOutbound: 'Atlanta, GA', wow: 0.9 },
+  { code: 'GSP', city: 'Greenville / Spartanburg', state: 'SC', country: 'US', loadsIn: 146, loadsOut: 92, trucksIn: 158, trucksOut: 124, spot: 4.64, contract: 4.78, avgMiles: 412, topOutbound: 'Atlanta, GA', wow: 1.3 },
+  { code: 'CHS', city: 'Charleston', state: 'SC', country: 'US', loadsIn: 118, loadsOut: 62, trucksIn: 116, trucksOut: 96, spot: 4.72, contract: 4.86, avgMiles: 486, topOutbound: 'Atlanta, GA', wow: -0.5 },
+  { code: 'RDU', city: 'Raleigh', state: 'NC', country: 'US', loadsIn: 148, loadsOut: 108, trucksIn: 168, trucksOut: 132, spot: 4.68, contract: 4.88, avgMiles: 412, topOutbound: 'Atlanta, GA', wow: 1.2 },
+  { code: 'GSO', city: 'Greensboro', state: 'NC', country: 'US', loadsIn: 112, loadsOut: 86, trucksIn: 128, trucksOut: 98, spot: 4.58, contract: 4.82, avgMiles: 386, topOutbound: 'Charlotte, NC', wow: 0.4 },
+  { code: 'BHM', city: 'Birmingham', state: 'AL', country: 'US', loadsIn: 142, loadsOut: 54, trucksIn: 152, trucksOut: 96, spot: 5.24, contract: 5.18, avgMiles: 386, topOutbound: 'Atlanta, GA', wow: 0.8 },
+  { code: 'HSV', city: 'Huntsville', state: 'AL', country: 'US', loadsIn: 96, loadsOut: 42, trucksIn: 102, trucksOut: 68, spot: 5.36, contract: 5.32, avgMiles: 412, topOutbound: 'Nashville, TN', wow: 1.4 },
+  { code: 'SLC', city: 'Salt Lake City', state: 'UT', country: 'US', loadsIn: 208, loadsOut: 97, trucksIn: 146, trucksOut: 118, spot: 4.51, contract: 4.86, avgMiles: 624, topOutbound: 'Los Angeles, CA', wow: 1.6 },
+  { code: 'LAS', city: 'Las Vegas', state: 'NV', country: 'US', loadsIn: 168, loadsOut: 64, trucksIn: 112, trucksOut: 96, spot: 4.46, contract: 4.68, avgMiles: 386, topOutbound: 'Los Angeles, CA', wow: 2.8 },
+  { code: 'RNO', city: 'Reno', state: 'NV', country: 'US', loadsIn: 96, loadsOut: 42, trucksIn: 68, trucksOut: 56, spot: 4.38, contract: 4.62, avgMiles: 468, topOutbound: 'Stockton, CA', wow: 1.2 },
+  { code: 'PDX', city: 'Portland', state: 'OR', country: 'US', loadsIn: 148, loadsOut: 92, trucksIn: 124, trucksOut: 106, spot: 4.22, contract: 4.58, avgMiles: 486, topOutbound: 'Seattle, WA', wow: -0.6 },
+  { code: 'GEG', city: 'Spokane', state: 'WA', country: 'US', loadsIn: 82, loadsOut: 48, trucksIn: 68, trucksOut: 58, spot: 4.28, contract: 4.66, avgMiles: 542, topOutbound: 'Seattle, WA', wow: 0.4 },
+  { code: 'MSP', city: 'Minneapolis', state: 'MN', country: 'US', loadsIn: 186, loadsOut: 196, trucksIn: 248, trucksOut: 148, spot: 5.02, contract: 5.24, avgMiles: 568, topOutbound: 'Chicago, IL', wow: 1.4 },
+  { code: 'MKE', city: 'Milwaukee', state: 'WI', country: 'US', loadsIn: 152, loadsOut: 168, trucksIn: 212, trucksOut: 128, spot: 4.92, contract: 5.14, avgMiles: 486, topOutbound: 'Chicago, IL', wow: 0.9 },
+  { code: 'OKC', city: 'Oklahoma City', state: 'OK', country: 'US', loadsIn: 118, loadsOut: 96, trucksIn: 148, trucksOut: 92, spot: 4.68, contract: 5.08, avgMiles: 542, topOutbound: 'Dallas, TX', wow: 1.1 },
+  { code: 'ELK', city: 'Elkhart / Fort Wayne', state: 'IN', country: 'US', loadsIn: 126, loadsOut: 148, trucksIn: 196, trucksOut: 118, spot: 5.32, contract: 5.22, avgMiles: 468, topOutbound: 'Chicago, IL', wow: 1.7 },
+  { code: 'GRR', city: 'Grand Rapids', state: 'MI', country: 'US', loadsIn: 132, loadsOut: 118, trucksIn: 178, trucksOut: 112, spot: 4.52, contract: 4.72, avgMiles: 412, topOutbound: 'Chicago, IL', wow: 1.2 },
+  { code: 'YQM', city: 'Moncton', state: 'NB', country: 'CA', loadsIn: 62, loadsOut: 78, trucksIn: 74, trucksOut: 62, spot: 3.24, contract: 3.48, avgMiles: 542, topOutbound: 'Montreal, QC', wow: 0.6 },
+  { code: 'YHZ', city: 'Halifax', state: 'NS', country: 'CA', loadsIn: 74, loadsOut: 92, trucksIn: 86, trucksOut: 72, spot: 3.36, contract: 3.62, avgMiles: 686, topOutbound: 'Montreal, QC', wow: 1.1 },
+  { code: 'YWG', city: 'Winnipeg', state: 'MB', country: 'CA', loadsIn: 146, loadsOut: 178, trucksIn: 122, trucksOut: 137, spot: 2.82, contract: 2.95, avgMiles: 742, topOutbound: 'Toronto, ON', wow: -0.8 },
+  { code: 'YXE', city: 'Saskatoon', state: 'SK', country: 'CA', loadsIn: 89, loadsOut: 97, trucksIn: 116, trucksOut: 108, spot: 2.18, contract: 2.33, avgMiles: 624, topOutbound: 'Calgary, AB', wow: -1.2 },
+  { code: 'YQB', city: 'Quebec City', state: 'PQ', country: 'CA', loadsIn: 118, loadsOut: 132, trucksIn: 126, trucksOut: 118, spot: 3.84, contract: 3.58, avgMiles: 386, topOutbound: 'Montreal, QC', wow: 0.4 },
+  { code: 'MTY', city: 'Monterrey', state: 'NL', country: 'MX', loadsIn: 512, loadsOut: 624, trucksIn: 342, trucksOut: 428, spot: 2.88, contract: 3.14, avgMiles: 486, topOutbound: 'Laredo, TX', wow: 3.4 },
+  { code: 'SLW', city: 'Saltillo', state: 'CU', country: 'MX', loadsIn: 268, loadsOut: 324, trucksIn: 186, trucksOut: 232, spot: 2.82, contract: 3.08, avgMiles: 542, topOutbound: 'Laredo, TX', wow: 2.8 },
+  { code: 'NLD', city: 'Nuevo Laredo', state: 'TM', country: 'MX', loadsIn: 342, loadsOut: 468, trucksIn: 224, trucksOut: 312, spot: 2.68, contract: 2.96, avgMiles: 286, topOutbound: 'Laredo, TX', wow: 4.2 },
+  { code: 'REX', city: 'Reynosa', state: 'TM', country: 'MX', loadsIn: 224, loadsOut: 286, trucksIn: 148, trucksOut: 196, spot: 2.62, contract: 2.92, avgMiles: 312, topOutbound: 'McAllen, TX', wow: 2.4 },
+  { code: 'CJS', city: 'Ciudad Juárez', state: 'CH', country: 'MX', loadsIn: 312, loadsOut: 396, trucksIn: 212, trucksOut: 276, spot: 2.96, contract: 3.26, avgMiles: 342, topOutbound: 'El Paso, TX', wow: 3.1 },
+  { code: 'CUU', city: 'Chihuahua', state: 'CH', country: 'MX', loadsIn: 148, loadsOut: 186, trucksIn: 112, trucksOut: 138, spot: 2.88, contract: 3.18, avgMiles: 486, topOutbound: 'Ciudad Juárez, CH', wow: 1.6 },
+  { code: 'TIJ', city: 'Tijuana', state: 'BN', country: 'MX', loadsIn: 224, loadsOut: 286, trucksIn: 168, trucksOut: 212, spot: 3.08, contract: 3.38, avgMiles: 268, topOutbound: 'Otay Mesa, CA', wow: 2.2 },
+  { code: 'GDL', city: 'Guadalajara', state: 'JA', country: 'MX', loadsIn: 286, loadsOut: 262, trucksIn: 232, trucksOut: 218, spot: 2.56, contract: 2.88, avgMiles: 624, topOutbound: 'Monterrey, NL', wow: 1.2 },
+  { code: 'MEX', city: 'Mexico City', state: 'DF', country: 'MX', loadsIn: 386, loadsOut: 296, trucksIn: 358, trucksOut: 312, spot: 2.38, contract: 2.68, avgMiles: 568, topOutbound: 'Monterrey, NL', wow: 0.8 },
+  { code: 'TLC', city: 'Toluca', state: 'MX', country: 'MX', loadsIn: 248, loadsOut: 224, trucksIn: 226, trucksOut: 204, spot: 2.44, contract: 2.74, avgMiles: 542, topOutbound: 'Mexico City, DF', wow: 0.6 },
+  { code: 'SIL', city: 'Silao / León', state: 'GJ', country: 'MX', loadsIn: 224, loadsOut: 268, trucksIn: 168, trucksOut: 204, spot: 2.64, contract: 2.94, avgMiles: 586, topOutbound: 'Laredo, TX', wow: 1.9 },
+  { code: 'QRO', city: 'Querétaro', state: 'QE', country: 'MX', loadsIn: 248, loadsOut: 286, trucksIn: 186, trucksOut: 214, spot: 2.68, contract: 2.98, avgMiles: 624, topOutbound: 'Laredo, TX', wow: 2.6 },
+  { code: 'SLP', city: 'San Luis Potosí', state: 'SL', country: 'MX', loadsIn: 224, loadsOut: 268, trucksIn: 176, trucksOut: 206, spot: 2.58, contract: 2.88, avgMiles: 568, topOutbound: 'Monterrey, NL', wow: 2.1 },
+  { code: 'HMO', city: 'Hermosillo', state: 'SO', country: 'MX', loadsIn: 142, loadsOut: 186, trucksIn: 118, trucksOut: 148, spot: 2.92, contract: 3.22, avgMiles: 412, topOutbound: 'Nogales, AZ', wow: 1.4 },
+  { code: 'PBC', city: 'Puebla', state: 'PU', country: 'MX', loadsIn: 186, loadsOut: 168, trucksIn: 162, trucksOut: 148, spot: 2.44, contract: 2.74, avgMiles: 486, topOutbound: 'Mexico City, DF', wow: 0.4 },
+]
+
+/** Loads per truck for a metro market. */
+export function cityRatio(city: CityMarket) {
+  return city.loadsIn / Math.max(1, city.trucksIn)
+}
+
+export function cityTone(city: CityMarket): MarketTone {
+  const ratio = cityRatio(city)
+  if (ratio >= 1.35) return 'tight'
+  if (ratio >= 0.85) return 'balanced'
+  return 'soft'
+}
 
 export const datHeadlines = [
   {

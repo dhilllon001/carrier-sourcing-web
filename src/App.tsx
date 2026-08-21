@@ -16,6 +16,7 @@ import {
   Gauge,
   ShieldCog,
   Sparkles,
+  UserRoundCog,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -26,6 +27,9 @@ import { AvailabilityPage } from '@/pages/AvailabilityPage'
 import { MyCarriersPage } from '@/pages/MyCarriersPage'
 import { CarrierDetailPage } from '@/pages/CarrierDetailPage'
 import { QuickLaneSearchPanel } from '@/components/QuickLaneSearchPanel'
+import { SourcingStatusBar } from '@/components/SourcingStatusBar'
+import { RouteInsightModal } from '@/components/RouteInsightModal'
+import { insightRoutes } from '@/data/marketInsights'
 import { CmtReviewPage } from '@/pages/CmtReviewPage'
 import { CmtConfigurationPage } from '@/pages/CmtConfigurationPage'
 import { AccessManagementPage } from '@/pages/AccessManagementPage'
@@ -33,8 +37,13 @@ import { ConfigurationPage } from '@/pages/ConfigurationPage'
 import { CapacityManagerPage } from '@/pages/CapacityManagerPage'
 import { CarrierSearchPage } from '@/pages/CarrierSearchPage'
 import { MarketInsightsPage } from '@/pages/MarketInsightsPage'
+import { InsightPreferencesPage } from '@/pages/InsightPreferencesPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
+import {
+  defaultInsightPreferences,
+  routeMatchesProfile,
+} from '@/data/insightPreferences'
 import { cn } from '@/lib/cn'
 
 const NAV = [
@@ -44,6 +53,7 @@ const NAV = [
   { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
   { id: 'carrier-search', label: 'Carrier capacity', icon: Search },
   { id: 'market-insights', label: 'AI market insights', icon: Sparkles },
+  { id: 'insight-preferences', label: 'User preferences', icon: UserRoundCog, sub: true },
   { id: 'carriers', label: 'My carriers', icon: Users },
   { id: 'access', label: 'Access & management', icon: KeyRound },
   { id: 'cmt', label: 'CMT', icon: Shield },
@@ -60,10 +70,20 @@ export default function App() {
   const [openCarrierId, setOpenCarrierId] = useState<string | null>(null)
   const [laneSearchOpen, setLaneSearchOpen] = useState(false)
   const [newLaneOpen, setNewLaneOpen] = useState(false)
+  /* Quick market read for whoever lands on Sourcing, so they see the news before working loads. */
+  const [briefOpen, setBriefOpen] = useState(true)
+  const [insightPreferences, setInsightPreferences] = useState(defaultInsightPreferences)
   const [configView, setConfigView] = useState<
     'workflows' | 'runs' | 'carriers' | 'favorites' | 'new'
   >('workflows')
   const cmtPendingCount = cmtReviewQueue.filter((r) => r.status === 'Pending').length
+  const activeInsightProfile =
+    insightPreferences.profiles.find(
+      (profile) => profile.id === insightPreferences.activeProfileId
+    ) ?? insightPreferences.profiles[0]
+  const preferredBriefRoute =
+    insightRoutes.find((route) => routeMatchesProfile(route, activeInsightProfile)) ??
+    insightRoutes[0]
 
   const openLoad = useMemo(
     () => reportLoads.find((r) => r.id === openLoadId) ?? null,
@@ -80,6 +100,7 @@ export default function App() {
   }
 
   return (
+    <div className="sr-shell">
     <div className={cn('sr-app', collapsed && 'is-collapsed', inDetails && 'is-details')}>
       {!inDetails && (
       <aside className={cn('sr-sidebar', collapsed && 'is-collapsed')}>
@@ -111,12 +132,17 @@ export default function App() {
                 key={item.id}
                 type="button"
                 title={item.label}
-                className={cn('sr-sidebar__nav-link', nav === item.id && 'is-active')}
+                className={cn(
+                  'sr-sidebar__nav-link',
+                  'sub' in item && item.sub && 'is-sub',
+                  nav === item.id && 'is-active'
+                )}
                 onClick={() => {
                   setNav(item.id)
                   setOpenLoadId(null)
                   setOpenCarrierId(null)
                   if (item.id === 'configuration') setConfigView('workflows')
+                  if (item.id === 'sourcing' && nav !== 'sourcing') setBriefOpen(true)
                 }}
               >
                 <Icon size={16} strokeWidth={1.75} />
@@ -181,6 +207,8 @@ export default function App() {
                         ? 'Search carrier, MC, contact, or lane…'
                       : nav === 'market-insights'
                         ? 'Search market, route, customer…'
+                      : nav === 'insight-preferences'
+                        ? 'Search preferences, states, lanes…'
                       : nav === 'carriers'
                         ? 'Search carrier, MC, DOT, contact…'
                         : nav === 'cmt'
@@ -204,7 +232,7 @@ export default function App() {
                     <SlidersHorizontal size={14} strokeWidth={1.85} />
                     New lane search
                   </button>
-                ) : nav === 'market-insights' ? null : (
+                ) : ['market-insights', 'insight-preferences'].includes(nav) ? null : (
                   <button
                     type="button"
                     className="sr-btn sr-btn--lane"
@@ -296,7 +324,17 @@ export default function App() {
                 onPanelOpenChange={setNewLaneOpen}
               />
             ) : nav === 'market-insights' ? (
-              <MarketInsightsPage search={search} onOpenCapacity={() => setNav('carrier-search')} />
+              <MarketInsightsPage
+                search={search}
+                profile={activeInsightProfile}
+                onOpenCapacity={() => setNav('carrier-search')}
+                onOpenPreferences={() => setNav('insight-preferences')}
+              />
+            ) : nav === 'insight-preferences' ? (
+              <InsightPreferencesPage
+                preferences={insightPreferences}
+                onChange={setInsightPreferences}
+              />
             ) : nav === 'carriers' ? (
               <MyCarriersPage
                 search={search}
@@ -327,6 +365,30 @@ export default function App() {
       </div>
 
       <QuickLaneSearchPanel open={laneSearchOpen} onClose={() => setLaneSearchOpen(false)} />
+
+      {nav === 'sourcing' && briefOpen && !inDetails && (
+        <RouteInsightModal
+          route={preferredBriefRoute}
+          eyebrow="Sourcing brief · Aug 20"
+          primaryLabel="Open AI market insights"
+          onPrimary={() => setNav('market-insights')}
+          onClose={() => setBriefOpen(false)}
+          withNews
+          profile={activeInsightProfile}
+        />
+      )}
+    </div>
+
+      <SourcingStatusBar
+        active={nav}
+        onNavigate={(id) => {
+          setOpenLoadId(null)
+          setOpenCarrierId(null)
+          if (id === 'sourcing' && nav !== 'sourcing') setBriefOpen(true)
+          setNav(id)
+        }}
+        onOpenLaneSearch={() => setLaneSearchOpen(true)}
+      />
     </div>
   )
 }
