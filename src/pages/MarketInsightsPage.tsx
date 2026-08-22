@@ -21,7 +21,13 @@ import { cn } from '@/lib/cn'
 import { EChart } from '@/components/charts/EChart'
 import { MarketFeedPanel } from '@/components/AiAlertsPanel'
 import { MarketIntelligencePanel } from '@/components/MarketIntelligencePanel'
-import { CHART_FONT, chartTooltip, tooltipCategory } from '@/components/charts/chartTheme'
+import { Tip } from '@/components/Tip'
+import {
+  CHART_FONT,
+  chartTooltip,
+  chartTooltipLine,
+  tooltipCategory,
+} from '@/components/charts/chartTheme'
 import { mapRegionView, useGeoMap, type MapName } from '@/components/charts/useGeoMap'
 import {
   routeAreaCodes,
@@ -81,6 +87,19 @@ function onLane(origin: string, destination: string, pair: string[]) {
   )
 }
 
+/** Plain-language read of each national benchmark, shown on hover. */
+const rateHints: Record<string, string> = {
+  'broker-spot': 'What brokers pay carriers on the open market this week, fuel included.',
+  'shipper-contract': 'What shippers pay on committed volume, so the ceiling for a spot buy.',
+  'fuel-surcharge': 'Fuel portion already inside both rates above. Flat weeks mean no reprice.',
+}
+
+const toneHints: Record<MarketTone, string> = {
+  tight: 'Loads per truck above 1.35. Post early, expect to pay over the benchmark.',
+  balanced: 'Loads per truck between 0.85 and 1.35. Benchmark rates should cover it.',
+  soft: 'Loads per truck under 0.85. Capacity is looking for freight, so push back on price.',
+}
+
 const axisLabel = { color: '#64748b', fontSize: 13, fontFamily: CHART_FONT }
 const axisLine = { lineStyle: { color: '#dfe4ea' } }
 const splitLine = { lineStyle: { color: '#eef1f5' } }
@@ -96,15 +115,18 @@ function SortHead({
   id,
   sort,
   onSort,
+  tip,
   children,
 }: {
   id: string
   sort: Sort
   onSort: (sort: Sort) => void
+  /** One line on what the column measures, shown on hover. */
+  tip?: string
   children: ReactNode
 }) {
   const active = sort.key === id
-  return (
+  const head = (
     <button
       type="button"
       className={cn('mi-sort', active && 'is-active')}
@@ -113,6 +135,39 @@ function SortHead({
       {children}
       {active ? sort.dir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} /> : null}
     </button>
+  )
+
+  if (!tip) return head
+  return (
+    <Tip
+      className="mi-head-tip"
+      tip={
+        <>
+          <b>{children}</b>
+          <em>{tip}</em>
+          <em>Click to sort.</em>
+        </>
+      }
+    >
+      {head}
+    </Tip>
+  )
+}
+
+/** Plain (non-sortable) column heading with a hover explanation. */
+function Head({ tip, children }: { tip: string; children: ReactNode }) {
+  return (
+    <Tip
+      className="mi-head-tip"
+      tip={
+        <>
+          <b>{children}</b>
+          <em>{tip}</em>
+        </>
+      }
+    >
+      <span className="mi-head-label">{children}</span>
+    </Tip>
   )
 }
 
@@ -520,7 +575,7 @@ export function MarketInsightsPage({
         itemHeight: 11,
         textStyle: { color: '#64748b', fontSize: 13, fontFamily: CHART_FONT },
       },
-      tooltip: { ...chartTooltip, axisPointer: { type: 'line' } },
+      tooltip: chartTooltipLine,
       xAxis: {
         type: 'category',
         data: postingHistory.weeks,
@@ -692,7 +747,7 @@ export function MarketInsightsPage({
     () => ({
       textStyle: { fontFamily: CHART_FONT, fontSize: 13 },
       grid: { top: 14, right: 16, bottom: 24, left: 48 },
-      tooltip: { ...chartTooltip, valueFormatter: (v) => `$${Number(v).toFixed(2)}/mi` },
+      tooltip: { ...chartTooltipLine, valueFormatter: (v) => `$${Number(v).toFixed(2)}/mi` },
       xAxis: {
         type: 'category',
         boundaryGap: false,
@@ -766,17 +821,33 @@ export function MarketInsightsPage({
           {profile.lanes.map((lane) => {
             const key = `${lane.origin}-${lane.destination}`
             return (
-              <button
+              <Tip
                 key={lane.id}
-                type="button"
-                className={cn(laneKey === key && 'is-active')}
-                onClick={() => {
-                  setLaneKey(laneKey === key ? null : key)
-                  setFocusCode(null)
-                }}
+                className="mi-lane-chip"
+                tip={
+                  <>
+                    <b>
+                      {lane.origin} – {lane.destination}
+                    </b>
+                    <em>
+                      {laneKey === key
+                        ? 'Showing this lane only. Click again to clear.'
+                        : 'Filter lanes, metros and the map to this pair, both directions.'}
+                    </em>
+                  </>
+                }
               >
-                {lane.origin} <ArrowRight size={11} /> {lane.destination}
-              </button>
+                <button
+                  type="button"
+                  className={cn(laneKey === key && 'is-active')}
+                  onClick={() => {
+                    setLaneKey(laneKey === key ? null : key)
+                    setFocusCode(null)
+                  }}
+                >
+                  {lane.origin} <ArrowRight size={11} /> {lane.destination}
+                </button>
+              </Tip>
             )
           })}
         </div>
@@ -802,50 +873,87 @@ export function MarketInsightsPage({
 
         <div className="mi-stats__row">
           {nationalRates.items.map((item) => (
-            <article key={item.id}>
-              <span>{item.label}</span>
-              <strong>
-                ${item.value.toFixed(2)}
-                <u>
-                  ({item.delta < 0 ? '−' : item.delta > 0 ? '+' : ''}$
-                  {Math.abs(item.delta).toFixed(2)})
-                </u>
-              </strong>
-              <em className={item.direction === 'neutral' ? 'is-flat' : 'is-up'}>
-                {item.direction === 'neutral' ? (
-                  <>
-                    <ArrowRight size={12} /> Rate is neutral
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp size={12} /> Rate is increasing
-                  </>
-                )}
-              </em>
-            </article>
+            <Tip
+              key={item.id}
+              block
+              tip={
+                <>
+                  <b>{item.label}</b>
+                  <em>{rateHints[item.id] ?? 'National benchmark, fuel included.'}</em>
+                </>
+              }
+            >
+              <article>
+                <span>{item.label}</span>
+                <strong>
+                  ${item.value.toFixed(2)}
+                  <u>
+                    ({item.delta < 0 ? '−' : item.delta > 0 ? '+' : ''}$
+                    {Math.abs(item.delta).toFixed(2)})
+                  </u>
+                </strong>
+                <em className={item.direction === 'neutral' ? 'is-flat' : 'is-up'}>
+                  {item.direction === 'neutral' ? (
+                    <>
+                      <ArrowRight size={12} /> Rate is neutral
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp size={12} /> Rate is increasing
+                    </>
+                  )}
+                </em>
+              </article>
+            </Tip>
           ))}
 
-          <article className="is-preference">
-            <span>Preferred market spot</span>
-            <strong>
-              ${averageSpot.toFixed(2)}
-              <u>/ mi</u>
-            </strong>
-            <em>
-              <Activity size={12} /> {areas.length} selected markets
-            </em>
-          </article>
+          <Tip
+            block
+            tip={
+              <>
+                <b>Average spot across your markets</b>
+                <em>
+                  Loads-in weighted across the {areas.length} markets in {profile.name}, not the
+                  whole country.
+                </em>
+              </>
+            }
+          >
+            <article className="is-preference">
+              <span>Preferred market spot</span>
+              <strong>
+                ${averageSpot.toFixed(2)}
+                <u>/ mi</u>
+              </strong>
+              <em>
+                <Activity size={12} /> {areas.length} selected markets
+              </em>
+            </article>
+          </Tip>
 
-          <article className="is-preference">
-            <span>Average load / truck</span>
-            <strong>{averageRatio.toFixed(2)}</strong>
-            <em className={averageRatio >= 1.35 ? 'is-warn' : undefined}>
-              <Gauge size={12} />{' '}
-              {hardestMarket
-                ? `${hardestMarket.code} hardest at ${areaRatio(hardestMarket).toFixed(2)}×`
-                : 'No selected market'}
-            </em>
-          </article>
+          <Tip
+            block
+            tip={
+              <>
+                <b>Loads per truck</b>
+                <em>
+                  Above 1.35 means more freight than capacity, so expect to pay up. Below 0.85 is a
+                  buyer&rsquo;s market.
+                </em>
+              </>
+            }
+          >
+            <article className="is-preference">
+              <span>Average load / truck</span>
+              <strong>{averageRatio.toFixed(2)}</strong>
+              <em className={averageRatio >= 1.35 ? 'is-warn' : undefined}>
+                <Gauge size={12} />{' '}
+                {hardestMarket
+                  ? `${hardestMarket.code} hardest at ${areaRatio(hardestMarket).toFixed(2)}×`
+                  : 'No selected market'}
+              </em>
+            </article>
+          </Tip>
         </div>
       </section>
 
@@ -950,36 +1058,63 @@ export function MarketInsightsPage({
               {areas.slice(0, 8).map((area) => {
                 const ratio = areaRatio(area)
                 return (
-                  <button
+                  <Tip
                     key={area.code}
-                    type="button"
-                    className={cn('mi-rail__row', area.code === focusCode && 'is-active')}
-                    onClick={() => drillTo(area.code)}
+                    block
+                    tip={
+                      <>
+                        <b>
+                          {area.name} · {toneLabel[areaTone(area)]}
+                        </b>
+                        <em>
+                          {(area.loadsIn + area.loadsOut).toLocaleString()} loads against{' '}
+                          {(area.trucksIn + area.trucksOut).toLocaleString()} trucks · spot $
+                          {area.spot.toFixed(2)}/mi · contract ${area.contract.toFixed(2)}/mi
+                        </em>
+                        <em>Click to drill into its metros and lanes.</em>
+                      </>
+                    }
                   >
-                    <b>{area.code}</b>
-                    <span>{area.name}</span>
-                    <em>{ratio.toFixed(2)}×</em>
-                    <i>
-                      <u
-                        style={{
-                          width: `${Math.min(100, (ratio / 3.2) * 100)}%`,
-                          background: toneColor[areaTone(area)],
-                        }}
-                      />
-                    </i>
-                    <small>{(shares.get(area.code) ?? 0).toFixed(1)}% of loads</small>
-                  </button>
+                    <button
+                      type="button"
+                      className={cn('mi-rail__row', area.code === focusCode && 'is-active')}
+                      onClick={() => drillTo(area.code)}
+                    >
+                      <b>{area.code}</b>
+                      <span>{area.name}</span>
+                      <em>{ratio.toFixed(2)}×</em>
+                      <i>
+                        <u
+                          style={{
+                            width: `${Math.min(100, (ratio / 3.2) * 100)}%`,
+                            background: toneColor[areaTone(area)],
+                          }}
+                        />
+                      </i>
+                      <small>{(shares.get(area.code) ?? 0).toFixed(1)}% of loads</small>
+                    </button>
+                  </Tip>
                 )
               })}
             </aside>
           </div>
           <div className="mi-legend">
             {(['tight', 'balanced', 'soft'] as MarketTone[]).map((tone) => (
-              <span key={tone}>
-                <i style={{ background: toneColor[tone] }} />
-                {toneLabel[tone]}
-                <b>{areas.filter((area) => areaTone(area) === tone).length}</b>
-              </span>
+              <Tip
+                key={tone}
+                tip={
+                  <>
+                    <b>{toneLabel[tone]}</b>
+                    <em>{toneHints[tone]}</em>
+                  </>
+                }
+              >
+                <span>
+                  <i style={{ background: toneColor[tone] }} />
+                  {toneLabel[tone]}
+                  <b>{areas.filter((area) => areaTone(area) === tone).length}</b>
+                </span>
+              </Tip>
             ))}
             <span className="mi-legend__hint">
               {view === 'map'
@@ -1030,34 +1165,69 @@ export function MarketInsightsPage({
 
         <div className="mi-brief__kpis">
           {[
-            { label: 'Spot rate', value: `$${route.spot.toFixed(2)}`, unit: '/mi' },
-            { label: 'Contract', value: `$${route.contract.toFixed(2)}`, unit: '/mi' },
+            {
+              label: 'Spot rate',
+              value: `$${route.spot.toFixed(2)}`,
+              unit: '/mi',
+              hint: 'Seven-day average of what carriers accepted on this lane, fuel included.',
+            },
+            {
+              label: 'Contract',
+              value: `$${route.contract.toFixed(2)}`,
+              unit: '/mi',
+              hint: 'Committed rate on the same lane. Treat it as your ceiling on a spot buy.',
+            },
             {
               label: 'Spot vs contract',
               value: `${route.spot - route.contract > 0 ? '+' : '−'}$${Math.abs(
                 route.spot - route.contract
               ).toFixed(2)}`,
               tone: route.spot - route.contract > 0 ? 'bad' : 'good',
+              hint:
+                route.spot - route.contract > 0
+                  ? 'Spot is over contract, so covering here eats margin.'
+                  : 'Spot is under contract, so there is room in the buy.',
             },
-            { label: '35-day outlook', value: `$${route.forecast.toFixed(2)}`, unit: '/mi' },
-            { label: 'Load / truck', value: route.loadToTruck.toFixed(1) },
+            {
+              label: '35-day outlook',
+              value: `$${route.forecast.toFixed(2)}`,
+              unit: '/mi',
+              hint: 'Model forecast five weeks out, based on postings, tender rejects and fuel.',
+            },
+            {
+              label: 'Load / truck',
+              value: route.loadToTruck.toFixed(1),
+              hint: 'Posted loads per available truck on this lane right now.',
+            },
             {
               label: 'Carriers',
               value: String(route.carrierMatches),
               unit: `${route.preferredCarriers} preferred`,
+              hint: 'Carriers in your network that have run this lane in the last 90 days.',
             },
           ].map((kpi) => (
-            <article key={kpi.label}>
-              <span>{kpi.label}</span>
-              <strong
-                className={
-                  kpi.tone === 'bad' ? 'is-bad' : kpi.tone === 'good' ? 'is-good' : undefined
-                }
-              >
-                {kpi.value}
-                {kpi.unit && <small>{kpi.unit}</small>}
-              </strong>
-            </article>
+            <Tip
+              key={kpi.label}
+              block
+              tip={
+                <>
+                  <b>{kpi.label}</b>
+                  <em>{kpi.hint}</em>
+                </>
+              }
+            >
+              <article>
+                <span>{kpi.label}</span>
+                <strong
+                  className={
+                    kpi.tone === 'bad' ? 'is-bad' : kpi.tone === 'good' ? 'is-good' : undefined
+                  }
+                >
+                  {kpi.value}
+                  {kpi.unit && <small>{kpi.unit}</small>}
+                </strong>
+              </article>
+            </Tip>
           ))}
         </div>
 
@@ -1128,13 +1298,19 @@ export function MarketInsightsPage({
           <div className="mi-table__head">
             <span>Lane</span>
             <span>Equipment</span>
-            <span>Miles</span>
-            <span>Loads / wk</span>
-            <span>Broker spot</span>
-            <span>$ / mile</span>
-            <span>Spread</span>
-            <span>WoW</span>
-            <span>Market range and paid position</span>
+            <Head tip="Practical length of haul used for the per-mile math.">Miles</Head>
+            <Head tip="Loads moving on this lane in an average week.">Loads / wk</Head>
+            <Head tip="What brokers paid per load on this lane in the last seven days.">
+              Broker spot
+            </Head>
+            <Head tip="Broker spot divided by lane miles, fuel included.">$ / mile</Head>
+            <Head tip="Gap between the low and high paid rate. A wide spread means the lane is being bought inconsistently.">
+              Spread
+            </Head>
+            <Head tip="Change in the paid rate against last week.">WoW</Head>
+            <Head tip="Where the current paid rate sits between the low and high of the market range.">
+              Market range and paid position
+            </Head>
           </div>
           {laneRows.length ? (
             laneRows.map((lane) => {
@@ -1185,13 +1361,15 @@ export function MarketInsightsPage({
         <div className="mi-routes__scroll">
           <div className="mi-routes__head">
             <span>Lane</span>
-            <span>Signal</span>
-            <span>Weekly</span>
-            <span>Spot</span>
-            <span>Contract</span>
-            <span>Forecast</span>
-            <span>Load / truck</span>
-            <span>Carriers</span>
+            <Head tip="How hard this lane is to cover right now.">Signal</Head>
+            <Head tip="Loads tendered on this lane in an average week.">Weekly</Head>
+            <Head tip="Seven-day average paid rate per mile, fuel included.">Spot</Head>
+            <Head tip="Committed rate per mile on the lane.">Contract</Head>
+            <Head tip="Model forecast for the paid rate five weeks out.">Forecast</Head>
+            <Head tip="Posted loads per available truck on the lane.">Load / truck</Head>
+            <Head tip="Carriers in your network that ran this lane in the last 90 days.">
+              Carriers
+            </Head>
             <span />
           </div>
           {routes.length ? (
@@ -1244,32 +1422,79 @@ export function MarketInsightsPage({
         <div className="mi-table mi-table--markets">
           <div className="mi-table__head">
             <span>Market</span>
-            <span>Signal</span>
-            <SortHead id="loadsIn" sort={stateSort} onSort={setStateSort}>
+            <Head tip="Tight, balanced or soft, taken from loads per truck in the market.">
+              Signal
+            </Head>
+            <SortHead
+              id="loadsIn"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Loads delivering into the market against loads originating from it, this week."
+            >
               Loads in / out
             </SortHead>
-            <SortHead id="trucksIn" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="trucksIn"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Trucks posted inbound against trucks posted outbound."
+            >
               Trucks in / out
             </SortHead>
-            <SortHead id="net" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="net"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Loads minus trucks. A positive number means freight is chasing capacity."
+            >
               Net balance
             </SortHead>
-            <SortHead id="ratio" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="ratio"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Posted loads per available truck. Over 1.35 is a tight market."
+            >
               Load / truck
             </SortHead>
-            <SortHead id="share" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="share"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="This market's share of all loads across the markets you selected."
+            >
               Share
             </SortHead>
-            <SortHead id="spot" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="spot"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Average spot rate per mile inside the market, fuel included."
+            >
               Spot
             </SortHead>
-            <SortHead id="contract" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="contract"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Average committed rate per mile, your ceiling on a spot buy."
+            >
               Contract
             </SortHead>
-            <SortHead id="spread" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="spread"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Spot minus contract. Positive means covering here costs more than the contract rate."
+            >
               Spot vs contract
             </SortHead>
-            <SortHead id="metros" sort={stateSort} onSort={setStateSort}>
+            <SortHead
+              id="metros"
+              sort={stateSort}
+              onSort={setStateSort}
+              tip="Metro markets we track inside this state or province."
+            >
               Metros
             </SortHead>
           </div>
@@ -1345,26 +1570,63 @@ export function MarketInsightsPage({
         <div className="mi-table mi-table--cities">
           <div className="mi-table__head">
             <span>Metro market</span>
-            <span>Signal</span>
-            <SortHead id="loadsIn" sort={citySort} onSort={setCitySort}>
+            <Head tip="Tight, balanced or soft for this metro, from its loads per truck.">
+              Signal
+            </Head>
+            <SortHead
+              id="loadsIn"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Loads delivering into the metro against loads leaving it."
+            >
               Loads in / out
             </SortHead>
-            <SortHead id="trucksIn" sort={citySort} onSort={setCitySort}>
+            <SortHead
+              id="trucksIn"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Trucks posted inbound against trucks posted outbound."
+            >
               Trucks in / out
             </SortHead>
-            <SortHead id="ratio" sort={citySort} onSort={setCitySort}>
+            <SortHead
+              id="ratio"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Posted loads per available truck in the metro."
+            >
               Load / truck
             </SortHead>
-            <SortHead id="spot" sort={citySort} onSort={setCitySort}>
+            <SortHead
+              id="spot"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Average outbound spot rate per mile, fuel included."
+            >
               Spot
             </SortHead>
-            <SortHead id="contract" sort={citySort} onSort={setCitySort}>
+            <SortHead
+              id="contract"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Average committed rate per mile out of this metro."
+            >
               Contract
             </SortHead>
-            <SortHead id="wow" sort={citySort} onSort={setCitySort}>
+            <SortHead
+              id="wow"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Change in spot rate against last week."
+            >
               WoW
             </SortHead>
-            <SortHead id="avgMiles" sort={citySort} onSort={setCitySort}>
+            <SortHead
+              id="avgMiles"
+              sort={citySort}
+              onSort={setCitySort}
+              tip="Average length of haul on loads leaving the metro."
+            >
               Avg haul
             </SortHead>
             <span>Top outbound</span>

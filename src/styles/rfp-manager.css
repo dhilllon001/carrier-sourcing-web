@@ -2,6 +2,9 @@
    Same Fleet Ops tokens as the rest of the app; nothing new invented here. */
 
 .rfp-page {
+  /* Same Inter-first stack as the insight board, so the two read as one product. */
+  --rfp-font: Inter, 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+
   flex: 1;
   min-height: 0;
   display: flex;
@@ -11,7 +14,26 @@
   padding: 14px 16px 22px;
   background: var(--bg);
   color: var(--ink);
+  font-family: var(--rfp-font);
   font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: -0.004em;
+  -webkit-font-smoothing: antialiased;
+}
+
+.rfp-page button,
+.rfp-page input,
+.rfp-page select,
+.rfp-page a {
+  font-family: inherit;
+}
+
+/* Every heading in the module tightens the same way. */
+.rfp-page h1,
+.rfp-page h2,
+.rfp-page h3,
+.rfp-page h4 {
+  letter-spacing: -0.018em;
 }
 
 /* the page scrolls, so sections keep their natural height */
@@ -30,7 +52,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
@@ -149,6 +171,14 @@
   color: var(--ink-2);
 }
 
+/* Hover hints wrap the summary cards, so the wrapper is the grid cell and the
+   card inside it stretches to fill. */
+.rfp-hero > *,
+.rfp-stats > * {
+  display: grid;
+  min-width: 0;
+}
+
 .rfp-fact {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -156,6 +186,12 @@
   gap: 2px 9px;
   padding: 12px 14px;
   border-left: 1px solid var(--line);
+  transition: background var(--fast) var(--ease);
+}
+
+.rfp-hero > *:hover .rfp-fact,
+.rfp-stats > *:hover .rfp-stat {
+  background: var(--surface-2);
 }
 
 .rfp-fact i {
@@ -243,7 +279,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12.5px;
   color: var(--ink);
 }
@@ -266,7 +302,7 @@
   border: 0;
   border-radius: 7px;
   background: transparent;
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink-2);
@@ -355,7 +391,7 @@
   border: 0;
   border-bottom: 1px solid var(--line-soft);
   background: var(--surface);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12.5px;
   color: var(--ink);
   cursor: pointer;
@@ -394,6 +430,27 @@
   justify-self: end;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Column headings that explain themselves on hover. */
+.rfp-head-tip {
+  min-width: 0;
+  cursor: help;
+}
+
+.rfp-head-label {
+  transition: color var(--fast) var(--ease);
+}
+
+.rfp-head-tip:hover .rfp-head-label {
+  color: var(--ink-2);
+}
+
+/* Pill and scope groups keep their rhythm once each control is wrapped. */
+.rfp-pills > span,
+.rfp-scope > span,
+.rfp-tools > span:not(.rfp-tools__count) {
+  display: inline-flex;
 }
 
 .rfp-grid input[type='checkbox'] {
@@ -629,7 +686,7 @@ button.rfp-cell--go:hover {
   border: 1px solid var(--sr-border-2);
   border-radius: 7px;
   background: var(--surface);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12.5px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
@@ -654,7 +711,7 @@ button.rfp-cell--go:hover {
 .rfp-empty button {
   border: 0;
   background: none;
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12.5px;
   font-weight: 650;
   color: var(--accent);
@@ -679,7 +736,7 @@ button.rfp-cell--go:hover {
   gap: 4px;
   border: 0;
   background: none;
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 650;
   color: var(--ink-3);
@@ -772,6 +829,7 @@ button.rfp-cell--go:hover {
   gap: 2px;
   padding: 11px 13px;
   border-right: 1px solid var(--line);
+  transition: background var(--fast) var(--ease);
 }
 
 .rfp-stat span {
@@ -880,7 +938,7 @@ button.rfp-cell--go:hover {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--ink-2);
@@ -919,7 +977,7 @@ button.rfp-cell--go:hover {
   padding: 9px 12px;
   border: 0;
   background: var(--surface);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   cursor: pointer;
 }
 
@@ -950,11 +1008,12 @@ button.rfp-cell--go:hover {
 
 .rfp-map {
   display: grid;
-  grid-template-columns: minmax(130px, 0.9fr) repeat(4, minmax(90px, 1fr));
+  grid-template-columns: minmax(96px, 0.7fr) repeat(4, minmax(76px, 1fr));
   gap: 6px;
-  padding: 2px 12px 12px;
+  padding: 2px 12px 10px;
 }
 
+.rfp-map__corner,
 .rfp-map__col,
 .rfp-map__row {
   display: flex;
@@ -966,50 +1025,167 @@ button.rfp-cell--go:hover {
   color: var(--ink-3);
 }
 
-.rfp-map__col {
-  justify-content: center;
+.rfp-map__corner i {
+  margin: 0 3px;
+  font-style: normal;
+  color: var(--line);
 }
 
+.rfp-map__col {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Row label reads as a band: name on top, the score range under it. */
+.rfp-map__row {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  padding-right: 4px;
+}
+
+.rfp-map__row b {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--ink-2);
+}
+
+.rfp-map__row em {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* The hover hint wraps each cell, so the wrapper carries the grid slot. */
+.rfp-map__slot {
+  display: grid;
+  min-width: 0;
+}
+
+/* Cells read as a heat map: the tone says what it means, the fill says how much
+   of the file sits there. --fill is the share of lanes, 0 to 1. */
 .rfp-map__cell {
-  height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-2);
-  font-family: var(--sr-font-body);
-  font-size: 13px;
+  --tone: #94a3b8;
+  --fill: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--tone) 26%, #fff);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--tone) calc(7% + 20% * var(--fill)), #fff);
+  font-family: inherit;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  color: color-mix(in srgb, var(--tone) 82%, #0f172a);
   cursor: pointer;
   transition:
     border-color var(--fast) var(--ease),
-    background var(--fast) var(--ease);
+    background var(--fast) var(--ease),
+    box-shadow var(--base) var(--ease),
+    transform var(--base) var(--ease);
 }
 
-.rfp-map__cell:disabled {
-  color: var(--sr-text-disabled);
+.rfp-map__cell em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 650;
+  opacity: 0.72;
+}
+
+.rfp-map__cell.is-good {
+  --tone: var(--green);
+}
+
+.rfp-map__cell.is-watch {
+  --tone: #d97706;
+}
+
+.rfp-map__cell.is-danger {
+  --tone: #dc2626;
+}
+
+.rfp-map__cell.is-idle {
+  --tone: #64748b;
+}
+
+/* Nothing here: a quiet dashed slot so the eye skips it. */
+.rfp-map__cell.is-empty {
+  border-style: dashed;
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 600;
   cursor: default;
 }
 
 .rfp-map__cell:hover:not(:disabled) {
-  border-color: var(--accent-2);
-}
-
-.rfp-map__cell.is-watch {
-  border-color: var(--amber-line);
-  background: var(--amber-soft);
-  color: var(--amber);
-}
-
-.rfp-map__cell.is-danger {
-  border-color: var(--red-line);
-  background: var(--red-soft);
-  color: var(--red);
+  border-color: color-mix(in srgb, var(--tone) 52%, #fff);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--tone) 18%, transparent);
+  transform: translateY(-1px);
 }
 
 .rfp-map__cell.is-on {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: color-mix(in srgb, var(--tone) 62%, #fff);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone) 22%, #fff);
+}
+
+.rfp-map__legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 9px 13px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface-2);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.rfp-map__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rfp-map__legend i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, #fff);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tone) 22%, #fff);
+}
+
+.rfp-map__legend .is-good {
+  --tone: var(--green);
+}
+
+.rfp-map__legend .is-watch {
+  --tone: #d97706;
+}
+
+.rfp-map__legend .is-danger {
+  --tone: #dc2626;
+}
+
+.rfp-map__legend .is-idle {
+  --tone: #64748b;
+}
+
+.rfp-map__legend em {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--ink-3);
 }
 
 /* ── detail footer strip ── */
@@ -1066,7 +1242,7 @@ button.rfp-cell--go:hover {
   border: 1px solid var(--accent-line);
   border-radius: 999px;
   background: var(--accent-soft);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 650;
   color: var(--accent);
@@ -1274,7 +1450,7 @@ button.rfp-cell--go:hover {
   border: 1px solid var(--sr-border-2);
   border-radius: 9px;
   background: var(--surface);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 19px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
@@ -1288,23 +1464,30 @@ button.rfp-cell--go:hover {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Three per row, two rows: the steps read as a ladder instead of wrapping ragged
+   inside the narrow half of the drawer. */
 .rfp-ladder {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px;
-  flex-wrap: wrap;
+}
+
+.rfp-ladder > span {
+  display: flex;
 }
 
 .rfp-ladder button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   gap: 3px;
   height: 25px;
-  padding: 0 7px;
+  padding: 0 6px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--surface-2);
-  font-family: var(--sr-font-body);
+  font-family: inherit;
   font-size: 11.5px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1615,5 +1798,86 @@ button.rfp-cell--go:hover {
 
   .rfp-foot {
     grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  .rfp-map {
+    grid-template-columns: minmax(78px, 0.6fr) repeat(4, minmax(62px, 1fr));
+    gap: 5px;
+  }
+
+  .rfp-map__col {
+    font-size: 9.5px;
+    letter-spacing: 0.03em;
+  }
+
+  .rfp-map__cell {
+    min-height: 36px;
+    padding: 0 5px;
+    font-size: 14px;
+  }
+}
+
+/* Under the width where a four-column matrix stays readable, each confidence
+   band becomes its own block and the cells label their own margin column. */
+@media (max-width: 780px) {
+  .rfp-map {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 10px 10px;
+  }
+
+  .rfp-map__corner,
+  .rfp-map > .rfp-map__col {
+    display: none;
+  }
+
+  .rfp-map .contents {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    background: var(--surface-2);
+  }
+
+  .rfp-map__row {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 0 2px 2px;
+  }
+
+  .rfp-map__cell {
+    min-height: 42px;
+    padding: 0 10px;
+    background: color-mix(in srgb, var(--tone) calc(9% + 20% * var(--fill)), #fff);
+  }
+
+  /* The column this cell belongs to, since the axis header is hidden. */
+  .rfp-map__cell::before {
+    content: attr(data-col);
+    margin-right: auto;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.66;
+  }
+
+  .rfp-map__cell.is-empty {
+    background: #fff;
+  }
+
+  .rfp-map__legend {
+    gap: 10px;
+    font-size: 10.5px;
+  }
+
+  .rfp-map__legend em {
+    margin-left: 0;
+    flex-basis: 100%;
   }
 }

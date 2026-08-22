@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, CircleCheckBig, TriangleAlert, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { Tip } from '@/components/Tip'
 import {
   annualMargin,
   annualRevenue,
@@ -126,18 +127,35 @@ export function RfpLaneDrawer({
                 {ladder(target).map((pct) => {
                   const rate = rateForMargin(lane.ourCost, pct)
                   return (
-                    <button key={pct} type="button" onClick={() => onRate(Math.round(rate * 100) / 100)}>
-                      {pct}% <i>→</i> {money(rate)}
-                    </button>
+                    <Tip
+                      key={pct}
+                      tip={
+                        <>
+                          <b>
+                            Price at {pct}% · {money(rate)}
+                          </b>
+                          <em>
+                            Leaves {money(rate - lane.ourCost)} a load,{' '}
+                            {compactMoney((rate - lane.ourCost) * lane.annualLoads)} across the year.
+                          </em>
+                        </>
+                      }
+                    >
+                      <button type="button" onClick={() => onRate(Math.round(rate * 100) / 100)}>
+                        {pct}% <i>→</i> {money(rate)}
+                      </button>
+                    </Tip>
                   )
                 })}
-                <button
-                  type="button"
-                  className="rfp-ladder__reset"
-                  onClick={() => onRate(Math.round(rateForMargin(lane.ourCost, target)))}
-                >
-                  target {target}%
-                </button>
+                <Tip tip={`Snap back to this file's ${target}% target margin.`}>
+                  <button
+                    type="button"
+                    className="rfp-ladder__reset"
+                    onClick={() => onRate(Math.round(rateForMargin(lane.ourCost, target)))}
+                  >
+                    target {target}%
+                  </button>
+                </Tip>
               </div>
 
               <div className="rfp-price__facts">
@@ -186,7 +204,21 @@ export function RfpLaneDrawer({
 
               <ul className="rfp-score">
                 {confidenceParts(lane).map((part) => (
-                  <li key={part.label}>
+                  <Tip
+                    key={part.label}
+                    as="li"
+                    tip={
+                      <>
+                        <b>
+                          {part.got} of {part.of} points
+                        </b>
+                        <em>
+                          {part.label}: {part.detail}. This factor is worth up to {part.of} of the
+                          100-point score.
+                        </em>
+                      </>
+                    }
+                  >
                     <span>{part.label}</span>
                     <em>{part.detail}</em>
                     <b>
@@ -195,7 +227,7 @@ export function RfpLaneDrawer({
                     <i>
                       <u style={{ width: `${(part.got / part.of) * 100}%` }} />
                     </i>
-                  </li>
+                  </Tip>
                 ))}
               </ul>
             </article>

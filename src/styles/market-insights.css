@@ -70,13 +70,18 @@
   display: none;
 }
 
-.mi-lanes > span {
+.mi-lanes > span:first-child {
   flex: none;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--mi-ink-3);
+}
+
+.mi-lanes > .mi-lane-chip {
+  display: inline-flex;
+  flex: none;
 }
 
 .mi-lanes button {
@@ -93,11 +98,18 @@
   font-weight: 600;
   color: var(--mi-ink-2);
   cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mi-lanes button:hover {
-  border-color: #c3ccd8;
+  border-color: #b9c4d2;
+  background: #f7f9fc;
   color: var(--mi-ink);
+  transform: translateY(-1px);
 }
 
 .mi-lanes button.is-active {
@@ -229,16 +241,32 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.mi-stats__row article {
-  padding: 14px 16px 15px;
+/* Each cell is wrapped by the hover hint, so borders live on the wrapper and the
+   article stretches to fill it. */
+.mi-stats__row > * {
+  display: grid;
+  min-width: 0;
 }
 
-.mi-stats__row article + article {
+.mi-stats__row > * + * {
   border-left: 1px solid var(--mi-line-soft);
+}
+
+.mi-stats__row article {
+  padding: 14px 16px 15px;
+  transition: background 140ms var(--sr-ease, ease);
+}
+
+.mi-stats__row > *:hover article {
+  background: #f6f9fd;
 }
 
 .mi-stats__row article.is-preference {
   background: #fafcff;
+}
+
+.mi-stats__row > *:hover article.is-preference {
+  background: #f2f7fe;
 }
 
 .mi-stats__row span {
@@ -486,10 +514,11 @@
   gap: 10px;
 }
 
-.mi-index > header > div:first-child {
+.mi-index__value {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  cursor: help;
 }
 
 .mi-index > header span {
@@ -565,12 +594,22 @@
   overflow: hidden;
 }
 
+.mi-contract__kpis > * {
+  display: grid;
+  min-width: 0;
+}
+
 .mi-contract__kpis article {
   padding: 10px 12px;
   border-right: 1px solid var(--mi-line-soft);
+  transition: background 140ms ease;
 }
 
-.mi-contract__kpis article:last-child {
+.mi-contract__kpis > *:hover article {
+  background: #f6f9fd;
+}
+
+.mi-contract__kpis > *:last-child article {
   border-right: 0;
 }
 
@@ -729,10 +768,18 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 160ms ease,
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mi-rail__row:hover {
   background: #eef2f7;
+  border-color: #dde4ed;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
 }
 
 .mi-rail__row.is-active {
@@ -1018,10 +1065,25 @@
   padding: 12px 15px 0;
 }
 
+.mi-brief__kpis > * {
+  display: grid;
+  min-width: 0;
+}
+
 .mi-brief__kpis article {
   padding: 11px 12px;
   border: 1px solid var(--mi-line);
   border-radius: 10px;
+  transition:
+    border-color 140ms ease,
+    box-shadow 160ms ease,
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mi-brief__kpis > *:hover article {
+  border-color: #cdd7e3;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
 }
 
 .mi-brief__kpis span {
@@ -1161,6 +1223,30 @@
     minmax(78px, 0.5fr) minmax(68px, 0.45fr) minmax(74px, 0.45fr) minmax(78px, 0.5fr)
     minmax(82px, 0.5fr) minmax(150px, 1fr);
   min-width: 1120px;
+}
+
+/* A heading with a hover hint: the wrapper becomes the grid cell, so it carries
+   the right-aligned rhythm its numeric column expects. */
+.mi-head-tip {
+  display: block;
+  min-width: 0;
+  text-align: right;
+}
+
+.mi-table__head > .mi-head-tip:nth-child(2),
+.mi-routes__head > .mi-head-tip:nth-child(2),
+.mi-table--lanes .mi-table__head > .mi-head-tip:last-child {
+  text-align: left;
+}
+
+.mi-head-label {
+  cursor: help;
+  transition: color 140ms ease;
+}
+
+.mi-head-tip:hover .mi-head-label,
+.mi-head-tip:hover .mi-sort {
+  color: var(--mi-ink-2);
 }
 
 /* Sortable numeric headers keep the same right-aligned rhythm as their cells. */
@@ -2204,11 +2290,11 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .mi-stats__row article:nth-child(3n + 1) {
+  .mi-stats__row > *:nth-child(3n + 1) {
     border-left: 0;
   }
 
-  .mi-stats__row article:nth-child(n + 4) {
+  .mi-stats__row > *:nth-child(n + 4) {
     border-top: 1px solid var(--mi-line-soft);
   }
 
@@ -2236,11 +2322,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .mi-contract__kpis article:nth-child(2) {
+  .mi-contract__kpis > *:nth-child(2) article {
     border-right: 0;
   }
 
-  .mi-contract__kpis article:nth-child(n + 3) {
+  .mi-contract__kpis > *:nth-child(n + 3) article {
     border-top: 1px solid var(--mi-line-soft);
   }
 

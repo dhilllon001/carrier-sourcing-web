@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import type { EChartsOption } from 'echarts'
 import { CalendarDays, Info, RotateCcw, SlidersHorizontal, TrendingDown, TrendingUp } from 'lucide-react'
 import { EChart } from '@/components/charts/EChart'
-import { CHART_FONT, chartTooltip } from '@/components/charts/chartTheme'
+import { CHART_FONT, chartTooltip, chartTooltipLine } from '@/components/charts/chartTheme'
+import { Tip } from '@/components/Tip'
 import {
   marketAreas,
   marketIntelligence,
@@ -177,13 +178,31 @@ function MarketOverview({ factor }: { factor: number }) {
         return (
           <article key={equipment} className="mi-index">
             <header>
-              <div>
-                <span>{equipment}</span>
-                <strong>{values.at(-1)!.toFixed(1)}</strong>
-              </div>
+              <Tip
+                block
+                tip={
+                  <>
+                    <b>{equipment} market index</b>
+                    <em>
+                      Rate level against a Jan 2025 base of 100, so {values.at(-1)!.toFixed(1)} means
+                      the market sits {(values.at(-1)! - 100).toFixed(1)} points{' '}
+                      {values.at(-1)! >= 100 ? 'above' : 'below'} that base.
+                    </em>
+                  </>
+                }
+              >
+                <div className="mi-index__value">
+                  <span>{equipment}</span>
+                  <strong>{values.at(-1)!.toFixed(1)}</strong>
+                </div>
+              </Tip>
               <div className="mi-index__moves">
-                <Move label="MoM" value={mom} />
-                <Move label="12 mo" value={yoy} />
+                <Move
+                  label="MoM"
+                  value={mom}
+                  hint="Change against last month. Watch this for turning points."
+                />
+                <Move label="12 mo" value={yoy} hint="Change across the full 12-month window." />
               </div>
             </header>
             <EChart
@@ -229,30 +248,84 @@ function ContractIntelligence({
   return (
     <div className="mi-contract">
       <div className="mi-contract__kpis">
-        <article>
-          <span>Current spot</span>
-          <strong>${spot.at(-1)!.toFixed(2)}<small>/mi</small></strong>
-          <em className={gap >= 0 ? 'is-warn' : 'is-good'}>
-            {gap >= 0 ? '+' : '−'}${Math.abs(gap).toFixed(2)} vs contract
-          </em>
-        </article>
-        <article>
-          <span>Contract index</span>
-          <strong>${contract.at(-1)!.toFixed(2)}<small>/mi</small></strong>
-          <em>12-month committed benchmark</em>
-        </article>
-        <article>
-          <span>Our spot margin</span>
-          <strong>{companyMargin.at(-1)!.toFixed(1)}%</strong>
-          <em className={marginLead >= 0 ? 'is-good' : 'is-warn'}>
-            {marginLead >= 0 ? '+' : '−'}{Math.abs(marginLead).toFixed(1)} pts vs market
-          </em>
-        </article>
-        <article>
-          <span>Forecast error</span>
-          <strong>{avgBias.toFixed(1)}<small> pts</small></strong>
-          <em>{avgBias <= 0.5 ? 'Inside planning tolerance' : 'Review model assumptions'}</em>
-        </article>
+        <Tip
+          block
+          tip={
+            <>
+              <b>Current spot</b>
+              <em>
+                Latest month of the {equipment.toLowerCase()} spot benchmark, fuel included.{' '}
+                {gap >= 0
+                  ? 'It sits over contract, so covering on the spot market costs you margin.'
+                  : 'It sits under contract, so there is room in the buy.'}
+              </em>
+            </>
+          }
+        >
+          <article>
+            <span>Current spot</span>
+            <strong>${spot.at(-1)!.toFixed(2)}<small>/mi</small></strong>
+            <em className={gap >= 0 ? 'is-warn' : 'is-good'}>
+              {gap >= 0 ? '+' : '−'}${Math.abs(gap).toFixed(2)} vs contract
+            </em>
+          </article>
+        </Tip>
+        <Tip
+          block
+          tip={
+            <>
+              <b>Contract index</b>
+              <em>
+                Committed rate per mile across the 12-month window. Use it as the ceiling when you
+                price a spot cover.
+              </em>
+            </>
+          }
+        >
+          <article>
+            <span>Contract index</span>
+            <strong>${contract.at(-1)!.toFixed(2)}<small>/mi</small></strong>
+            <em>12-month committed benchmark</em>
+          </article>
+        </Tip>
+        <Tip
+          block
+          tip={
+            <>
+              <b>Our spot margin</b>
+              <em>
+                Margin we realized on spot covers this month, next to what the market averaged. A
+                positive lead means we are buying better than peers.
+              </em>
+            </>
+          }
+        >
+          <article>
+            <span>Our spot margin</span>
+            <strong>{companyMargin.at(-1)!.toFixed(1)}%</strong>
+            <em className={marginLead >= 0 ? 'is-good' : 'is-warn'}>
+              {marginLead >= 0 ? '+' : '−'}{Math.abs(marginLead).toFixed(1)} pts vs market
+            </em>
+          </article>
+        </Tip>
+        <Tip
+          block
+          tip={
+            <>
+              <b>Forecast error</b>
+              <em>
+                Average gap between the forecast and what the market actually did. Under 0.5 points
+                is close enough to plan on.
+              </em>
+            </>
+          }
+        >
+          <article>
+            <span>Forecast error</span>
+            <strong>{avgBias.toFixed(1)}<small> pts</small></strong>
+            <em>{avgBias <= 0.5 ? 'Inside planning tolerance' : 'Review model assumptions'}</em>
+          </article>
+        </Tip>
       </div>
 
       <div className="mi-contract__charts">
@@ -305,13 +378,29 @@ function ContractIntelligence({
   )
 }
 
-function Move({ label, value }: { label: string; value: number }) {
+function Move({ label, value, hint }: { label: string; value: number; hint?: string }) {
   const up = value >= 0
-  return (
+  const chip = (
     <span className={cn(up ? 'is-up' : 'is-down')}>
       {up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
       <b>{Math.abs(value).toFixed(1)}%</b> {label}
     </span>
+  )
+
+  if (!hint) return chip
+  return (
+    <Tip
+      tip={
+        <>
+          <b>
+            {label} {up ? 'up' : 'down'} {Math.abs(value).toFixed(1)}%
+          </b>
+          <em>{hint}</em>
+        </>
+      }
+    >
+      {chip}
+    </Tip>
   )
 }
 
@@ -335,8 +424,7 @@ function indexOption(values: number[]): EChartsOption {
     textStyle: { fontFamily: CHART_FONT },
     grid: { top: 12, right: 10, bottom: 24, left: 34 },
     tooltip: {
-      ...chartTooltip,
-      axisPointer: { type: 'line' },
+      ...chartTooltipLine,
       valueFormatter: (value) => `${Number(value).toFixed(1)} index`,
     },
     xAxis: {
@@ -403,7 +491,7 @@ function lineCompareOption(
     animationDuration: 450,
     textStyle: { fontFamily: CHART_FONT },
     grid: { top: 15, right: 16, bottom: 28, left: 44 },
-    tooltip: { ...chartTooltip, axisPointer: { type: 'line' } },
+    tooltip: chartTooltipLine,
     xAxis: {
       type: 'category',
       data: marketIntelligence.labels,

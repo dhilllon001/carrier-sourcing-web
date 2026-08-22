@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   ArrowUpRight,
   Banknote,
@@ -21,6 +21,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { Tip } from '@/components/Tip'
 import { RfpLaneDrawer } from '@/components/rfp/RfpLaneDrawer'
 import {
   annualMargin,
@@ -29,6 +30,7 @@ import {
   compactCount,
   compactMoney,
   confidenceBand,
+  confidenceLabel,
   isClosed,
   isOpen,
   isPriced,
@@ -65,18 +67,29 @@ const BOARD_TABS: Array<{ id: BoardTab; label: string }> = [
   { id: 'closed', label: 'Closed' },
 ]
 
-const CONF_ROWS: Array<{ id: ConfidenceBand; label: string }> = [
-  { id: 'high', label: 'High 85+' },
-  { id: 'medium', label: 'Workable 50–84' },
-  { id: 'thin', label: 'Thin < 50' },
+const CONF_ROWS: Array<{ id: ConfidenceBand; label: string; range: string }> = [
+  { id: 'high', label: 'High', range: '85+' },
+  { id: 'medium', label: 'Workable', range: '50–84' },
+  { id: 'thin', label: 'Thin', range: 'under 50' },
 ]
 
-const MARGIN_COLS: Array<{ id: MarginBand; label: string }> = [
-  { id: 'under', label: 'Under target' },
-  { id: 'at', label: 'At target' },
-  { id: 'over', label: 'Over target' },
-  { id: 'none', label: 'Not priced' },
+const MARGIN_COLS: Array<{ id: MarginBand; label: string; short: string }> = [
+  { id: 'under', label: 'Under target', short: 'Under' },
+  { id: 'at', label: 'At target', short: 'At' },
+  { id: 'over', label: 'Over target', short: 'Over' },
+  { id: 'none', label: 'Not priced', short: 'Unpriced' },
 ]
+
+type CellTone = 'empty' | 'good' | 'watch' | 'danger' | 'idle'
+
+/** Colour a cell by what sitting there means, not just by how many lanes. */
+function cellTone(conf: ConfidenceBand, band: MarginBand, count: number): CellTone {
+  if (count === 0) return 'empty'
+  if (isDanger(conf, band)) return 'danger'
+  if (isWatch(conf, band)) return 'watch'
+  if (band === 'none') return 'idle'
+  return 'good'
+}
 
 function marginBand(lane: RfpLane, target: number): MarginBand {
   const margin = laneMargin(lane)
@@ -84,6 +97,14 @@ function marginBand(lane: RfpLane, target: number): MarginBand {
   if (margin < target - 1.5) return 'under'
   if (margin > target + 1.5) return 'over'
   return 'at'
+}
+
+const laneFilterHint: Record<LaneFilter, string> = {
+  all: 'Every lane in the file.',
+  flagged: 'Off target, above the incumbent, or priced on a wide cost spread.',
+  thin: 'Confidence under 50, so our cost is a guess more than a record.',
+  unpriced: 'Still waiting on a rate, and not marked no bid.',
+  manual: 'Rates typed by hand. Bulk apply never touches these.',
 }
 
 const isDanger = (conf: ConfidenceBand, band: MarginBand) => conf === 'thin' && band === 'under'
@@ -170,12 +191,19 @@ export function RfpManagerPage({ search }: Props) {
               <Upload size={14} /> Upload RFP
             </button>
           </div>
-          <Fact icon={Layers} label="Open RFPs" value={String(board.open)} note="being priced" />
+          <Fact
+            icon={Layers}
+            label="Open RFPs"
+            value={String(board.open)}
+            note="being priced"
+            hint="Files in draft or pricing that have not gone back to the customer yet."
+          />
           <Fact
             icon={Gauge}
             label="Lanes to price"
             value={String(board.toPrice)}
             note="across open files"
+            hint="Lanes on open files with no rate yet, excluding anything marked no bid."
           />
           <Fact
             icon={CalendarClock}
@@ -183,6 +211,7 @@ export function RfpManagerPage({ search }: Props) {
             value={String(board.dueSoon)}
             note="customer deadline"
             tone={board.dueSoon > 0 ? 'warn' : undefined}
+            hint="Open files whose customer deadline lands inside the next five days."
           />
           <Fact
             icon={Percent}
@@ -190,6 +219,7 @@ export function RfpManagerPage({ search }: Props) {
             value={board.winRate === null ? '—' : `${board.winRate}%`}
             note="last 12 decisions"
             tone="good"
+            hint="Share of the last twelve decided files that came back awarded."
           />
         </section>
 
@@ -231,12 +261,24 @@ export function RfpManagerPage({ search }: Props) {
             <div className="rfp-grid__head">
               <span>RFP</span>
               <span>Customer / file</span>
-              <span>Round</span>
-              <span className="is-num">Lanes</span>
-              <span>Priced</span>
-              <span className="is-num">Avg margin</span>
-              <span className="is-num">Due</span>
-              <span>Status</span>
+              <Head tip="Which bid round we are on, and how many have already gone back.">
+                Round
+              </Head>
+              <Head num tip="Lane rows in the customer sheet, with the annual volume behind them.">
+                Lanes
+              </Head>
+              <Head tip="Share of biddable lanes that carry a rate. No-bid lanes are excluded.">
+                Priced
+              </Head>
+              <Head num tip="Revenue-weighted margin across every priced lane on the file.">
+                Avg margin
+              </Head>
+              <Head num tip="Days left until the customer deadline, with the calendar date.">
+                Due
+              </Head>
+              <Head tip="Where the file sits: draft, pricing, submitted, awarded or lost.">
+                Status
+              </Head>
               <span />
             </div>
 
@@ -468,17 +510,24 @@ export function RfpManagerPage({ search }: Props) {
       </header>
 
       <section className="rfp-stats">
-        <Stat label="Lanes" value={String(totals.lanes)} note={`${totals.noBid} no-bid`} />
+        <Stat
+          label="Lanes"
+          value={String(totals.lanes)}
+          note={`${totals.noBid} no-bid`}
+          hint="Every lane row in the customer sheet, including the ones we chose not to bid."
+        />
         <Stat
           label="Priced"
           value={String(totals.priced)}
           note={`of ${totals.lanes - totals.noBid} to price`}
           tone={totals.pricedPct === 100 ? 'good' : undefined}
+          hint="Lanes that carry a rate right now. No-bid lanes are left out of the count."
         />
         <Stat
           label="Annual revenue"
           value={compactMoney(totals.revenue)}
           note={`${compactMoney(totals.margin)} margin`}
+          hint="Annual loads times our rate on every priced lane, with the margin that leaves."
         />
         <Stat
           label="Avg margin"
@@ -491,18 +540,21 @@ export function RfpManagerPage({ search }: Props) {
                 ? 'good'
                 : 'warn'
           }
+          hint="Revenue-weighted margin across the file, so the big lanes carry more weight."
         />
         <Stat
           label="Flagged"
           value={String(totals.flagged)}
           note="need a look"
           tone={totals.flagged > 0 ? 'warn' : undefined}
+          hint="Lanes off target, above the incumbent rate, or built on a wide cost spread."
         />
         <Stat
           label="Low confidence"
           value={String(totals.thin)}
           note="thin history"
           tone={totals.thin > 0 ? 'warn' : undefined}
+          hint="Lanes scoring under 50, where we have too little history to trust the cost."
         />
         <p className="rfp-stats__note">
           <CircleCheckBig size={13} />
@@ -511,7 +563,17 @@ export function RfpManagerPage({ search }: Props) {
       </section>
 
       <section className="rfp-tools">
-        <div className="rfp-target">
+        <Tip
+          className="rfp-target"
+          tip={
+            <>
+              <b>Target margin</b>
+              <em>
+                The margin bulk pricing aims for. Lanes land in the risk map against this number.
+              </em>
+            </>
+          }
+        >
           <span>Target margin</span>
           <button type="button" aria-label="Lower target" onClick={() => setTarget(target - 0.5)}>
             <Minus size={13} />
@@ -520,54 +582,82 @@ export function RfpManagerPage({ search }: Props) {
           <button type="button" aria-label="Raise target" onClick={() => setTarget(target + 0.5)}>
             <Plus size={13} />
           </button>
-        </div>
+        </Tip>
 
         <div className="rfp-scope" role="group" aria-label="Apply to">
-          <button
-            type="button"
-            className={cn(scope === 'all' && 'is-active')}
-            onClick={() => setScope('all')}
-          >
-            All {active.lanes.length}
-          </button>
-          <button
-            type="button"
-            className={cn(scope === 'filtered' && 'is-active')}
-            onClick={() => setScope('filtered')}
-          >
-            Filtered {shown.length}
-          </button>
-          <button
-            type="button"
-            className={cn(scope === 'selected' && 'is-active')}
-            onClick={() => setScope('selected')}
-          >
-            Selected {selected.length}
-          </button>
+          <Tip tip="Price every lane on the file.">
+            <button
+              type="button"
+              className={cn(scope === 'all' && 'is-active')}
+              onClick={() => setScope('all')}
+            >
+              All {active.lanes.length}
+            </button>
+          </Tip>
+          <Tip tip="Price only the lanes the filters and risk map are showing.">
+            <button
+              type="button"
+              className={cn(scope === 'filtered' && 'is-active')}
+              onClick={() => setScope('filtered')}
+            >
+              Filtered {shown.length}
+            </button>
+          </Tip>
+          <Tip tip="Price only the lanes you ticked in the table.">
+            <button
+              type="button"
+              className={cn(scope === 'selected' && 'is-active')}
+              onClick={() => setScope('selected')}
+            >
+              Selected {selected.length}
+            </button>
+          </Tip>
         </div>
 
-        <button
-          type="button"
-          className="rfp-btn rfp-btn--accent"
-          disabled={scopePool.length === 0}
-          onClick={applyMargin}
+        <Tip
+          tip={
+            <>
+              <b>
+                Price {scopePool.length} lane{scopePool.length === 1 ? '' : 's'} at {target}%
+              </b>
+              <em>Manual overrides and no-bid lanes are left exactly as they are.</em>
+            </>
+          }
         >
-          <Percent size={13} /> Apply margin
-        </button>
+          <button
+            type="button"
+            className="rfp-btn rfp-btn--accent"
+            disabled={scopePool.length === 0}
+            onClick={applyMargin}
+          >
+            <Percent size={13} /> Apply margin
+          </button>
+        </Tip>
 
         <div className="rfp-pills rfp-pills--lane">
           {laneFilters.map((item) => (
-            <button
+            <Tip
               key={item.id}
-              type="button"
-              className={cn(laneFilter === item.id && 'is-active')}
-              onClick={() => {
-                setLaneFilter(item.id)
-                setCell(null)
-              }}
+              tip={
+                <>
+                  <b>
+                    {item.label} · {item.count} lane{item.count === 1 ? '' : 's'}
+                  </b>
+                  <em>{laneFilterHint[item.id]}</em>
+                </>
+              }
             >
-              {item.label} <b>{item.count}</b>
-            </button>
+              <button
+                type="button"
+                className={cn(laneFilter === item.id && 'is-active')}
+                onClick={() => {
+                  setLaneFilter(item.id)
+                  setCell(null)
+                }}
+              >
+                {item.label} <b>{item.count}</b>
+              </button>
+            </Tip>
           ))}
         </div>
 
@@ -589,47 +679,101 @@ export function RfpManagerPage({ search }: Props) {
         </button>
 
         {riskOpen ? (
-          <div className="rfp-map">
-            <span />
-            {MARGIN_COLS.map((col) => (
-              <span key={col.id} className="rfp-map__col">
-                {col.label}
+          <>
+            <div className="rfp-map">
+              <span className="rfp-map__corner">
+                Confidence <i>/</i> margin
               </span>
-            ))}
+              {MARGIN_COLS.map((col) => (
+                <span key={col.id} className="rfp-map__col">
+                  {col.label}
+                </span>
+              ))}
 
-            {CONF_ROWS.map((row) => (
-              <div className="contents" key={row.id}>
-                <span className="rfp-map__row">{row.label}</span>
-                {MARGIN_COLS.map((col) => {
-                  const lanes = active.lanes.filter(
-                    (lane) =>
-                      confidenceBand(laneConfidence(lane)) === row.id &&
-                      marginBand(lane, target) === col.id
-                  )
-                  const on = cell?.conf === row.id && cell?.band === col.id
-                  return (
-                    <button
-                      key={col.id}
-                      type="button"
-                      disabled={lanes.length === 0}
-                      className={cn(
-                        'rfp-map__cell',
-                        isDanger(row.id, col.id) && lanes.length > 0 && 'is-danger',
-                        !isDanger(row.id, col.id) && isWatch(row.id, col.id) && lanes.length > 0 && 'is-watch',
-                        on && 'is-on'
-                      )}
-                      onClick={() => {
-                        setCell(on ? null : { conf: row.id, band: col.id })
-                        setLaneFilter('all')
-                      }}
-                    >
-                      {lanes.length || '·'}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
+              {CONF_ROWS.map((row) => (
+                <div className="contents" key={row.id}>
+                  <span className="rfp-map__row">
+                    <b>{row.label}</b>
+                    <em>{row.range}</em>
+                  </span>
+                  {MARGIN_COLS.map((col) => {
+                    const lanes = active.lanes.filter(
+                      (lane) =>
+                        confidenceBand(laneConfidence(lane)) === row.id &&
+                        marginBand(lane, target) === col.id
+                    )
+                    const on = cell?.conf === row.id && cell?.band === col.id
+                    const tone = cellTone(row.id, col.id, lanes.length)
+                    const share = lanes.length / Math.max(1, active.lanes.length)
+                    return (
+                      <Tip
+                        key={col.id}
+                        block
+                        className="rfp-map__slot"
+                        tip={
+                          <>
+                            <b>
+                              {row.label} confidence · {col.label.toLowerCase()}
+                            </b>
+                            <em>
+                              {lanes.length
+                                ? `${lanes.length} of ${active.lanes.length} lanes${
+                                    tone === 'danger'
+                                      ? ' — thin history priced under target, the riskiest place to be.'
+                                      : tone === 'watch'
+                                        ? ' — worth a second look before you send.'
+                                        : tone === 'idle'
+                                          ? ' — still waiting on a rate.'
+                                          : ' — priced on history we trust.'
+                                  }`
+                                : 'Nothing sits here.'}
+                            </em>
+                            {lanes.length ? <em>Click to filter the table to this cell.</em> : null}
+                          </>
+                        }
+                      >
+                        <button
+                          type="button"
+                          data-col={col.short}
+                          disabled={lanes.length === 0}
+                          style={{ ['--fill' as string]: share.toFixed(3) }}
+                          className={cn('rfp-map__cell', `is-${tone}`, on && 'is-on')}
+                          onClick={() => {
+                            setCell(on ? null : { conf: row.id, band: col.id })
+                            setLaneFilter('all')
+                          }}
+                        >
+                          <b>{lanes.length || '–'}</b>
+                          {lanes.length ? <em>{Math.round(share * 100)}%</em> : null}
+                        </button>
+                      </Tip>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <div className="rfp-map__legend">
+              {(
+                [
+                  ['good', 'Priced on solid history'],
+                  ['watch', 'Watch before you send'],
+                  ['danger', 'Thin history, under target'],
+                  ['idle', 'Not priced yet'],
+                ] as Array<[CellTone, string]>
+              ).map(([tone, label]) => (
+                <span key={tone} className={`is-${tone}`}>
+                  <i />
+                  {label}
+                </span>
+              ))}
+              <em>
+                {cell
+                  ? 'Table filtered to the selected cell — click it again to clear.'
+                  : 'Click a cell to filter the lane table below.'}
+              </em>
+            </div>
+          </>
         ) : null}
       </section>
 
@@ -647,13 +791,25 @@ export function RfpManagerPage({ search }: Props) {
               />
             </span>
             <span>Lane</span>
-            <span className="is-num">Volume</span>
-            <span className="is-num">Our cost</span>
-            <span>Confidence</span>
-            <span className="is-num">Our rate</span>
-            <span className="is-num">Margin</span>
-            <span className="is-num">vs incumbent</span>
-            <span>Flags</span>
+            <Head num tip="Loads a year on this lane, taken straight from the customer sheet.">
+              Volume
+            </Head>
+            <Head num tip="What it costs us to move the load, and where that number came from.">
+              Our cost
+            </Head>
+            <Head tip="How much history sits behind our cost: loads, recency, carriers and source.">
+              Confidence
+            </Head>
+            <Head num tip="The rate we bid. Typing here marks the lane as a manual override.">
+              Our rate
+            </Head>
+            <Head num tip="Margin our rate leaves against our cost, per load and as a percentage.">
+              Margin
+            </Head>
+            <Head num tip="Our rate against the rate the customer is paying today, where they gave it.">
+              vs incumbent
+            </Head>
+            <Head tip="Anything worth a second look before this lane goes back.">Flags</Head>
             <span />
           </div>
 
@@ -706,7 +862,23 @@ export function RfpManagerPage({ search }: Props) {
                   <em>{lane.costSource}</em>
                 </span>
 
-                <span className="rfp-cell--conf">
+                <Tip
+                  block
+                  className="rfp-cell--conf"
+                  tip={
+                    <>
+                      <b>
+                        {score} · {confidenceLabel[band]}
+                      </b>
+                      <em>
+                        {lane.history.loads} loads over {lane.history.months} months,{' '}
+                        {lane.history.carriers} carriers, last run {lane.history.lastRun.toLowerCase()}
+                        , cost from {lane.costSource.toLowerCase()}.
+                      </em>
+                      <em>Open the lane to see the full score breakdown.</em>
+                    </>
+                  }
+                >
                   <div>
                     <b className={`is-${band}`}>{score}</b>
                     <Bar value={score} tone={band === 'thin' ? 'warn' : band === 'medium' ? 'idle' : 'good'} />
@@ -714,7 +886,7 @@ export function RfpManagerPage({ search }: Props) {
                   <em>
                     {lane.history.loads} loads · {lane.history.carriers} carriers
                   </em>
-                </span>
+                </Tip>
 
                 <span className="is-num">
                   <input
@@ -749,14 +921,25 @@ export function RfpManagerPage({ search }: Props) {
                   <em>{lane.incumbent ? money(lane.incumbent) : '—'}</em>
                 </span>
 
-                <span className="rfp-cell--flags">
+                <Tip
+                  block
+                  className="rfp-cell--flags"
+                  tip={
+                    <>
+                      <b>
+                        {flags.length} flag{flags.length === 1 ? '' : 's'} on this lane
+                      </b>
+                      <em>{flags.map((flag) => flag.label).join(' · ')}</em>
+                    </>
+                  }
+                >
                   {flags.slice(0, 2).map((flag) => (
                     <i key={flag.label} style={{ ['--tone' as string]: rfpFlagHex[flag.tone] }}>
                       {flag.label}
                     </i>
                   ))}
                   {flags.length > 2 ? <i className="is-more">+{flags.length - 2}</i> : null}
-                </span>
+                </Tip>
 
                 <button
                   type="button"
@@ -858,11 +1041,53 @@ export function RfpManagerPage({ search }: Props) {
 
 /* ── small pieces ── */
 
+const statusHint: Record<RfpStatus, string> = {
+  Draft: 'File is loaded but nothing has been priced yet.',
+  Pricing: 'Lanes are being priced. Nothing has gone back to the customer.',
+  Submitted: 'Latest round is with the customer and we are waiting on an answer.',
+  Awarded: 'Customer gave us the freight at these rates.',
+  Lost: 'Customer awarded the freight elsewhere.',
+}
+
 function StatusChip({ status }: { status: RfpStatus }) {
   return (
-    <span className="rfp-status" style={{ ['--tone' as string]: rfpStatusHex[status] }}>
-      {status}
-    </span>
+    <Tip
+      tip={
+        <>
+          <b>{status}</b>
+          <em>{statusHint[status]}</em>
+        </>
+      }
+    >
+      <span className="rfp-status" style={{ ['--tone' as string]: rfpStatusHex[status] }}>
+        {status}
+      </span>
+    </Tip>
+  )
+}
+
+/** Column heading that explains itself on hover. */
+function Head({
+  tip,
+  num,
+  children,
+}: {
+  tip: string
+  num?: boolean
+  children: ReactNode
+}) {
+  return (
+    <Tip
+      className={cn('rfp-head-tip', num && 'is-num')}
+      tip={
+        <>
+          <b>{children}</b>
+          <em>{tip}</em>
+        </>
+      }
+    >
+      <span className="rfp-head-label">{children}</span>
+    </Tip>
   )
 }
 
@@ -880,22 +1105,34 @@ function Fact({
   value,
   note,
   tone,
+  hint,
 }: {
   icon: typeof Layers
   label: string
   value: string
   note: string
   tone?: 'good' | 'warn'
+  hint: string
 }) {
   return (
-    <article className="rfp-fact">
-      <i>
-        <Icon size={15} strokeWidth={1.9} />
-      </i>
-      <span>{label}</span>
-      <strong className={tone ? `is-${tone}` : undefined}>{value}</strong>
-      <em>{note}</em>
-    </article>
+    <Tip
+      block
+      tip={
+        <>
+          <b>{label}</b>
+          <em>{hint}</em>
+        </>
+      }
+    >
+      <article className="rfp-fact">
+        <i>
+          <Icon size={15} strokeWidth={1.9} />
+        </i>
+        <span>{label}</span>
+        <strong className={tone ? `is-${tone}` : undefined}>{value}</strong>
+        <em>{note}</em>
+      </article>
+    </Tip>
   )
 }
 
@@ -904,17 +1141,29 @@ function Stat({
   value,
   note,
   tone,
+  hint,
 }: {
   label: string
   value: string
   note: string
   tone?: 'good' | 'warn'
+  hint: string
 }) {
   return (
-    <article className="rfp-stat">
-      <span>{label}</span>
-      <strong className={tone ? `is-${tone}` : undefined}>{value}</strong>
-      <em>{note}</em>
-    </article>
+    <Tip
+      block
+      tip={
+        <>
+          <b>{label}</b>
+          <em>{hint}</em>
+        </>
+      }
+    >
+      <article className="rfp-stat">
+        <span>{label}</span>
+        <strong className={tone ? `is-${tone}` : undefined}>{value}</strong>
+        <em>{note}</em>
+      </article>
+    </Tip>
   )
 }
