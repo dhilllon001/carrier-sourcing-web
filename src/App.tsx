@@ -17,6 +17,7 @@ import {
   ShieldCog,
   Sparkles,
   UserRoundCog,
+  FileSpreadsheet,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -38,6 +39,7 @@ import { CapacityManagerPage } from '@/pages/CapacityManagerPage'
 import { CarrierSearchPage } from '@/pages/CarrierSearchPage'
 import { MarketInsightsPage } from '@/pages/MarketInsightsPage'
 import { InsightPreferencesPage } from '@/pages/InsightPreferencesPage'
+import { RfpManagerPage } from '@/pages/RfpManagerPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
 import {
@@ -58,6 +60,7 @@ const NAV = [
   { id: 'access', label: 'Access & management', icon: KeyRound },
   { id: 'cmt', label: 'CMT', icon: Shield },
   { id: 'cmt-configuration', label: 'CMT configuration', icon: ShieldCog },
+  { id: 'rfp', label: 'RFP manager', icon: FileSpreadsheet },
 ] as const
 
 export default function App() {
@@ -215,6 +218,8 @@ export default function App() {
                           ? 'Search carrier, lane, equipment, notes…'
                           : nav === 'cmt-configuration'
                             ? 'Search configuration, customer, condition, owner…'
+                          : nav === 'rfp'
+                            ? 'Search RFP, customer, owner, lane…'
                           : nav === 'access'
                             ? 'Search user, role, team…'
                             : 'Search probills, PO, customer, equipment…'
@@ -345,6 +350,8 @@ export default function App() {
               <CmtReviewPage search={search} refreshKey={refreshKey} />
             ) : nav === 'cmt-configuration' ? (
               <CmtConfigurationPage search={search} />
+            ) : nav === 'rfp' ? (
+              <RfpManagerPage search={search} />
             ) : nav === 'access' ? (
               <AccessManagementPage search={search} />
             ) : (

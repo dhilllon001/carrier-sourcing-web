@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/cn'
 import { EChart } from '@/components/charts/EChart'
 import { MarketFeedPanel } from '@/components/AiAlertsPanel'
+import { MarketIntelligencePanel } from '@/components/MarketIntelligencePanel'
 import { CHART_FONT, chartTooltip, tooltipCategory } from '@/components/charts/chartTheme'
 import { mapRegionView, useGeoMap, type MapName } from '@/components/charts/useGeoMap'
 import {
@@ -71,6 +72,14 @@ const countryLabel: Record<MarketCountry, string> = {
 const equipmentTypes: EquipmentMarket[] = ['Van', 'Reefer', 'Flatbed']
 /** Stop code to country, so a lane can be matched to the selected region. */
 const countryByCode = new Map(marketAreas.map((area) => [area.code, area.country]))
+
+/** Lane filters match either direction, since a desk works the round trip. */
+function onLane(origin: string, destination: string, pair: string[]) {
+  const [from, to] = pair
+  return (
+    (origin === from && destination === to) || (origin === to && destination === from)
+  )
+}
 
 const axisLabel = { color: '#64748b', fontSize: 13, fontFamily: CHART_FONT }
 const axisLine = { lineStyle: { color: '#dfe4ea' } }
@@ -228,6 +237,16 @@ export function MarketInsightsPage({
   const [citiesShown, setCitiesShown] = useState(PAGE_ROWS)
   /** Market code the board is drilled into, set by clicking the map or a row. */
   const [focusCode, setFocusCode] = useState<string | null>(null)
+  /** Preferred lane the board is filtered to, as `origin-destination`. */
+  const [laneKey, setLaneKey] = useState<string | null>(null)
+
+  const lanePair = laneKey ? laneKey.split('-') : null
+
+  /** Drilling into a market replaces any lane filter, so the two never fight. */
+  const drillTo = (code: string) => {
+    setFocusCode(code === focusCode ? null : code)
+    setLaneKey(null)
+  }
 
   const mapName = mapNames[region]
   const geo = useGeoMap(mapName)
@@ -339,27 +358,29 @@ export function MarketInsightsPage({
           data: areas.map((area) => ({
             name: area.name,
             value: Number(areaRatio(area).toFixed(2)),
-            ...(area.code === focusCode
+            ...(area.code === focusCode || lanePair?.includes(area.code)
               ? { itemStyle: { borderColor: '#0f172a', borderWidth: 1.8 } }
               : {}),
           })),
         },
       ],
     }
-  }, [areas, focusCode, focusName, geo.ready, mapName, shares])
+  }, [areas, focusCode, focusName, geo.ready, laneKey, mapName, shares])
 
   const routes = useMemo(() => {
     const q = search.trim().toLowerCase()
     const country = countryOfRegion[region]
     return preferredRoutes.filter((route) => {
+      const [from, to] = routeAreaCodes(route)
       const regionMatch =
         !country || routeAreaCodes(route).some((code) => countryByCode.get(code) === country)
+      const laneMatch = !lanePair || onLane(from, to, lanePair)
       const textMatch =
         !q ||
         [route.origin, route.destination, route.customer].join(' ').toLowerCase().includes(q)
-      return regionMatch && route.equipment === equipment && textMatch
+      return regionMatch && laneMatch && route.equipment === equipment && textMatch
     })
-  }, [equipment, preferredRoutes, region, search])
+  }, [equipment, laneKey, preferredRoutes, region, search])
 
   const route =
     preferredRoutes.find((item) => item.id === routeId) ??
@@ -607,6 +628,7 @@ export function MarketInsightsPage({
           profile.areaCodes.includes(city.state) &&
           (!country || city.country === country) &&
           (!focusCode || city.state === focusCode) &&
+          (!lanePair || lanePair.includes(city.state)) &&
           (!q ||
             [city.city, city.code, city.state, city.topOutbound]
               .join(' ')
@@ -615,7 +637,7 @@ export function MarketInsightsPage({
       )
       .map((city) => ({ ...city, ratio: cityRatio(city) }))
     return byKey(rows, citySort)
-  }, [citySort, focusCode, profile.areaCodes, region, search])
+  }, [citySort, focusCode, laneKey, profile.areaCodes, region, search])
 
   const stateRows = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -661,9 +683,10 @@ export function MarketInsightsPage({
     return topNationalLanes.filter(
       (lane) =>
         (!focusCode || lane.origin === focusCode || lane.destination === focusCode) &&
+        (!lanePair || onLane(lane.origin, lane.destination, lanePair)) &&
         (!q || [lane.short, lane.lane, lane.equipment].join(' ').toLowerCase().includes(q))
     )
-  }, [focusCode, search])
+  }, [focusCode, laneKey, search])
 
   const laneTrendOption = useMemo<EChartsOption>(
     () => ({
@@ -729,6 +752,33 @@ export function MarketInsightsPage({
               {item}
             </button>
           ))}
+        </div>
+
+        <div className="mi-lanes" role="group" aria-label="Preferred lanes">
+          <span>Lanes</span>
+          <button
+            type="button"
+            className={cn(!laneKey && 'is-active')}
+            onClick={() => setLaneKey(null)}
+          >
+            All
+          </button>
+          {profile.lanes.map((lane) => {
+            const key = `${lane.origin}-${lane.destination}`
+            return (
+              <button
+                key={lane.id}
+                type="button"
+                className={cn(laneKey === key && 'is-active')}
+                onClick={() => {
+                  setLaneKey(laneKey === key ? null : key)
+                  setFocusCode(null)
+                }}
+              >
+                {lane.origin} <ArrowRight size={11} /> {lane.destination}
+              </button>
+            )
+          })}
         </div>
 
         <div className="mi-controls__meta">
@@ -799,6 +849,12 @@ export function MarketInsightsPage({
         </div>
       </section>
 
+      <MarketIntelligencePanel
+        region={region}
+        equipment={equipment}
+        selectedMarkets={profile.areaCodes}
+      />
+
       <section className="mi-grid">
         <article className="mi-card">
           <header>
@@ -819,13 +875,30 @@ export function MarketInsightsPage({
                     <ChevronRight size={14} />
                     <b>{focus.name}</b>
                   </span>
+                ) : lanePair ? (
+                  <span className="mi-crumbs">
+                    <button type="button" onClick={() => setLaneKey(null)}>
+                      {region}
+                    </button>
+                    <ChevronRight size={14} />
+                    <b>
+                      {lanePair[0]} – {lanePair[1]} lane
+                    </b>
+                  </span>
                 ) : (
                   `${region} capacity balance`
                 )}
               </h3>
             </div>
-            {focus ? (
-              <button type="button" className="mi-clear" onClick={() => setFocusCode(null)}>
+            {focus || lanePair ? (
+              <button
+                type="button"
+                className="mi-clear"
+                onClick={() => {
+                  setFocusCode(null)
+                  setLaneKey(null)
+                }}
+              >
                 <X size={13} /> Back to {region}
               </button>
             ) : null}
@@ -856,7 +929,7 @@ export function MarketInsightsPage({
                     ariaLabel={`${region} loads per truck by market`}
                     onSelect={(name) => {
                       const clicked = areas.find((area) => area.name === name)
-                      if (clicked) setFocusCode(clicked.code === focusCode ? null : clicked.code)
+                      if (clicked) drillTo(clicked.code)
                     }}
                   />
                 ) : (
@@ -881,7 +954,7 @@ export function MarketInsightsPage({
                     key={area.code}
                     type="button"
                     className={cn('mi-rail__row', area.code === focusCode && 'is-active')}
-                    onClick={() => setFocusCode(area.code === focusCode ? null : area.code)}
+                    onClick={() => drillTo(area.code)}
                   >
                     <b>{area.code}</b>
                     <span>{area.name}</span>
@@ -1042,8 +1115,11 @@ export function MarketInsightsPage({
           <div>
             <span>Top national lanes</span>
             <h3>
-              {focus ? `Lanes touching ${focus.name}` : 'Broker spot versus market range'} ·{' '}
-              {laneRows.length} lanes
+              {lanePair
+                ? `Lanes on ${lanePair[0]} – ${lanePair[1]}`
+                : focus
+                  ? `Lanes touching ${focus.name}`
+                  : 'Broker spot versus market range'} · {laneRows.length} lanes
             </h3>
           </div>
           <span className="mi-source">Per load, incl. fuel</span>
@@ -1208,13 +1284,11 @@ export function MarketInsightsPage({
                   'is-clickable',
                   row.area.code === focusCode && 'is-active'
                 )}
-                onClick={() =>
-                  setFocusCode(row.area.code === focusCode ? null : row.area.code)
-                }
+                onClick={() => drillTo(row.area.code)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    setFocusCode(row.area.code === focusCode ? null : row.area.code)
+                    drillTo(row.area.code)
                   }
                 }}
               >

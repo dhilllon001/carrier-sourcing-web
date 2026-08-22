@@ -50,9 +50,61 @@
 .mi-controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 9px 11px;
   border-radius: 11px;
+}
+
+/* Preferred lanes: one click narrows the whole board to that pair. */
+.mi-lanes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mi-lanes::-webkit-scrollbar {
+  display: none;
+}
+
+.mi-lanes > span {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mi-ink-3);
+}
+
+.mi-lanes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  height: 27px;
+  padding: 0 10px;
+  border: 1px solid #dfe5ec;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mi-ink-2);
+  cursor: pointer;
+}
+
+.mi-lanes button:hover {
+  border-color: #c3ccd8;
+  color: var(--mi-ink);
+}
+
+.mi-lanes button.is-active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
 }
 
 .mi-tabs,
@@ -288,6 +340,351 @@
 
 .mi-chart {
   padding: 10px 12px 6px;
+}
+
+/* ── market intelligence: overview + contract benchmark ── */
+.mi-intel {
+  overflow: visible;
+}
+
+.mi-intel__head {
+  min-height: 68px !important;
+}
+
+.mi-intel__head > div:first-child p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--mi-ink-3);
+}
+
+.mi-intel__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mi-intel__head-actions > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mi-ink-3);
+}
+
+.mi-intel__note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--mi-line-soft);
+  background: #f8fafc;
+  font-size: 11.5px;
+  color: var(--mi-ink-2);
+}
+
+.mi-intel__note svg {
+  flex: none;
+  color: #2b4fd3;
+}
+
+.mi-intel__filters {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--mi-line-soft);
+  background: #fff;
+}
+
+.mi-intel__filters > svg {
+  align-self: center;
+  flex: none;
+  color: var(--mi-ink-3);
+}
+
+.mi-intel__filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 172px;
+}
+
+.mi-intel__filters label > span {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mi-ink-3);
+}
+
+.mi-intel__filters select {
+  height: 31px;
+  padding: 0 30px 0 9px;
+  border: 1px solid var(--mi-line);
+  border-radius: 7px;
+  outline: 0;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mi-ink);
+  cursor: pointer;
+}
+
+.mi-intel__filters select:focus {
+  border-color: #8296ea;
+  box-shadow: 0 0 0 3px #eff2fd;
+}
+
+.mi-intel__filters > em {
+  align-self: center;
+  margin-left: auto;
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--mi-ink-3);
+}
+
+.mi-intel__filters > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #2b4fd3;
+  cursor: pointer;
+}
+
+.mi-intel__filters > button:disabled {
+  color: var(--mi-ink-3);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mi-index-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mi-index {
+  min-width: 0;
+  padding: 13px 14px 11px;
+  border-right: 1px solid var(--mi-line-soft);
+}
+
+.mi-index:last-child {
+  border-right: 0;
+}
+
+.mi-index > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mi-index > header > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mi-index > header span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mi-ink-2);
+}
+
+.mi-index > header strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.mi-index__moves {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.mi-index__moves span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 550;
+  color: var(--mi-ink-3);
+}
+
+.mi-index__moves span b {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mi-index__moves .is-up svg,
+.mi-index__moves .is-up b {
+  color: #10b981;
+}
+
+.mi-index__moves .is-down svg,
+.mi-index__moves .is-down b {
+  color: #ef4444;
+}
+
+.mi-index > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--mi-line-soft);
+  font-size: 10.5px;
+  color: var(--mi-ink-3);
+}
+
+.mi-index > footer b {
+  font-weight: 650;
+  color: var(--mi-ink-2);
+}
+
+.mi-contract {
+  padding: 12px 14px 14px;
+  background: #f8fafc;
+}
+
+.mi-contract__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 10px;
+  border: 1px solid var(--mi-line);
+  border-radius: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.mi-contract__kpis article {
+  padding: 10px 12px;
+  border-right: 1px solid var(--mi-line-soft);
+}
+
+.mi-contract__kpis article:last-child {
+  border-right: 0;
+}
+
+.mi-contract__kpis span {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mi-ink-3);
+}
+
+.mi-contract__kpis strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.mi-contract__kpis strong small {
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--mi-ink-3);
+}
+
+.mi-contract__kpis em {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--mi-ink-3);
+}
+
+.mi-contract__kpis em.is-good {
+  color: #0b7a55;
+}
+
+.mi-contract__kpis em.is-warn {
+  color: #a85c06;
+}
+
+.mi-contract__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mi-contract__charts > article,
+.mi-bias {
+  min-width: 0;
+  border: 1px solid var(--mi-line);
+  border-radius: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.mi-contract__charts article > header,
+.mi-bias > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px 3px;
+}
+
+.mi-contract__charts header span,
+.mi-bias header span {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mi-ink-3);
+}
+
+.mi-contract__charts header h4,
+.mi-bias header h4 {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mi-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mi-chart-legend span {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px !important;
+  font-weight: 550 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.mi-chart-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.mi-bias {
+  margin-top: 10px;
+}
+
+.mi-bias > header > em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--mi-ink-3);
 }
 
 .mi-map-body {
@@ -1786,6 +2183,23 @@
 }
 
 @media (max-width: 1320px) {
+  .mi-intel__head {
+    align-items: flex-start;
+  }
+
+  .mi-intel__head-actions {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .mi-intel__filters {
+    flex-wrap: wrap;
+  }
+
+  .mi-intel__filters > em {
+    margin-left: 0;
+  }
+
   .mi-stats__row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1804,6 +2218,32 @@
 }
 
 @media (max-width: 1120px) {
+  .mi-index-grid,
+  .mi-contract__charts {
+    grid-template-columns: 1fr;
+  }
+
+  .mi-index {
+    border-right: 0;
+    border-bottom: 1px solid var(--mi-line-soft);
+  }
+
+  .mi-index:last-child {
+    border-bottom: 0;
+  }
+
+  .mi-contract__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mi-contract__kpis article:nth-child(2) {
+    border-right: 0;
+  }
+
+  .mi-contract__kpis article:nth-child(n + 3) {
+    border-top: 1px solid var(--mi-line-soft);
+  }
+
   .mi-grid {
     grid-template-columns: 1fr;
   }

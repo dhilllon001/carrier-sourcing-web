@@ -448,6 +448,51 @@ export const nationalTrend = {
   reefer: [3.36, 3.4, 3.41, 3.35],
 }
 
+/** Market intelligence history used by the overview and contract benchmark views.
+ *  Index values are normalized to Jan 2025 = 100; rates include fuel. */
+export const marketIntelligence = {
+  labels: [
+    'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26',
+    'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26',
+  ],
+  index: {
+    Van: [94, 96, 95, 101, 98, 100, 103, 107, 105, 111, 118, 114],
+    Reefer: [98, 100, 97, 108, 101, 102, 105, 110, 108, 115, 123, 120],
+    Flatbed: [91, 93, 92, 96, 94, 97, 102, 106, 109, 116, 121, 117],
+  },
+  spot: {
+    Van: [2.58, 2.61, 2.59, 2.72, 2.66, 2.69, 2.73, 2.79, 2.76, 2.84, 2.96, 2.90],
+    Reefer: [3.02, 3.08, 3.01, 3.22, 3.12, 3.15, 3.21, 3.29, 3.25, 3.36, 3.48, 3.35],
+    Flatbed: [3.28, 3.31, 3.27, 3.38, 3.34, 3.39, 3.45, 3.52, 3.58, 3.69, 3.74, 3.55],
+  },
+  contract: {
+    Van: [2.74, 2.73, 2.72, 2.72, 2.71, 2.70, 2.70, 2.71, 2.73, 2.76, 2.79, 2.81],
+    Reefer: [3.18, 3.17, 3.16, 3.16, 3.15, 3.14, 3.14, 3.16, 3.19, 3.22, 3.25, 3.27],
+    Flatbed: [3.42, 3.41, 3.40, 3.39, 3.38, 3.38, 3.39, 3.42, 3.46, 3.50, 3.54, 3.57],
+  },
+  /** Our realized spot margin versus a comparable market benchmark. */
+  margin: {
+    Van: {
+      company: [12.4, 12.8, 12.1, 11.6, 12.9, 13.2, 13.6, 14.1, 13.8, 14.4, 14.9, 14.6],
+      market: [11.8, 12.0, 11.7, 11.4, 12.2, 12.6, 12.9, 13.3, 13.1, 13.7, 14.1, 13.9],
+    },
+    Reefer: {
+      company: [13.7, 14.1, 13.4, 12.8, 14.0, 14.5, 14.8, 15.2, 14.9, 15.6, 16.0, 15.7],
+      market: [13.1, 13.4, 13.0, 12.5, 13.5, 13.9, 14.2, 14.7, 14.5, 15.0, 15.4, 15.1],
+    },
+    Flatbed: {
+      company: [14.2, 14.5, 14.0, 13.6, 14.4, 14.8, 15.1, 15.6, 15.9, 16.2, 16.5, 16.1],
+      market: [13.6, 13.9, 13.5, 13.2, 13.9, 14.3, 14.7, 15.0, 15.3, 15.7, 16.0, 15.6],
+    },
+  },
+  /** Forecast minus actual market movement, percentage points. */
+  forecastBias: {
+    Van: [-0.4, -0.8, -0.5, 0.3, 0.9, -0.2, -0.7, 0.4, 0.6, 0.2, -0.9, -0.5],
+    Reefer: [-0.2, -0.5, -0.3, 0.6, 1.1, 0.1, -0.4, 0.7, 0.5, 0.3, -0.7, -0.2],
+    Flatbed: [0.1, -0.3, -0.6, 0.4, 0.8, 0.3, -0.2, 0.5, 0.9, 0.4, -0.4, -0.1],
+  },
+}
+
 /** Weekly load and truck posting counts, thousands, last 12 weeks. */
 export const postingHistory = {
   weeks: [
@@ -481,6 +526,10 @@ export const topNationalLanes: NationalLane[] = [
   { short: 'LAX → PHX', lane: 'Los Angeles, CA → Phoenix, AZ', origin: 'CA', destination: 'AZ', equipment: 'Van', miles: 372, weeklyLoads: 478, rate: 1358, low: 1183, high: 1466, wow: 3.2 },
   { short: 'ONT → DEN', lane: 'Ontario, CA → Denver, CO', origin: 'CA', destination: 'CO', equipment: 'Van', miles: 1024, weeklyLoads: 196, rate: 2384, low: 2044, high: 2691, wow: 2.2 },
   { short: 'DFW → ATL', lane: 'Dallas, TX → Atlanta, GA', origin: 'TX', destination: 'GA', equipment: 'Van', miles: 795, weeklyLoads: 342, rate: 1866, low: 1602, high: 2058, wow: 1.4 },
+  { short: 'LAX → DFW', lane: 'Los Angeles, CA → Dallas, TX', origin: 'CA', destination: 'TX', equipment: 'Van', miles: 1435, weeklyLoads: 302, rate: 2884, low: 2468, high: 3186, wow: 2.4 },
+  { short: 'ONT → HOU', lane: 'Ontario, CA → Houston, TX', origin: 'CA', destination: 'TX', equipment: 'Reefer', miles: 1546, weeklyLoads: 164, rate: 3946, low: 3402, high: 4318, wow: 1.6 },
+  { short: 'YYZ → DFW', lane: 'Brampton, ON → Dallas, TX', origin: 'ON', destination: 'TX', equipment: 'Van', miles: 1428, weeklyLoads: 148, rate: 3184, low: 2742, high: 3562, wow: 3.1 },
+  { short: 'MTY → DTW', lane: 'Monterrey, NL → Detroit, MI', origin: 'NL', destination: 'MI', equipment: 'Van', miles: 1568, weeklyLoads: 142, rate: 3862, low: 3308, high: 4266, wow: 2.7 },
   { short: 'HOU → LRD', lane: 'Houston, TX → Laredo, TX', origin: 'TX', destination: 'TX', equipment: 'Van', miles: 316, weeklyLoads: 288, rate: 1102, low: 918, high: 1284, wow: -1.6 },
   { short: 'CHI → DFW', lane: 'Chicago, IL → Dallas, TX', origin: 'IL', destination: 'TX', equipment: 'Van', miles: 968, weeklyLoads: 254, rate: 2246, low: 1948, high: 2492, wow: 2.9 },
   { short: 'YYZ → DTW', lane: 'Toronto, ON → Detroit, MI', origin: 'ON', destination: 'MI', equipment: 'Van', miles: 237, weeklyLoads: 318, rate: 852, low: 712, high: 1008, wow: 3.6 },

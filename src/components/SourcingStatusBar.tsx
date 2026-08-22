@@ -26,6 +26,7 @@ type NavId =
   | 'access'
   | 'cmt'
   | 'cmt-configuration'
+  | 'rfp'
 
 type Props = {
   active: NavId
