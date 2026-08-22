@@ -17,6 +17,7 @@ import { areaRatio, marketAreas, nationalTrend } from '@/data/marketInsights'
 type NavId =
   | 'sourcing'
   | 'capacity'
+  | 'capacity-dashboard'
   | 'configuration'
   | 'availability'
   | 'carrier-search'
@@ -27,6 +28,11 @@ type NavId =
   | 'cmt'
   | 'cmt-configuration'
   | 'rfp'
+  | 'rfp-design'
+  | 'rfp-publish'
+  | 'rfp-bids'
+  | 'rfp-evaluate'
+  | 'rfp-award'
 
 type Props = {
   active: NavId

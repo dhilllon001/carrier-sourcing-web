@@ -1,0 +1,1066 @@
+.capdash-page,
+.rfpflow-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--sr-font-body);
+}
+
+.capdash-hero,
+.rfpflow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 84% 20%, rgba(59, 130, 246, 0.1), transparent 25%),
+    linear-gradient(135deg, #fff, #f8faff);
+  box-shadow: var(--sh-1);
+}
+
+.capdash-kicker,
+.rfpflow-head > div > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.capdash-hero h2,
+.rfpflow-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.capdash-hero p,
+.rfpflow-head p {
+  max-width: 740px;
+  margin: 5px 0 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.capdash-primary,
+.rfpflow-primary,
+.rfpflow-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rfpflow-secondary {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--ink-2);
+}
+
+.rfpflow-head aside {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.capdash-stats,
+.rfpflow-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+}
+
+.capdash-stat {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  border-right: 1px solid var(--line-soft);
+}
+
+.capdash-stat:last-child {
+  border-right: 0;
+}
+
+.capdash-stat > i {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+.capdash-stat.is-danger > i { background: var(--red-soft); color: var(--red); }
+.capdash-stat.is-action > i { background: var(--accent-soft); color: var(--accent); }
+.capdash-stat.is-good > i { background: var(--green-soft); color: var(--green); }
+
+.capdash-stat > span {
+  display: grid;
+  min-width: 0;
+}
+
+.capdash-stat em,
+.capdash-stat small {
+  color: var(--ink-3);
+  font-size: 10.5px;
+  font-style: normal;
+}
+
+.capdash-stat strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.capdash-card,
+.rfpflow-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  box-shadow: var(--sh-1);
+}
+
+.capdash-card__head,
+.rfpflow-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 50px;
+  padding: 8px 13px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+
+.capdash-card__head > div,
+.rfpflow-card__head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.capdash-card__head span,
+.rfpflow-card__head span {
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.capdash-card__head strong,
+.rfpflow-card__head strong {
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+.capdash-filters {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.capdash-filters button {
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  font: 650 10.5px inherit;
+}
+
+.capdash-filters button.is-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.capdash-row {
+  display: grid;
+  grid-template-columns: minmax(250px, 1.8fr) 80px 90px minmax(120px, 0.8fr) 90px minmax(180px, 1.1fr) 112px;
+  align-items: center;
+  min-width: 1030px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-2);
+  font-size: 11.5px;
+}
+
+.capdash-row:last-child { border-bottom: 0; }
+.capdash-row--head { min-height: 30px; padding-block: 5px; background: var(--surface-2); color: var(--ink-3); font-size: 9px; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; }
+.capdash-table { overflow-x: auto; }
+.capdash-lane, .capdash-num { display: grid; gap: 2px; }
+.capdash-lane strong, .capdash-num b { color: var(--ink); font-size: 11.5px; }
+.capdash-lane em, .capdash-num em { color: var(--ink-3); font-size: 10px; font-style: normal; }
+
+.capdash-coverage { display: flex; align-items: center; gap: 8px; }
+.capdash-coverage > b { width: 34px; font-size: 11px; }
+.capdash-coverage > i { width: 56px; height: 4px; overflow: hidden; border-radius: 10px; background: var(--line-soft); }
+.capdash-coverage > i span { display: block; height: 100%; border-radius: inherit; }
+.capdash-coverage .is-good { color: var(--green); background: var(--green); }
+.capdash-coverage .is-watch { color: var(--amber); background: var(--amber); }
+.capdash-coverage .is-danger { color: var(--red); background: var(--red); }
+
+.capdash-gap,
+.rfpflow-status {
+  justify-self: start;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.capdash-gap.is-danger { border-color: var(--red-line); background: var(--red-soft); color: var(--red); }
+.capdash-gap.is-good { border-color: var(--green-line); background: var(--green-soft); color: var(--green); }
+.capdash-reco { color: var(--ink-2); }
+.capdash-action { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; border: 0; background: transparent; color: var(--accent); font: 700 10.5px inherit; cursor: pointer; }
+
+.capdash-callout {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px;
+  border: 1px solid var(--accent-line);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.capdash-callout > div { display: grid; flex: 1; gap: 2px; }
+.capdash-callout strong { font-size: 12px; }
+.capdash-callout span { color: var(--ink-2); font-size: 10.5px; }
+.capdash-callout button { border: 0; background: transparent; color: var(--accent); font: 700 11px inherit; cursor: pointer; }
+
+/* Workflow shell */
+.rfpflow-context {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 27px;
+  color: var(--ink-3);
+  font-size: 10.5px;
+}
+
+.rfpflow-context button { border: 0; background: transparent; color: var(--accent); font: 650 10.5px inherit; cursor: pointer; }
+.rfpflow-context strong { color: var(--ink-2); }
+.rfpflow-context span { padding: 2px 5px; border: 1px solid var(--line); border-radius: 5px; background: #fff; font-size: 9.5px; }
+.rfpflow-context em { margin-left: auto; font-style: normal; }
+
+.rfpflow-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.rfpflow-steps button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rfpflow-steps button > i {
+  z-index: 1;
+  display: grid;
+  flex: 0 0 25px;
+  place-items: center;
+  height: 25px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.rfpflow-steps button > span { z-index: 1; display: grid; min-width: 0; gap: 1px; background: #fff; padding-right: 8px; }
+.rfpflow-steps strong { color: var(--ink-2); font-size: 11.5px; white-space: nowrap; }
+.rfpflow-steps em { font-size: 9.5px; font-style: normal; white-space: nowrap; }
+.rfpflow-steps button > b { position: absolute; right: -9px; left: 35px; height: 1px; background: var(--line); }
+.rfpflow-steps button.is-active > i { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 0 0 3px var(--accent-soft); }
+.rfpflow-steps button.is-active strong { color: var(--accent); }
+.rfpflow-steps button.is-complete > i { border-color: var(--green); background: var(--green); color: #fff; }
+.rfpflow-steps button.is-complete > b { background: var(--green-line); }
+
+.rfpflow-complete { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid var(--green-line); border-radius: 8px; background: var(--green-soft); color: var(--green); font-size: 11px; font-weight: 700; }
+
+.rfpflow-metric { display: grid; gap: 2px; padding: 11px 14px; border-right: 1px solid var(--line-soft); }
+.rfpflow-metric:last-child { border-right: 0; }
+.rfpflow-metric em, .rfpflow-metric span { color: var(--ink-3); font-size: 10px; font-style: normal; }
+.rfpflow-metric strong { color: var(--ink); font-size: 17px; line-height: 1.2; }
+.rfpflow-metric.is-danger strong { color: var(--red); }
+.rfpflow-metric.is-action strong { color: var(--accent); }
+.rfpflow-metric.is-good strong { color: var(--green); }
+
+.rfpflow-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.7fr); gap: 12px; align-items: start; }
+.rfpflow-ai { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border: 1px solid var(--accent-line); border-radius: 999px; background: var(--accent-soft); color: var(--accent) !important; font-size: 9.5px !important; letter-spacing: 0 !important; text-transform: none !important; }
+.rfpflow-lanes { display: grid; }
+
+.rfpflow-lane {
+  display: grid;
+  grid-template-columns: 20px minmax(220px, 1fr) 90px 95px;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: #fff;
+  color: var(--ink-2);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rfpflow-lane:last-child { border-bottom: 0; }
+.rfpflow-lane.is-selected { background: color-mix(in srgb, var(--accent) 3%, #fff); }
+.rfpflow-check { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: #fff; font-style: normal; }
+.is-selected > .rfpflow-check, .rfpflow-grid__row.is-selected > .rfpflow-check { border-color: var(--accent); background: var(--accent); }
+.rfpflow-lane > span:nth-child(2), .rfpflow-lane__volume { display: grid; gap: 2px; }
+.rfpflow-lane strong { color: var(--ink); font-size: 11.5px; }
+.rfpflow-lane em { color: var(--ink-3); font-size: 9.5px; font-style: normal; }
+.rfpflow-lane__volume b { color: var(--ink); font-size: 13px; }
+.rfpflow-risk { justify-self: start; padding: 4px 6px; border-radius: 999px; font-size: 9.5px; font-weight: 700; }
+.rfpflow-risk.is-danger { background: var(--red-soft); color: var(--red); }
+.rfpflow-risk.is-watch { background: var(--amber-soft); color: var(--amber); }
+
+.rfpflow-settings { padding-bottom: 11px; }
+.rfpflow-settings > .rfpflow-field, .rfpflow-settings > .rfpflow-fields, .rfpflow-settings > .rfpflow-toggle { margin-inline: 12px; }
+.rfpflow-field { display: grid; gap: 5px; margin-top: 10px; }
+.rfpflow-field > span { color: var(--ink-2); font-size: 10px; font-weight: 700; }
+.rfpflow-field input, .rfpflow-field select, .rfpflow-field textarea { width: 100%; min-height: 32px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink); font: 11px inherit; box-sizing: border-box; }
+.rfpflow-field textarea { min-height: 67px; resize: vertical; line-height: 1.45; }
+.rfpflow-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rfpflow-toggle { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: var(--ink-2); font-size: 10.5px; cursor: pointer; }
+.rfpflow-toggle input { position: absolute; opacity: 0; }
+.rfpflow-toggle span { position: relative; width: 26px; height: 15px; border-radius: 20px; background: var(--line); }
+.rfpflow-toggle span::after { position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; content: ""; transition: transform var(--fast) var(--ease); }
+.rfpflow-toggle input:checked + span { background: var(--accent); }
+.rfpflow-toggle input:checked + span::after { transform: translateX(11px); }
+
+.rfpflow-source-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.rfpflow-source-strip > button { display: flex; align-items: center; gap: 7px; padding: 10px 12px; border: 0; border-right: 1px solid var(--line-soft); background: #fff; color: var(--ink-2); text-align: left; cursor: pointer; }
+.rfpflow-source-strip > button:last-child { border-right: 0; }
+.rfpflow-source-strip > button:hover,
+.rfpflow-source-strip > button.is-active { background: var(--accent-soft); }
+.rfpflow-source-strip > button > b { margin-left: auto; color: var(--ink); font-size: 13px; }
+.rfpflow-source-strip > button > em { color: var(--ink-3); font-size: 12px; font-style: normal; }
+
+.rfpflow-source { display: inline-flex; align-items: center; justify-self: start; gap: 5px; padding: 3px 6px; border: 1px solid color-mix(in srgb, var(--source) 30%, #fff); border-radius: 999px; background: color-mix(in srgb, var(--source) 9%, #fff); color: color-mix(in srgb, var(--source) 80%, #111827); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+.rfpflow-source i { width: 5px; height: 5px; border-radius: 50%; background: var(--source); }
+
+.rfpflow-toolbar { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); }
+.rfpflow-toolbar label { display: flex; align-items: center; gap: 6px; min-width: 230px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink-3); }
+.rfpflow-toolbar input { min-height: 30px; flex: 1; border: 0; outline: 0; font: 10.5px inherit; }
+.rfpflow-toolbar label button { display: grid; place-items: center; border: 0; background: transparent; color: var(--ink-3); }
+.rfpflow-toolbar > button, .rfpflow-quiet { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink-2); font: 650 10px inherit; }
+.rfpflow-toolbar > span { margin-left: auto; color: var(--ink-3); font-size: 10px; }
+
+.rfpflow-grid { overflow-x: auto; }
+.rfpflow-grid__head, .rfpflow-grid__row { display: grid; align-items: center; gap: 8px; min-width: 940px; padding: 8px 11px; }
+.rfpflow-grid__head { background: var(--surface-2); color: var(--ink-3); font-size: 8.5px; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; }
+.rfpflow-grid__row { min-height: 48px; border: 0; border-top: 1px solid var(--line-soft); background: #fff; color: var(--ink-2); text-align: left; font: 10.5px inherit; }
+button.rfpflow-grid__row { width: 100%; cursor: pointer; }
+.rfpflow-grid__row.is-selected { background: color-mix(in srgb, var(--accent) 3%, #fff); }
+.rfpflow-grid--invite .rfpflow-grid__head, .rfpflow-grid--invite .rfpflow-grid__row { grid-template-columns: 20px minmax(190px, 1.4fr) 90px 115px 85px minmax(150px, 1fr) 85px; }
+.rfpflow-grid--bids .rfpflow-grid__head, .rfpflow-grid--bids .rfpflow-grid__row { grid-template-columns: minmax(190px, 1.4fr) 90px 90px 85px 85px 150px 90px; }
+.rfpflow-carrier { display: grid; gap: 2px; }
+.rfpflow-carrier strong { color: var(--ink); font-size: 11px; }
+.rfpflow-carrier em, .rfpflow-muted { color: var(--ink-3); font-size: 9.5px; font-style: normal; }
+.rfpflow-money { color: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
+.rfpflow-score { display: flex; align-items: center; gap: 7px; }
+.rfpflow-score > b { width: 20px; color: var(--ink); }
+.rfpflow-score > i { width: 55px; height: 4px; overflow: hidden; border-radius: 10px; background: var(--line-soft); }
+.rfpflow-score > i em { display: block; height: 100%; background: var(--accent); }
+
+.rfpflow-status.is-interested { border-color: var(--green-line); background: var(--green-soft); color: var(--green); }
+.rfpflow-status.is-invited, .rfpflow-status.is-viewed { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
+.rfpflow-status.is-declined { border-color: var(--red-line); background: var(--red-soft); color: var(--red); }
+
+.rfpflow-confidence { display: grid; grid-template-columns: 24px 62px auto; align-items: center; gap: 6px; justify-self: start; font-variant-numeric: tabular-nums; }
+.rfpflow-confidence > b { color: var(--ink); font-size: 11px; }
+.rfpflow-confidence > span { height: 4px; overflow: hidden; border-radius: 10px; background: var(--line-soft); }
+.rfpflow-confidence > span i { display: block; height: 100%; background: var(--tone); }
+.rfpflow-confidence > em { color: var(--tone); font-size: 9px; font-style: normal; font-weight: 700; }
+.rfpflow-confidence.is-good { --tone: var(--green); }
+.rfpflow-confidence.is-watch { --tone: var(--amber); }
+.rfpflow-confidence.is-danger { --tone: var(--red); }
+.rfpflow-confidence.is-large { grid-template-columns: 30px 80px auto; }
+.rfpflow-confidence.is-large > b { font-size: 16px; }
+
+.rfpflow-evaluate { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 11px; }
+.rfpflow-bidcard { position: relative; display: grid; gap: 11px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.rfpflow-bidcard.is-shortlisted { border-color: var(--accent-line); box-shadow: inset 0 3px 0 var(--accent); }
+.rfpflow-bidcard__rank { position: absolute; top: 8px; right: 9px; color: var(--ink-3); font-size: 10px; font-weight: 750; }
+.rfpflow-bidcard__carrier { display: grid; justify-items: start; gap: 3px; }
+.rfpflow-bidcard__carrier strong { margin-top: 3px; color: var(--ink); font-size: 12px; }
+.rfpflow-bidcard__carrier em { color: var(--ink-3); font-size: 9.5px; font-style: normal; }
+.rfpflow-bidcard__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.rfpflow-bidcard__facts span { display: grid; gap: 2px; padding: 7px; border-radius: 7px; background: var(--surface-2); }
+.rfpflow-bidcard__facts em { color: var(--ink-3); font-size: 9px; font-style: normal; }
+.rfpflow-bidcard__facts b { color: var(--ink); font-size: 11px; }
+.rfpflow-bidcard__actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+.rfpflow-bidcard__actions button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 29px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink-2); font: 650 9.5px inherit; }
+.rfpflow-bidcard__actions button.is-on { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
+.rfpflow-bidcard__actions button.is-award { grid-column: 1 / -1; border-color: var(--accent); background: var(--accent); color: #fff; }
+.rfpflow-negotiate { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 6px; padding: 9px; border: 1px solid var(--amber-line); border-radius: 8px; background: var(--amber-soft); }
+.rfpflow-negotiate > strong { grid-column: 1 / -1; color: var(--amber); font-size: 10px; }
+.rfpflow-negotiate label { display: grid; gap: 3px; color: var(--ink-2); font-size: 8.5px; font-weight: 700; text-transform: uppercase; }
+.rfpflow-negotiate input { width: 100%; min-height: 27px; border: 1px solid var(--amber-line); border-radius: 6px; background: #fff; font: 10px inherit; box-sizing: border-box; }
+.rfpflow-negotiate button { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; border: 0; border-radius: 6px; background: var(--amber); color: #fff; font: 700 9px inherit; }
+
+.rfpflow-award { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(330px, 0.7fr); gap: 12px; align-items: start; }
+.rfpflow-winner { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 13px; border-bottom: 1px solid var(--line-soft); }
+.rfpflow-winner > i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; background: var(--green-soft); color: var(--green); }
+.rfpflow-winner > span { display: grid; justify-items: start; gap: 2px; }
+.rfpflow-winner strong { margin-top: 3px; color: var(--ink); font-size: 13px; }
+.rfpflow-winner em { color: var(--ink-3); font-size: 9.5px; font-style: normal; }
+.rfpflow-award-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rfpflow-award-facts span { display: grid; gap: 3px; padding: 12px; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+.rfpflow-award-facts span:nth-child(3n) { border-right: 0; }
+.rfpflow-award-facts em { color: var(--ink-3); font-size: 9px; font-style: normal; text-transform: uppercase; }
+.rfpflow-award-facts strong { color: var(--ink); font-size: 12px; }
+.rfpflow-award-note { display: flex; gap: 9px; margin: 12px; padding: 10px; border: 1px solid var(--green-line); border-radius: 8px; background: var(--green-soft); color: var(--green); }
+.rfpflow-award-note span { display: grid; gap: 2px; }
+.rfpflow-award-note strong { font-size: 10.5px; }
+.rfpflow-award-note em { color: var(--ink-2); font-size: 9.5px; font-style: normal; line-height: 1.4; }
+.rfpflow-contract { padding-bottom: 11px; }
+.rfpflow-document { display: grid; justify-items: center; gap: 4px; margin: 12px; padding: 18px 10px; border: 1px dashed var(--accent-line); border-radius: 9px; background: var(--accent-soft); color: var(--accent); text-align: center; }
+.rfpflow-document strong { color: var(--ink); font-size: 10.5px; }
+.rfpflow-document span { color: var(--ink-3); font-size: 9px; }
+.rfpflow-document button { display: inline-flex; align-items: center; gap: 5px; margin-top: 5px; border: 0; background: transparent; color: var(--accent); font: 700 10px inherit; }
+.rfpflow-signers { display: grid; margin: 0 12px 11px; border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden; }
+.rfpflow-signer { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 7px; padding: 9px; border-bottom: 1px solid var(--line-soft); }
+.rfpflow-signer:last-child { border-bottom: 0; }
+.rfpflow-signer > i { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: var(--amber-soft); color: var(--amber); font-style: normal; }
+.rfpflow-signer.is-done > i { background: var(--green-soft); color: var(--green); }
+.rfpflow-signer > span { display: grid; gap: 1px; }
+.rfpflow-signer strong { color: var(--ink); font-size: 10px; }
+.rfpflow-signer em { color: var(--ink-3); font-size: 8.5px; font-style: normal; }
+.rfpflow-signer > b { color: var(--amber); font-size: 8.5px; }
+.rfpflow-signer.is-done > b { color: var(--green); }
+.rfpflow-sign { width: calc(100% - 24px); margin-inline: 12px; }
+.rfpflow-signed { display: flex; align-items: center; gap: 8px; margin: 0 12px; padding: 9px; border: 1px solid var(--green-line); border-radius: 8px; background: var(--green-soft); color: var(--green); }
+.rfpflow-signed span { display: grid; gap: 1px; }
+.rfpflow-signed strong { font-size: 10.5px; }
+.rfpflow-signed em { color: var(--ink-2); font-size: 8.5px; font-style: normal; }
+
+@media (max-width: 1200px) {
+  .rfpflow-layout, .rfpflow-award { grid-template-columns: 1fr; }
+  .rfpflow-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rfpflow-settings > .rfpflow-card__head, .rfpflow-settings > .rfpflow-toggle, .rfpflow-settings > .rfpflow-field:last-of-type { grid-column: 1 / -1; }
+  .rfpflow-evaluate { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .capdash-stats, .rfpflow-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .capdash-stat:nth-child(2), .rfpflow-metric:nth-child(2) { border-right: 0; }
+  .capdash-stat:nth-child(-n + 2), .rfpflow-metric:nth-child(-n + 2) { border-bottom: 1px solid var(--line-soft); }
+  .rfpflow-steps { overflow-x: auto; grid-template-columns: repeat(5, minmax(145px, 1fr)); }
+  .rfpflow-source-strip { grid-template-columns: repeat(3, 1fr); }
+  .rfpflow-source-strip > button:nth-child(3) { border-right: 0; }
+  .rfpflow-source-strip > button:nth-child(-n + 3) { border-bottom: 1px solid var(--line-soft); }
+}
+
+@media (max-width: 680px) {
+  .capdash-hero, .rfpflow-head { align-items: flex-start; flex-direction: column; padding: 14px; }
+  .capdash-hero h2, .rfpflow-head h2 { font-size: 17px; }
+  .rfpflow-head aside { width: 100%; flex-wrap: wrap; }
+  .rfpflow-head aside > button { flex: 1; }
+  .rfpflow-context em { display: none; }
+  .rfpflow-evaluate { grid-template-columns: 1fr; }
+  .rfpflow-settings { display: block; }
+  .rfpflow-fields { grid-template-columns: 1fr; }
+  .rfpflow-source-strip { grid-template-columns: repeat(2, 1fr); }
+  .rfpflow-source-strip > button { border-bottom: 1px solid var(--line-soft); }
+  .rfpflow-source-strip > button:nth-child(2n) { border-right: 0; }
+  .rfpflow-source-strip > button:last-child { grid-column: 1 / -1; border-bottom: 0; }
+  .rfpflow-toolbar { align-items: stretch; flex-wrap: wrap; }
+  .rfpflow-toolbar label { flex: 1 0 100%; min-width: 0; }
+  .rfpflow-toolbar > span { margin-left: 0; }
+  .rfpflow-award-facts { grid-template-columns: repeat(2, 1fr); }
+  .rfpflow-award-facts span:nth-child(3n) { border-right: 1px solid var(--line-soft); }
+  .rfpflow-award-facts span:nth-child(2n) { border-right: 0; }
+  .rfpflow-winner { grid-template-columns: 38px 1fr; }
+  .rfpflow-winner > .rfpflow-confidence { grid-column: 1 / -1; }
+  .capdash-callout { align-items: flex-start; flex-wrap: wrap; }
+  .capdash-callout button { width: 100%; text-align: left; }
+}
+
+/* Refined workspace treatment: these two modules intentionally use a 12px
+   Inter baseline and keep comfortable gutters instead of shrinking dense data. */
+.capdash-page,
+.rfpflow-page {
+  --workflow-font: Inter, 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+
+  gap: 14px;
+  padding: 16px 22px 24px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: var(--workflow-font);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.capdash-page button,
+.capdash-page input,
+.capdash-page select,
+.capdash-page textarea,
+.rfpflow-page button,
+.rfpflow-page input,
+.rfpflow-page select,
+.rfpflow-page textarea {
+  font-family: var(--workflow-font);
+}
+
+.capdash-kicker,
+.capdash-card__head span,
+.capdash-stat em,
+.capdash-stat small,
+.capdash-lane em,
+.capdash-num em,
+.rfpflow-head > div > span,
+.rfpflow-context,
+.rfpflow-steps em,
+.rfpflow-metric em,
+.rfpflow-metric span,
+.rfpflow-card__head span,
+.rfpflow-lane em,
+.rfpflow-field > span,
+.rfpflow-toolbar,
+.rfpflow-grid__head,
+.rfpflow-carrier em,
+.rfpflow-muted,
+.rfpflow-bidcard__carrier em,
+.rfpflow-bidcard__facts em,
+.rfpflow-award-facts em,
+.rfpflow-award-note em,
+.rfpflow-document span,
+.rfpflow-signer em,
+.rfpflow-signed em {
+  font-size: 12px;
+}
+
+.capdash-hero,
+.rfpflow-head {
+  min-height: 92px;
+  padding: 20px 22px;
+  border-color: #dce3f2;
+  background:
+    radial-gradient(circle at 88% 15%, rgba(59, 130, 246, 0.13), transparent 28%),
+    linear-gradient(125deg, #ffffff 0%, #f8faff 72%, #f2f6ff 100%);
+}
+
+.capdash-hero h2,
+.rfpflow-head h2 {
+  font-size: 22px;
+}
+
+.capdash-hero p,
+.rfpflow-head p {
+  font-size: 12px;
+}
+
+.capdash-primary,
+.rfpflow-primary,
+.rfpflow-secondary {
+  min-height: 38px;
+  padding-inline: 15px;
+  font-size: 12px;
+}
+
+.capdash-primary:disabled,
+.rfpflow-primary:disabled,
+.capdash-callout button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.capdash-stats,
+.rfpflow-metrics,
+.capdash-card,
+.rfpflow-card,
+.rfpflow-steps,
+.rfpflow-source-strip {
+  border-color: #dfe4ec;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.045);
+}
+
+.capdash-stat {
+  min-height: 68px;
+  padding: 14px 17px;
+}
+
+.capdash-stat > i {
+  width: 36px;
+  height: 36px;
+}
+
+.capdash-stat strong {
+  font-size: 20px;
+}
+
+.capdash-card__head,
+.rfpflow-card__head {
+  min-height: 56px;
+  padding: 10px 15px;
+}
+
+.capdash-card__head strong,
+.rfpflow-card__head strong {
+  font-size: 13px;
+}
+
+.capdash-filters button,
+.capdash-action,
+.rfpflow-status,
+.rfpflow-risk,
+.rfpflow-source,
+.rfpflow-ai,
+.rfpflow-quiet {
+  font-size: 11px;
+}
+
+/* Capacity table now includes an explicit selection column. */
+.capdash-row {
+  grid-template-columns: 28px minmax(260px, 1.8fr) 82px 92px minmax(125px, 0.8fr) 92px minmax(190px, 1.1fr) 118px;
+  min-width: 1110px;
+  min-height: 54px;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+.capdash-row--head {
+  min-height: 36px;
+  font-size: 11px;
+}
+
+.capdash-lane strong,
+.capdash-num b {
+  font-size: 12px;
+}
+
+.capdash-select {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.capdash-select.is-on {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.capdash-select:disabled {
+  background: var(--surface-2);
+  cursor: not-allowed;
+}
+
+.capdash-insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.capdash-corridors,
+.capdash-pipeline {
+  display: grid;
+}
+
+.capdash-corridors article {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 46px minmax(110px, 0.7fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.capdash-corridors article:last-child,
+.capdash-pipeline article:last-child {
+  border-bottom: 0;
+}
+
+.capdash-corridors article > span {
+  display: grid;
+  gap: 2px;
+}
+
+.capdash-corridors strong,
+.capdash-pipeline strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.capdash-corridors em,
+.capdash-pipeline em {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.capdash-corridors article > b {
+  color: var(--tone);
+  font-size: 12px;
+}
+
+.capdash-corridors article > i {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--line-soft);
+}
+
+.capdash-corridors article > i span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tone);
+}
+
+.capdash-corridors .is-good { --tone: var(--green); color: var(--green); }
+.capdash-corridors .is-watch { --tone: var(--amber); color: var(--amber); }
+.capdash-corridors .is-danger { --tone: var(--red); color: var(--red); }
+
+.capdash-pipeline article {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.capdash-pipeline article > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.capdash-pipeline article > i.is-danger { background: var(--red); }
+.capdash-pipeline article > i.is-action { background: var(--accent); }
+.capdash-pipeline article > i.is-watch { background: var(--amber); }
+.capdash-pipeline article > i.is-good { background: var(--green); }
+.capdash-pipeline article > span { display: grid; gap: 2px; }
+.capdash-pipeline article > b { color: var(--ink-3); font-size: 11px; font-weight: 700; }
+
+.capdash-callout {
+  min-height: 52px;
+  padding: 12px 16px;
+}
+
+/* RFP workflow hierarchy and readable 12px data density. */
+.rfpflow-context {
+  min-height: 30px;
+}
+
+.rfpflow-steps {
+  padding: 12px 15px;
+}
+
+.rfpflow-steps button {
+  min-height: 44px;
+  padding: 7px 10px;
+}
+
+.rfpflow-steps button > i {
+  flex-basis: 29px;
+  height: 29px;
+  font-size: 12px;
+}
+
+.rfpflow-steps strong {
+  font-size: 12px;
+}
+
+.rfpflow-metric {
+  min-height: 60px;
+  padding: 13px 16px;
+}
+
+.rfpflow-metric strong {
+  font-size: 20px;
+}
+
+.rfpflow-lane {
+  grid-template-columns: 22px minmax(240px, 1fr) 105px 112px;
+  min-height: 58px;
+  padding: 11px 14px;
+}
+
+.rfpflow-lane strong,
+.rfpflow-lane__volume b {
+  font-size: 12px;
+}
+
+.rfpflow-field input,
+.rfpflow-field select,
+.rfpflow-field textarea {
+  min-height: 36px;
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+.rfpflow-toggle {
+  font-size: 12px;
+}
+
+.rfpflow-source-strip > button {
+  min-height: 46px;
+  padding: 10px 14px;
+}
+
+.rfpflow-toolbar {
+  min-height: 48px;
+  padding: 8px 12px;
+}
+
+.rfpflow-toolbar input,
+.rfpflow-source-filter select {
+  min-height: 34px;
+  font-size: 12px;
+}
+
+.rfpflow-source-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink-3);
+  background: #fff;
+}
+
+.rfpflow-source-filter select {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.rfpflow-grid__head,
+.rfpflow-grid__row {
+  padding: 10px 13px;
+}
+
+.rfpflow-grid__head {
+  min-height: 36px;
+  font-size: 11px;
+}
+
+.rfpflow-grid__row {
+  min-height: 56px;
+  font-size: 12px;
+}
+
+.rfpflow-carrier strong,
+.rfpflow-money,
+.rfpflow-score > b {
+  font-size: 12px;
+}
+
+.rfpflow-confidence > b {
+  font-size: 12px;
+}
+
+.rfpflow-confidence > em {
+  font-size: 11px;
+}
+
+.rfpflow-bid-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.rfpflow-funnel,
+.rfpflow-activity {
+  display: grid;
+  padding: 12px 14px;
+}
+
+.rfpflow-funnel {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rfpflow-funnel span {
+  display: grid;
+  gap: 4px;
+}
+
+.rfpflow-funnel b {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.rfpflow-funnel em {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.rfpflow-funnel i {
+  height: 5px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.rfpflow-activity span {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.rfpflow-activity span:last-child {
+  border-bottom: 0;
+}
+
+.rfpflow-activity i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.rfpflow-activity em {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.rfpflow-evaluate {
+  gap: 14px;
+  padding: 14px;
+}
+
+.rfpflow-bidcard {
+  gap: 13px;
+  padding: 15px;
+}
+
+.rfpflow-bidcard__carrier strong,
+.rfpflow-bidcard__facts b {
+  font-size: 12px;
+}
+
+.rfpflow-bidcard__actions button,
+.rfpflow-negotiate label,
+.rfpflow-negotiate button {
+  font-size: 11px;
+}
+
+.rfpflow-terms {
+  display: grid;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 12px;
+  border: 1px solid var(--accent-line);
+  border-radius: 8px;
+  background: #fbfcff;
+}
+
+.rfpflow-terms > strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.rfpflow-terms > span {
+  display: flex;
+  gap: 7px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.rfpflow-terms > span b {
+  color: var(--accent);
+}
+
+@media (max-width: 1000px) {
+  .capdash-page,
+  .rfpflow-page {
+    padding-inline: 16px;
+  }
+
+  .capdash-insights,
+  .rfpflow-bid-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .capdash-page,
+  .rfpflow-page {
+    padding: 12px;
+  }
+
+  .capdash-hero,
+  .rfpflow-head {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .capdash-hero h2,
+  .rfpflow-head h2 {
+    font-size: 19px;
+  }
+
+  .rfpflow-funnel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

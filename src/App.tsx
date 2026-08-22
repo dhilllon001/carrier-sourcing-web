@@ -18,6 +18,13 @@ import {
   Sparkles,
   UserRoundCog,
   FileSpreadsheet,
+  LayoutDashboard,
+  PenLine,
+  Megaphone,
+  HandCoins,
+  Scale,
+  Trophy,
+  Compass,
 } from 'lucide-react'
 import {
   CarrierSourcingReportPage,
@@ -40,6 +47,8 @@ import { CarrierSearchPage } from '@/pages/CarrierSearchPage'
 import { MarketInsightsPage } from '@/pages/MarketInsightsPage'
 import { InsightPreferencesPage } from '@/pages/InsightPreferencesPage'
 import { RfpManagerPage } from '@/pages/RfpManagerPage'
+import { RfpWorkflowPage, type RfpStage } from '@/pages/RfpWorkflowPage'
+import { CapacityDashboardPage } from '@/pages/CapacityDashboardPage'
 import { reportLoads } from '@/data/report'
 import { cmtReviewQueue } from '@/data/cmtReview'
 import {
@@ -49,19 +58,35 @@ import {
 import { cn } from '@/lib/cn'
 
 const NAV = [
-  { id: 'sourcing', label: 'Sourcing', icon: Truck },
-  { id: 'capacity', label: 'Carrier capacity manager', icon: Gauge },
-  { id: 'configuration', label: 'Auto sourcing configuration', icon: SlidersHorizontal },
-  { id: 'availability', label: 'Availability', icon: CalendarCheck2 },
-  { id: 'carrier-search', label: 'Carrier capacity', icon: Search },
-  { id: 'market-insights', label: 'AI market insights', icon: Sparkles },
-  { id: 'insight-preferences', label: 'User preferences', icon: UserRoundCog, sub: true },
-  { id: 'carriers', label: 'My carriers', icon: Users },
-  { id: 'access', label: 'Access & management', icon: KeyRound },
-  { id: 'cmt', label: 'CMT', icon: Shield },
-  { id: 'cmt-configuration', label: 'CMT configuration', icon: ShieldCog },
-  { id: 'rfp', label: 'RFP manager', icon: FileSpreadsheet },
+  { id: 'sourcing', label: 'Sourcing', icon: Truck, group: 'Workspace' },
+  { id: 'capacity-dashboard', label: 'Capacity dashboard', icon: LayoutDashboard, group: 'Carrier capacity', sub: true },
+  { id: 'capacity', label: 'Capacity manager', icon: Gauge, group: 'Carrier capacity', sub: true },
+  { id: 'carrier-search', label: 'Carrier discovery', icon: Compass, group: 'Carrier capacity', sub: true },
+  { id: 'rfp', label: 'RFP dashboard', icon: FileSpreadsheet, group: 'RFP manager', sub: true },
+  { id: 'rfp-design', label: 'Design', icon: PenLine, group: 'RFP manager', sub: true },
+  { id: 'rfp-publish', label: 'Publish & invite', icon: Megaphone, group: 'RFP manager', sub: true },
+  { id: 'rfp-bids', label: 'Bids', icon: HandCoins, group: 'RFP manager', sub: true },
+  { id: 'rfp-evaluate', label: 'Evaluate', icon: Scale, group: 'RFP manager', sub: true },
+  { id: 'rfp-award', label: 'Award', icon: Trophy, group: 'RFP manager', sub: true },
+  { id: 'configuration', label: 'Auto sourcing', icon: SlidersHorizontal, group: 'Automation' },
+  { id: 'availability', label: 'Availability', icon: CalendarCheck2, group: 'Automation' },
+  { id: 'market-insights', label: 'AI market insights', icon: Sparkles, group: 'Intelligence' },
+  { id: 'insight-preferences', label: 'User preferences', icon: UserRoundCog, group: 'Intelligence', sub: true },
+  { id: 'carriers', label: 'My carriers', icon: Users, group: 'Management' },
+  { id: 'access', label: 'Access & management', icon: KeyRound, group: 'Management' },
+  { id: 'cmt', label: 'CMT review', icon: Shield, group: 'Management' },
+  { id: 'cmt-configuration', label: 'CMT configuration', icon: ShieldCog, group: 'Management', sub: true },
 ] as const
+
+const NAV_GROUPS = ['Workspace', 'Carrier capacity', 'RFP manager', 'Automation', 'Intelligence', 'Management'] as const
+
+const RFP_STAGE_BY_NAV: Partial<Record<(typeof NAV)[number]['id'], RfpStage>> = {
+  'rfp-design': 'design',
+  'rfp-publish': 'publish',
+  'rfp-bids': 'bids',
+  'rfp-evaluate': 'evaluate',
+  'rfp-award': 'award',
+}
 
 export default function App() {
   const [nav, setNav] = useState<(typeof NAV)[number]['id']>('sourcing')
@@ -73,6 +98,7 @@ export default function App() {
   const [openCarrierId, setOpenCarrierId] = useState<string | null>(null)
   const [laneSearchOpen, setLaneSearchOpen] = useState(false)
   const [newLaneOpen, setNewLaneOpen] = useState(false)
+  const [rfpLaneIds, setRfpLaneIds] = useState<string[]>([])
   /* Quick market read for whoever lands on Sourcing, so they see the news before working loads. */
   const [briefOpen, setBriefOpen] = useState(true)
   const [insightPreferences, setInsightPreferences] = useState(defaultInsightPreferences)
@@ -125,32 +151,38 @@ export default function App() {
           </button>
         </div>
 
-        {!collapsed && <div className="sr-sidebar__eyebrow">Modules</div>}
-
         <nav className="sr-sidebar__nav">
-          {NAV.map((item) => {
-            const Icon = item.icon
+          {NAV_GROUPS.map((group) => {
+            const items = NAV.filter((item) => item.group === group)
             return (
-              <button
-                key={item.id}
-                type="button"
-                title={item.label}
-                className={cn(
-                  'sr-sidebar__nav-link',
-                  'sub' in item && item.sub && 'is-sub',
-                  nav === item.id && 'is-active'
-                )}
-                onClick={() => {
-                  setNav(item.id)
-                  setOpenLoadId(null)
-                  setOpenCarrierId(null)
-                  if (item.id === 'configuration') setConfigView('workflows')
-                  if (item.id === 'sourcing' && nav !== 'sourcing') setBriefOpen(true)
-                }}
-              >
-                <Icon size={16} strokeWidth={1.75} />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
+              <div className="sr-sidebar__group" key={group}>
+                {!collapsed && <div className="sr-sidebar__group-title">{group}</div>}
+                {items.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      title={item.label}
+                      className={cn(
+                        'sr-sidebar__nav-link',
+                        'sub' in item && item.sub && 'is-sub',
+                        nav === item.id && 'is-active'
+                      )}
+                      onClick={() => {
+                        setNav(item.id)
+                        setOpenLoadId(null)
+                        setOpenCarrierId(null)
+                        if (item.id === 'configuration') setConfigView('workflows')
+                        if (item.id === 'sourcing' && nav !== 'sourcing') setBriefOpen(true)
+                      }}
+                    >
+                      <Icon size={15} strokeWidth={1.75} />
+                      {!collapsed && <span>{item.label}</span>}
+                    </button>
+                  )
+                })}
+              </div>
             )
           })}
         </nav>
@@ -202,6 +234,8 @@ export default function App() {
                   placeholder={
                     nav === 'capacity'
                       ? 'Search lane, customer, team, or carrier…'
+                      : nav === 'capacity-dashboard'
+                        ? 'Search lane, customer, equipment, or corridor…'
                       : nav === 'configuration'
                       ? 'Search workflows, runs, probill, carrier…'
                       : nav === 'availability'
@@ -218,7 +252,7 @@ export default function App() {
                           ? 'Search carrier, lane, equipment, notes…'
                           : nav === 'cmt-configuration'
                             ? 'Search configuration, customer, condition, owner…'
-                          : nav === 'rfp'
+                          : nav === 'rfp' || nav.startsWith('rfp-')
                             ? 'Search RFP, customer, owner, lane…'
                           : nav === 'access'
                             ? 'Search user, role, team…'
@@ -307,6 +341,15 @@ export default function App() {
               />
             ) : nav === 'capacity' ? (
               <CapacityManagerPage search={search} />
+            ) : nav === 'capacity-dashboard' ? (
+              <CapacityDashboardPage
+                search={search}
+                onCreateRfp={(laneIds) => {
+                  setRfpLaneIds(laneIds)
+                  setNav('rfp-design')
+                }}
+                onOpenManager={() => setNav('capacity')}
+              />
             ) : nav === 'configuration' ? (
               <ConfigurationPage
                 key={configView}
@@ -352,6 +395,14 @@ export default function App() {
               <CmtConfigurationPage search={search} />
             ) : nav === 'rfp' ? (
               <RfpManagerPage search={search} />
+            ) : RFP_STAGE_BY_NAV[nav] ? (
+              <RfpWorkflowPage
+                stage={RFP_STAGE_BY_NAV[nav]!}
+                search={search}
+                initialLaneIds={rfpLaneIds}
+                onStageChange={(stage) => setNav(`rfp-${stage}` as typeof nav)}
+                onOpenDashboard={() => setNav('rfp')}
+              />
             ) : nav === 'access' ? (
               <AccessManagementPage search={search} />
             ) : (
